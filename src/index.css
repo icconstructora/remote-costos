@@ -1,0 +1,24 @@
+/* Aproximación visual a la paleta/tipografía del shell (vic.icconstructora.co)
+   — solo para que el harness se sienta parecido. No es necesario que coincida
+   exactamente; el shell aplica sus propios estilos al renderizar tu componente. */
+:root {
+  --color-brand: #6b0f14;
+  --color-brand-soft: #f9f0f0;
+  --color-brand-dark: #4a0a0e;
+  --font-sans: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans);
+}

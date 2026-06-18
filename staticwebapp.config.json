@@ -1,0 +1,14 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*"]
+  },
+  "routes": [
+    {
+      "route": "/assets/*",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
+      }
+    }
+  ]
+}
