@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "remote-costos",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3005,
+      "cwd": "C:\\Users\\hcadena\\OneDrive - IC CONSTRUCTORA SAS\\Documentos\\Mis proyectos\\remote-costos"
+    }
+  ]
+}
