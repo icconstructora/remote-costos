@@ -646,7 +646,7 @@ export default function CostosModule() {
           {PROJECTS.map(p => (
             <div key={p.id} className={`cv-proj-chip${p.id === activePj ? ' active' : ''}`} onClick={() => selectPj(p.id)}>
               <div className="cv-chip-img">
-                <img src={p.img} alt={p.name}
+                <img src={new URL(p.img, import.meta.url).href} alt={p.name}
                   onError={e => { e.target.style.display='none'; e.target.parentNode.innerHTML=`<span style="font-size:.5rem;color:#6b7a99">${p.name.slice(0,4)}</span>`; }} />
               </div>
               <span className="cv-chip-label">{p.name}</span>
