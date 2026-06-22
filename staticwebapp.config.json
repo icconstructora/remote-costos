@@ -9,6 +9,12 @@
       "headers": {
         "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
       }
+    },
+    {
+      "route": "/remoteEntry.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
+      }
     }
   ]
 }
