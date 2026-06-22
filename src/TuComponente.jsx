@@ -17,7 +17,9 @@ function loadScript(src) {
     if (document.querySelector(`script[data-costos-src="${src}"]`)) { resolve(); return; }
     const s = document.createElement('script');
     s.setAttribute('data-costos-src', src);
-    s.src = src;
+    // Ruta absoluta resuelta contra el origen propio del remote (import.meta.url),
+    // no contra el origen del shell que lo está montando vía Module Federation.
+    s.src = new URL(src, import.meta.url).href;
     s.onload = resolve;
     s.onerror = resolve;
     document.head.appendChild(s);
