@@ -68,7 +68,7 @@ export function useCostosData(activePj, instance, accounts) {
           controlRows,
           contratoRows,
           anticipoRows,
-          proyectosRows,
+          sampleControl,
         ] = await Promise.all([
           getDim(token, 'adp_dtm_dim_controlclaseorigen'),
           getDim(token, 'adp_dtm_dim_estadopordocumento'),
@@ -78,10 +78,14 @@ export function useCostosData(activePj, instance, accounts) {
           fetchMerged(token, 'adp_dtm_fact_controlproyecto', skids),
           fetchMerged(token, 'adp_dtm_fact_contrato', skids),
           fetchMerged(token, 'adp_dtm_fact_anticipo', skids),
-          getDim(token, 'adp_dtm_dim_proyectos').catch(() => []),
+          // Sin filtro — para descubrir qué skidproyecto existen realmente
+          getDim(token, 'adp_dtm_fact_controlproyecto').catch(() => []),
         ]);
 
         if (cancelled) return;
+
+        // Extraer skidproyecto únicos de la muestra sin filtro
+        const skidsEnAPI = [...new Set(sampleControl.map(r => r.skidproyecto))].sort((a,b)=>a-b);
 
         // Log siempre visible (producción y dev) para verificar mapeos
         console.groupCollapsed('[Sinco] dims loaded — ' + activePj);
@@ -92,8 +96,9 @@ export function useCostosData(activePj, instance, accounts) {
         console.log('controlRows count', controlRows.length);
         console.log('contratoRows count', contratoRows.length);
         console.log('anticipoRows count', anticipoRows.length);
-        console.log('⚙️ dim_proyectos (todos)', proyectosRows);
         console.log('⚙️ skids usados para', activePj, '→', skids);
+        console.log('⚙️ skidproyecto que devuelve la API (sin filtro)', skidsEnAPI);
+        console.log('⚙️ muestra sin filtro (primeras 3 filas)', sampleControl.slice(0, 3));
         console.groupEnd();
 
         // Construir mapas de lookup
