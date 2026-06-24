@@ -66,7 +66,11 @@ export async function probeFactTables(token, sampleSkid) {
   for (const t of [...CANDIDATES_CONTRATOS, ...CANDIDATES_ACTAS]) {
     try {
       const rows = await sincoGet(token, t, { skidproyecto: sampleSkid });
-      console.log(`[probe] OK ${t} → ${Array.isArray(rows) ? rows.length : '?'} rows`);
+      const n = Array.isArray(rows) ? rows.length : '?';
+      console.log(`[probe] OK ${t} → ${n} rows`);
+      if (Array.isArray(rows) && rows.length > 0) {
+        console.log(`[probe] campos ${t}:`, Object.keys(rows[0]).join(', '));
+      }
     } catch (e) {
       console.log(`[probe] FAIL ${t} → ${e.message}`);
     }
