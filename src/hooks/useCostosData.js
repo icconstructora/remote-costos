@@ -68,6 +68,7 @@ export function useCostosData(activePj, instance, accounts) {
           controlRows,
           contratoRows,
           anticipoRows,
+          proyectosRows,
         ] = await Promise.all([
           getDim(token, 'adp_dtm_dim_controlclaseorigen'),
           getDim(token, 'adp_dtm_dim_estadopordocumento'),
@@ -77,6 +78,7 @@ export function useCostosData(activePj, instance, accounts) {
           fetchMerged(token, 'adp_dtm_fact_controlproyecto', skids),
           fetchMerged(token, 'adp_dtm_fact_contrato', skids),
           fetchMerged(token, 'adp_dtm_fact_anticipo', skids),
+          getDim(token, 'adp_dtm_dim_proyectos').catch(() => []),
         ]);
 
         if (cancelled) return;
@@ -90,6 +92,8 @@ export function useCostosData(activePj, instance, accounts) {
         console.log('controlRows count', controlRows.length);
         console.log('contratoRows count', contratoRows.length);
         console.log('anticipoRows count', anticipoRows.length);
+        console.log('⚙️ dim_proyectos (todos)', proyectosRows);
+        console.log('⚙️ skids usados para', activePj, '→', skids);
         console.groupEnd();
 
         // Construir mapas de lookup

@@ -17,20 +17,15 @@ function mesLabel(yyyymm) {
 export function buildClaseMap(rows) {
   const map = {};
   for (const row of rows) {
-    const txt = [
-      row['Clase Descripcion'] || '',
-      row.clase || '',
-      row['Origen Descripcion'] || '',
-      row.origen || '',
-    ].join(' ').toLowerCase();
-
+    // Usar el campo 'clase' directamente (código de un carácter de Sinco):
+    // P=Presupuestado, Y=Proyectado, B/T=Asegurado, C/J=Consumido/Ejecutado
+    const clase = (row.clase || '').toUpperCase();
     let cat;
-    if (/presupuesto/.test(txt))                                               cat = 'presupuesto';
-    else if (/proyectado|proyecci/.test(txt))                                  cat = 'proyectado';
-    else if (/comprometido|asegurado|contrato(?!rista)|licitad|adjudic/.test(txt)) cat = 'asegurado';
-    else if (/consumido|ejecutado|acta|factura|pago/.test(txt))                cat = 'consumido';
-    else                                                                        cat = 'otro';
-
+    if      (clase === 'P')                    cat = 'presupuesto';
+    else if (clase === 'Y')                    cat = 'proyectado';
+    else if (clase === 'B' || clase === 'T')   cat = 'asegurado';
+    else if (clase === 'C' || clase === 'J')   cat = 'consumido';
+    else                                       cat = 'otro';
     map[row.skidclaseorigen] = cat;
   }
   return map;

@@ -20,9 +20,12 @@ async function sincoGet(token, tabla, params = {}) {
   );
   const qs = new URLSearchParams(filtered).toString();
   const url = `${BASE}/${tabla}${qs ? '?' + qs : ''}`;
+  console.log('[sincoGet]', url);
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`[Sinco] ${tabla}: HTTP ${res.status}`);
-  return res.json();
+  const data = await res.json();
+  console.log('[sincoGet] respuesta', tabla, Array.isArray(data) ? data.length + ' filas' : data);
+  return data;
 }
 
 // Llama la tabla para cada skidproyecto en paralelo y fusiona
