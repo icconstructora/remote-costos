@@ -97,8 +97,11 @@ export function useCostosData(activePj, instance, accounts) {
         console.log('contratoRows count', contratoRows.length);
         console.log('anticipoRows count', anticipoRows.length);
         console.log('⚙️ skids usados para', activePj, '→', skids);
-        console.log('⚙️ skidproyecto que devuelve la API (sin filtro)', skidsEnAPI);
-        console.log('⚙️ muestra sin filtro (primeras 3 filas)', sampleControl.slice(0, 3));
+        console.log('⚙️ skidproyecto que devuelve la API (sin filtro control)', skidsEnAPI);
+        // Buscar skidproyecto en capituloPresupuesto (tabla que sí devuelve datos sin filtro)
+        const skidsEnCap = [...new Set(capRows.map(r => r.skidproyecto).filter(Boolean))].sort((a,b)=>a-b);
+        console.log('⚙️ skidproyecto en capituloPresupuesto', skidsEnCap);
+        console.log('⚙️ muestra capituloPresupuesto fila[0]', capRows[0]);
         console.groupEnd();
 
         // Construir mapas de lookup
