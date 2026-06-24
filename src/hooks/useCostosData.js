@@ -81,15 +81,16 @@ export function useCostosData(activePj, instance, accounts) {
 
         if (cancelled) return;
 
-        // Log de dims en desarrollo para verificar mapeos
-        if (import.meta.env.DEV) {
-          console.groupCollapsed('[Sinco] dims loaded');
-          console.log('claseOrigen', claseOrigenRows);
-          console.log('estadoPorDocumento', estadoRows);
-          console.log('tipoContrato', tipoContratoRows);
-          console.log('capituloPresupuesto (sample)', capRows.slice(0, 5));
-          console.groupEnd();
-        }
+        // Log siempre visible (producción y dev) para verificar mapeos
+        console.groupCollapsed('[Sinco] dims loaded — ' + activePj);
+        console.log('claseOrigen', claseOrigenRows);
+        console.log('estadoPorDocumento', estadoRows);
+        console.log('tipoContrato', tipoContratoRows);
+        console.log('capituloPresupuesto (sample)', capRows.slice(0, 5));
+        console.log('controlRows count', controlRows.length);
+        console.log('contratoRows count', contratoRows.length);
+        console.log('anticipoRows count', anticipoRows.length);
+        console.groupEnd();
 
         // Construir mapas de lookup
         const claseMap   = buildClaseMap(claseOrigenRows);

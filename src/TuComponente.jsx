@@ -8,7 +8,11 @@ import { useCostosData } from './hooks/useCostosData.js';
 const NS = 'http://www.w3.org/2000/svg';
 function se(tag, attrs, parent) {
   const e = document.createElementNS(NS, tag);
-  Object.entries(attrs || {}).forEach(([k, v]) => e.setAttribute(k, v));
+  Object.entries(attrs || {}).forEach(([k, v]) => {
+    // SVG rechaza height/width negativos — clampear a 0
+    if ((k === 'height' || k === 'width') && typeof v === 'number' && v < 0) v = 0;
+    e.setAttribute(k, v);
+  });
   if (parent) parent.appendChild(e);
   return e;
 }
@@ -75,7 +79,7 @@ function drawEstado(d, svg) {
     { label:'Consumido',   data:e.consumido,   pctRef:proy, colorFondo:'#AACAAA', colorCDD:'#3A7228', colorCID:'#6AA258' },
     { label:'Por Aseg.',   data:e.porAsegurar, pctRef:proy, colorFondo:'#D8AAAA', colorCDD:'#A01010', colorCID:'#C04040' },
   ];
-  const maxV = Math.max(...cols.map(c => c.data.cdd + c.data.cid));
+  const maxV = Math.max(...cols.map(c => c.data.cdd + c.data.cid), 1);
   const chartH = H - pad.t - pad.b;
   const cW = (W - pad.l - pad.r) / cols.length;
   const barW = cW * 0.68;
