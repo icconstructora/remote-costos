@@ -24,11 +24,53 @@ async function sincoGet(token, tabla, params = {}) {
   return res.json();
 }
 
+async function sincoGetSafe(token, tabla, params = {}) {
+  try {
+    return await sincoGet(token, tabla, params);
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchMerged(token, tabla, skids) {
   const results = await Promise.all(
     skids.map(sk => sincoGet(token, tabla, { skidproyecto: sk }))
   );
   return results.flat();
+}
+
+export async function fetchMergedSafe(token, tabla, skids) {
+  const results = await Promise.all(
+    skids.map(sk => sincoGetSafe(token, tabla, { skidproyecto: sk }))
+  );
+  return results.flat();
+}
+
+const CANDIDATES_CONTRATOS = [
+  'adp_dtm_fact_contratos',
+  'adp_dtm_fact_especificacioncontratos',
+  'adp_dtm_fact_encabezadocontratos',
+  'adp_dtm_fact_contrato',
+];
+const CANDIDATES_ACTAS = [
+  'adp_dtm_fact_actas',
+  'adp_dtm_fact_especificacionactas',
+  'adp_dtm_fact_encabezadoactas',
+  'adp_dtm_fact_acta',
+];
+
+let _probeDone = false;
+export async function probeFactTables(token, sampleSkid) {
+  if (_probeDone) return;
+  _probeDone = true;
+  for (const t of [...CANDIDATES_CONTRATOS, ...CANDIDATES_ACTAS]) {
+    try {
+      const rows = await sincoGet(token, t, { skidproyecto: sampleSkid });
+      console.log(`[probe] OK ${t} → ${Array.isArray(rows) ? rows.length : '?'} rows`);
+    } catch (e) {
+      console.log(`[probe] FAIL ${t} → ${e.message}`);
+    }
+  }
 }
 
 export async function getDim(token, tabla) {

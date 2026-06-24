@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getToken, fetchMerged, getDim, isMock } from '../services/sincoApi.js';
+import { getToken, fetchMerged, fetchMergedSafe, getDim, isMock, probeFactTables } from '../services/sincoApi.js';
 import {
   buildClaseMap,
   buildEstadoMap,
@@ -51,6 +51,8 @@ export function useCostosData(activePj, instance, accounts) {
       try {
         const token = await getToken(instance, accounts);
 
+        probeFactTables(token, skids[0]);
+
         const [
           claseOrigenRows,
           estadoRows,
@@ -67,8 +69,8 @@ export function useCostosData(activePj, instance, accounts) {
           getDim(token, 'adp_dtm_dim_capitulopresupuesto'),
           getDim(token, 'adp_dtm_dim_tercero'),
           fetchMerged(token, 'adp_dtm_fact_controlproyecto', skids),
-          fetchMerged(token, 'adp_dtm_fact_especificacioncontratos', skids),
-          fetchMerged(token, 'adp_dtm_fact_especificacionactas', skids),
+          fetchMergedSafe(token, 'adp_dtm_fact_contratos', skids),
+          fetchMergedSafe(token, 'adp_dtm_fact_actas', skids),
         ]);
 
         if (cancelled) return;
