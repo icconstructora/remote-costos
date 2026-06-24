@@ -47,10 +47,10 @@ export async function fetchMergedSafe(token, tabla, skids) {
 }
 
 const CANDIDATES_CONTRATOS = [
-  'adp_dtm_fact_especificaciondecontratos',
+  'adp_dtm_dim_especificaciondecontratos',
 ];
 const CANDIDATES_ACTAS = [
-  'adp_dtm_fact_especificaciondeactas',
+  'adp_dtm_dim_especificaciondeactas',
 ];
 
 let _probeDone = false;
