@@ -169,10 +169,15 @@ export function buildContratos(especContratosRows, especActasRows, estadoMap, te
     actasByContrato[nc] = (actasByContrato[nc] || 0) + 1;
   }
 
+  const seen = new Set();
   return especContratosRows
     .filter(row => {
       const nc = row['No. Contrato'];
-      return nc && projectCodes.has(Math.floor(nc / 10000));
+      if (!nc || !projectCodes.has(Math.floor(nc / 10000))) return false;
+      const sk = row['skidcontrato'];
+      if (seen.has(sk)) return false;
+      seen.add(sk);
+      return true;
     })
     .map(row => {
       const nc       = row['No. Contrato'];
