@@ -78,4 +78,13 @@ export async function getDim(token, tabla) {
   return _dimCache[tabla];
 }
 
+// Para dims que requieren skidproyecto para activarse pero devuelven datos globales de empresa.
+// Fetch una sola vez con el primer skid y cachea.
+export async function getDimWithSkid(token, tabla, skid) {
+  if (_dimCache[tabla]) return _dimCache[tabla];
+  const rows = await sincoGetSafe(token, tabla, { skidproyecto: skid });
+  _dimCache[tabla] = Array.isArray(rows) ? rows : [];
+  return _dimCache[tabla];
+}
+
 export const isMock = () => AUTH_MODE === 'mock';

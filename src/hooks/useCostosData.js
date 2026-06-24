@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getToken, fetchMerged, fetchMergedSafe, getDim, isMock, probeFactTables } from '../services/sincoApi.js';
+import { getToken, fetchMerged, fetchMergedSafe, getDim, getDimWithSkid, isMock, probeFactTables } from '../services/sincoApi.js';
 import {
   buildClaseMap,
   buildEstadoMap,
@@ -69,8 +69,8 @@ export function useCostosData(activePj, instance, accounts) {
           getDim(token, 'adp_dtm_dim_capitulopresupuesto'),
           getDim(token, 'adp_dtm_dim_tercero'),
           fetchMerged(token, 'adp_dtm_fact_controlproyecto', skids),
-          fetchMergedSafe(token, 'adp_dtm_dim_especificaciondecontratos', skids),
-          fetchMergedSafe(token, 'adp_dtm_dim_especificaciondeactas', skids),
+          getDimWithSkid(token, 'adp_dtm_dim_especificaciondecontratos', skids[0]),
+          getDim(token, 'adp_dtm_dim_especificaciondeactas'),
         ]);
 
         if (cancelled) return;
