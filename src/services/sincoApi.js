@@ -47,16 +47,10 @@ export async function fetchMergedSafe(token, tabla, skids) {
 }
 
 const CANDIDATES_CONTRATOS = [
-  'adp_dtm_fact_contratos',
-  'adp_dtm_fact_especificacioncontratos',
-  'adp_dtm_fact_encabezadocontratos',
-  'adp_dtm_fact_contrato',
+  'adp_dtm_fact_especificaciondecontratos',
 ];
 const CANDIDATES_ACTAS = [
-  'adp_dtm_fact_actas',
-  'adp_dtm_fact_especificacionactas',
-  'adp_dtm_fact_encabezadoactas',
-  'adp_dtm_fact_acta',
+  'adp_dtm_fact_especificaciondeactas',
 ];
 
 let _probeDone = false;

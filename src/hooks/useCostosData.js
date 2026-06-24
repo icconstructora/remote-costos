@@ -69,8 +69,8 @@ export function useCostosData(activePj, instance, accounts) {
           getDim(token, 'adp_dtm_dim_capitulopresupuesto'),
           getDim(token, 'adp_dtm_dim_tercero'),
           fetchMerged(token, 'adp_dtm_fact_controlproyecto', skids),
-          fetchMergedSafe(token, 'adp_dtm_fact_contrato', skids),
-          fetchMergedSafe(token, 'adp_dtm_fact_acta', skids),
+          fetchMergedSafe(token, 'adp_dtm_fact_especificaciondecontratos', skids),
+          fetchMergedSafe(token, 'adp_dtm_fact_especificaciondeactas', skids),
         ]);
 
         if (cancelled) return;
