@@ -1,30 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useMsal } from '@azure/msal-react';
 import './costos.css';
-import { PROJECTS, DATA, PROJECT_PREFIXES, PROJECT_SUBS } from './data/projectData.js';
-
-// ── CARGA SCRIPTS EXTERNOS DE DATOS ──────────────────────────────────────────
-const DATA_SCRIPTS = [
-  '/data/contracts_data.js',
-  '/data/balance_data.js',
-  '/data/estado_resumen.js',
-  '/data/proyecciones_data.js',
-  '/data/consumido_data.js',
-  '/data/cierre_data.js',
-];
-
-function loadScript(src) {
-  return new Promise((resolve) => {
-    if (document.querySelector(`script[data-costos-src="${src}"]`)) { resolve(); return; }
-    const s = document.createElement('script');
-    s.setAttribute('data-costos-src', src);
-    // Ruta absoluta resuelta contra el origen propio del remote (import.meta.url),
-    // no contra el origen del shell que lo está montando vía Module Federation.
-    s.src = new URL(src, import.meta.url).href;
-    s.onload = resolve;
-    s.onerror = resolve;
-    document.head.appendChild(s);
-  });
-}
+import { PROJECTS, DATA, PROJECT_SUBS } from './data/projectData.js';
+import { useCostosData } from './hooks/useCostosData.js';
 
 // ── SVG HELPERS ───────────────────────────────────────────────────────────────
 const NS = 'http://www.w3.org/2000/svg';
@@ -144,10 +122,9 @@ function drawEstado(d, svg) {
 }
 
 // ── PANEL 2b: CONSUMIDO MES A MES ────────────────────────────────────────────
-function drawConsumed(dataKey, svg) {
+function drawConsumed(periods, svg) {
   if (!svg) return;
   svg.innerHTML = '';
-  const periods = window.CONSUMIDO_DATA && window.CONSUMIDO_DATA[dataKey];
   if (!periods || !periods.length) return;
   const W = 500, H = 155, pad = { t:20, b:38, l:6, r:6 };
   const chartH = H - pad.t - pad.b, chartW = W - pad.l - pad.r, baseY = pad.t + chartH;
@@ -296,16 +273,15 @@ function drawFunnel(contracts, svg) {
 }
 
 // ── PANEL 4: ANTICIPOS Y RETEGARANTÍAS ───────────────────────────────────────
-function drawAnticipos(balanceKey, svg) {
+function drawAnticipos(bd, corte, svg) {
   if (!svg) return;
   svg.innerHTML = '';
-  const bd = window.BALANCE_DATA && window.BALANCE_DATA[balanceKey];
   if (!bd) return;
   const t = bd.totals || bd;
   const W = 500, H = 155, padT = 26, padB = 52, chartH = H - padT - padB, baseY = padT + chartH;
   const fmtC = v => { if (!v || v < 1) return '$0'; if (v >= 1e9) return '$'+(v/1e9).toFixed(1)+'MM'; if (v >= 1e6) return '$'+(v/1e6).toFixed(1)+'M'; return '$'+Math.round(v/1000)+'K'; };
-  const _cb = window.CORTE_BALANCE || '';
-  const _cbParts = _cb.match(/(\d+)\s+(\w+)\s+(\d{4})/);
+  const _cb = corte || '';
+  const _cbParts = _cb.match(/(\d+)\s+\w+\s+de\s+(\w+)\s+de\s+(\d{4})/) || _cb.match(/(\d+)\s+(\w+)\s+(\d{4})/);
   const _lblCurr = _cbParts ? _cbParts[2].substring(0,3)+' '+_cbParts[3].slice(2) : _cb;
   const MESES_AB = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const _mIdx = _cbParts ? MESES_AB.indexOf(_cbParts[2].substring(0,3)) : 0;
@@ -359,13 +335,13 @@ function drawAnticipos(balanceKey, svg) {
 }
 
 // ── CAPÍTULOS ESTADO RESUMEN (sidebar P1) ────────────────────────────────────
-function EstadoCaps({ dataKey }) {
-  const r = window.ESTADO_RESUMEN && window.ESTADO_RESUMEN[dataKey];
+function EstadoCaps({ data }) {
+  const r = data;
   if (!r) return null;
   const caps = r.caps || [];
   if (!caps.length) return null;
   const maxPa = caps[0].pa;
-  const total = r.crit + r.otro;
+  const total = (r.crit || 0) + (r.otro || 0);
   const pctCrit = total > 0 ? Math.round(r.crit / total * 100) : 0;
   const pctOtro = total > 0 ? Math.round(r.otro / total * 100) : 0;
   return (
@@ -512,23 +488,18 @@ function VistaLiquidacion({ contracts, label, onBack }) {
 // ── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────────
 export default function CostosModule() {
   const [activePj, setActivePj] = useState(() => localStorage.getItem('dash_activePj') || 'mitika');
-  const [activeSubFilter, setActiveSubFilter] = useState(() => {
-    const s = localStorage.getItem('dash_activeSubFilter');
-    return s || null;
-  });
+  const [activeSubFilter, setActiveSubFilter] = useState(() => localStorage.getItem('dash_activeSubFilter') || null);
   const [view, setView] = useState('dashboard');
   const [viewLabel, setViewLabel] = useState('');
-  const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [cidModal, setCidModal] = useState(null);
+
+  const { instance, accounts } = useMsal();
+  const { contratos: sincoContratos, consumido: sincoConsuмido, estadoCaps: sincoEstadoCaps, anticipos: sincoAnticipos, corte: sincoCorte, loading: sincoLoading, error: sincoError } = useCostosData(activePj, instance, accounts);
 
   const svgEstadoRef = useRef(null);
   const svgProyRef   = useRef(null);
   const svgFunnelRef = useRef(null);
   const svgAntRef    = useRef(null);
-
-  useEffect(() => {
-    Promise.all(DATA_SCRIPTS.map(loadScript)).then(() => setScriptsLoaded(true));
-  }, []);
 
   const getDataKey = useCallback(() => {
     const subs = PROJECT_SUBS[activePj];
@@ -539,43 +510,30 @@ export default function CostosModule() {
     return DATA[activePj] ? activePj : null;
   }, [activePj, activeSubFilter]);
 
-  const getBalanceKey = useCallback(() => {
-    if (activeSubFilter && window.BALANCE_DATA && window.BALANCE_DATA[activeSubFilter]) return activeSubFilter;
-    if (window.BALANCE_DATA && window.BALANCE_DATA[activePj]) return activePj;
-    return null;
-  }, [activePj, activeSubFilter, scriptsLoaded]);
-
   const getActiveSub = useCallback(() => {
     const subs = PROJECT_SUBS[activePj];
     if (!subs) return null;
     return subs.find(s => s.key === activeSubFilter) || subs[0];
   }, [activePj, activeSubFilter]);
 
-  const getContracts = useCallback(() => {
-    if (!scriptsLoaded) return null;
-    return getContractsByFilter(activePj, activeSubFilter);
-  }, [activePj, activeSubFilter, scriptsLoaded]);
-
   useEffect(() => {
     if (view !== 'dashboard') return;
     const dataKey = getDataKey();
     const d = dataKey ? DATA[dataKey] : null;
-    const balanceKey = getBalanceKey();
-    const contracts = getContracts();
     const id = requestAnimationFrame(() => {
       if (svgEstadoRef.current && d) drawEstado(d, svgEstadoRef.current);
       if (svgProyRef.current) {
-        if (scriptsLoaded && window.CONSUMIDO_DATA && window.CONSUMIDO_DATA[dataKey]) {
-          drawConsumed(dataKey, svgProyRef.current);
+        if (sincoConsuмido?.length) {
+          drawConsumed(sincoConsuмido, svgProyRef.current);
         } else if (d) {
           drawProyGenerico(d, svgProyRef.current);
         }
       }
-      if (svgFunnelRef.current) drawFunnel(contracts, svgFunnelRef.current);
-      if (svgAntRef.current && balanceKey) drawAnticipos(balanceKey, svgAntRef.current);
+      if (svgFunnelRef.current) drawFunnel(sincoContratos, svgFunnelRef.current);
+      if (svgAntRef.current && sincoAnticipos) drawAnticipos(sincoAnticipos, sincoCorte, svgAntRef.current);
     });
     return () => cancelAnimationFrame(id);
-  }, [activePj, activeSubFilter, scriptsLoaded, view]);
+  }, [activePj, activeSubFilter, sincoContratos, sincoConsuмido, sincoAnticipos, view]);
 
   const selectPj = id => {
     setActivePj(id);
@@ -600,25 +558,16 @@ export default function CostosModule() {
   const visibleSubs = (() => {
     const subs = PROJECT_SUBS[activePj];
     if (!subs) return [];
-    return subs.filter(s => {
-      if (s.key === null) return true;
-      if (DATA[s.key]) return true;
-      if (!scriptsLoaded || !window.CONTRACTS_DATA) return false;
-      return window.CONTRACTS_DATA.some(r => {
-        if (!r.proyecto) return false;
-        return s.exact ? s.prefixes.includes(r.proyecto) : s.prefixes.some(p => r.proyecto.startsWith(p));
-      });
-    });
+    return subs.filter(s => s.key === null || !!DATA[s.key]);
   })();
 
   const dataKey = getDataKey();
   const d = dataKey ? DATA[dataKey] : null;
   const pj = PROJECTS.find(p => p.id === activePj);
   const activeSub = getActiveSub();
-  const balanceKey = getBalanceKey();
-  const hasBalance = !!balanceKey;
-  const hasConsumed = scriptsLoaded && window.CONSUMIDO_DATA && !!window.CONSUMIDO_DATA[dataKey];
-  const contracts = getContracts();
+  const hasConsumed = !!(sincoConsuмido?.length);
+  const hasBalance  = !!(sincoAnticipos);
+  const contracts   = sincoContratos;
 
   if (view === 'liquidacion') {
     return (
@@ -628,10 +577,18 @@ export default function CostosModule() {
     );
   }
 
+  const corteContratos = sincoCorte || '';
+  const corteConsuмido = sincoCorte || '';
+  const corteBalance   = sincoCorte || '';
+
   const subLabel = (activeSubFilter && activeSub) ? activeSub.label : d?.sub;
 
   return (
     <div className="costos-module">
+
+      {/* Loading / error de Sinco */}
+      {sincoLoading && <div className="cv-sinco-loading">Actualizando datos desde Sinco…</div>}
+      {sincoError   && <div className="cv-sinco-error">Error cargando datos: {sincoError}</div>}
 
       {/* Ticker */}
       <div className="cv-ticker-wrap">
@@ -646,7 +603,7 @@ export default function CostosModule() {
           {PROJECTS.map(p => (
             <div key={p.id} className={`cv-proj-chip${p.id === activePj ? ' active' : ''}`} onClick={() => selectPj(p.id)}>
               <div className="cv-chip-img">
-                <img src={new URL(p.img, import.meta.url).href} alt={p.name}
+                <img src={p.img} alt={p.name}
                   onError={e => { e.target.style.display='none'; e.target.parentNode.innerHTML=`<span style="font-size:.5rem;color:#6b7a99">${p.name.slice(0,4)}</span>`; }} />
               </div>
               <span className="cv-chip-label">{p.name}</span>
@@ -690,7 +647,7 @@ export default function CostosModule() {
                     </div>
                     <div className="cv-estado-caps">
                       <div className="cv-caps-ttl">Por Asegurar</div>
-                      {scriptsLoaded && <EstadoCaps key={dataKey} dataKey={dataKey} />}
+                      {sincoEstadoCaps && <EstadoCaps data={sincoEstadoCaps} />}
                     </div>
                   </div>
                   <div className="cv-ov-legend">
@@ -707,7 +664,7 @@ export default function CostosModule() {
               <div className="cv-ov-panel cv-p2" style={{cursor:'default'}}>
                 <div className="cv-ov-side"><div className="cv-ov-title">Consumido</div></div>
                 <div className="cv-ov-body">
-                  <div className="cv-ov-corte">{window.CORTE_CONSUMIDO || ''}</div>
+                  <div className="cv-ov-corte">{corteConsuмido}</div>
                   <div className="cv-ov-chart">
                     <svg ref={svgProyRef} viewBox={hasConsumed ? '0 0 500 155' : '0 0 400 155'} preserveAspectRatio="xMidYMid meet"></svg>
                   </div>
@@ -718,11 +675,6 @@ export default function CostosModule() {
                     </div>
                   )}
                   <div className="cv-ov-footer">
-                    {hasConsumed && (
-                      <button className="cv-btn cv-btn-primary" onClick={() => {
-                        if (window.CONSUMIDO_DETALLE?.[dataKey]) setCidModal({ rows:window.CONSUMIDO_DETALLE[dataKey], name:d.nombre });
-                      }}>Detalle CID ›</button>
-                    )}
                     <button className="cv-btn cv-btn-secondary" onClick={openLiquidacion}>Contratos ›</button>
                   </div>
                 </div>
@@ -732,7 +684,7 @@ export default function CostosModule() {
               <div className="cv-ov-panel cv-p3" style={{cursor:'default'}}>
                 <div className="cv-ov-side"><div className="cv-ov-title">Estado de Contratos</div></div>
                 <div className="cv-ov-body">
-                  <div className="cv-ov-corte">{window.CORTE_CONTRATOS || ''}</div>
+                  <div className="cv-ov-corte">{corteContratos}</div>
                   <div className="cv-ov-chart">
                     <svg ref={svgFunnelRef} viewBox="0 0 470 178" preserveAspectRatio="xMidYMid meet"></svg>
                   </div>
@@ -747,7 +699,7 @@ export default function CostosModule() {
                 <div className="cv-ov-panel cv-p4" style={{cursor:'default'}}>
                   <div className="cv-ov-side"><div className="cv-ov-title">Anticipos y Retegarantías<span className="cv-title-abbr">A&amp;F</span></div></div>
                   <div className="cv-ov-body">
-                    <div className="cv-ov-corte">{window.CORTE_BALANCE || ''}</div>
+                    <div className="cv-ov-corte">{corteBalance}</div>
                     <div className="cv-ov-chart">
                       <svg ref={svgAntRef} viewBox="0 0 500 155" preserveAspectRatio="xMidYMid meet"></svg>
                     </div>

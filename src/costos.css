@@ -386,3 +386,15 @@
   font-weight: 800; border-top: 2px solid #D4AAAA; border-bottom: none; color: var(--corp-wine);
 }
 .costos-module .cv-total-row td:first-child { color: var(--corp-wine); }
+
+/* ── SINCO LIVE DATA — loading / error ──────────────────────────────────────── */
+.costos-module .cv-sinco-loading {
+  font-size: .65rem; color: var(--gold); background: #FFF8E1;
+  border-bottom: 1px solid #FFE082; padding: 3px 12px; text-align: center;
+  animation: cv-pulse 1.5s ease-in-out infinite;
+}
+.costos-module .cv-sinco-error {
+  font-size: .65rem; color: #fff; background: var(--danger);
+  padding: 3px 12px; text-align: center;
+}
+@keyframes cv-pulse { 0%,100% { opacity:.6; } 50% { opacity:1; } }
