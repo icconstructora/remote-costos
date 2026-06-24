@@ -89,8 +89,8 @@ export function useCostosData(activePj, instance, accounts) {
           error:      null,
           estadoCaps: buildEstadoCaps(controlRows, claseMap, capMap),
           consumido:  buildConsuмido(controlRows, claseMap, capMap),
-          contratos:  buildContratos(especContratosRows, especActasRows, estadoMap, terceroMap),
-          anticipos:  buildAnticipos(especActasRows, especContratosRows, tipoContratoRows),
+          contratos:  buildContratos(especContratosRows, especActasRows, estadoMap, terceroMap, skids),
+          anticipos:  null,
           corte:      buildCorte(controlRows),
         });
       } catch (err) {

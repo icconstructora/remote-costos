@@ -153,49 +153,61 @@ export function buildConsuмido(controlRows, claseMap, capMap) {
 
 /**
  * Construye la lista de contratos para panel 3.
- * Fuente: adp_dtm_fact_especificacioncontratos (encabezado) +
- *         adp_dtm_fact_especificacionactas (acumulado ejecutado)
+ * Fuente: adp_dtm_dim_especificaciondecontratos + adp_dtm_dim_especificaciondeactas
+ * Filtra por proyecto usando la codificación de No. Contrato:
+ *   projectCode = Math.floor(noContrato / 10000), skidproyecto = 100000 + projectCode
  */
-export function buildContratos(especContratosRows, especActasRows, estadoMap, terceroMap) {
-  // Acumulado por especificacion desde actas
-  const acumByEspec = {};
-  const antByEspec  = {};
-  const rteByEspec  = {};
+export function buildContratos(especContratosRows, especActasRows, estadoMap, terceroMap, skids) {
+  const projectCodes = new Set((skids || []).map(sk => sk - 100000));
+
+  // Filtrar actas del proyecto y contar por No Contrato
+  const actasByContrato = {};
   for (const row of especActasRows) {
-    const key = row.skidespecificacion ?? row.skidEspecificacion;
-    if (key === undefined) continue;
-    acumByEspec[key] = (acumByEspec[key] || 0) + (row['Valor Acta'] || row['valoracta'] || row['Valor'] || 0);
-    // Saldo anticipo y retención vienen del último valor del acta (no se suman, se toma el más reciente)
-    if (row['Saldo Anticipo'] !== undefined) antByEspec[key] = row['Saldo Anticipo'];
-    if (row['Saldo Retencion'] !== undefined || row['Saldo Retención'] !== undefined)
-      rteByEspec[key] = row['Saldo Retencion'] ?? row['Saldo Retención'];
+    const nc = row['No Contrato'];
+    if (!nc) continue;
+    if (!projectCodes.has(Math.floor(nc / 10000))) continue;
+    actasByContrato[nc] = (actasByContrato[nc] || 0) + 1;
   }
 
   return especContratosRows
+    .filter(row => {
+      const nc = row['No. Contrato'];
+      return nc && projectCodes.has(Math.floor(nc / 10000));
+    })
     .map(row => {
-      const key = row.skidespecificacion ?? row.skidEspecificacion;
-      const valorContrato = row['Valor Contrato'] || row['valorcontrato'] || 0;
-      const acumulado     = acumByEspec[key] || 0;
-      const faltante      = Math.max(valorContrato - acumulado, 0);
-      const tercero       = terceroMap[row.skidtercero] || {};
+      const nc       = row['No. Contrato'];
+      const numActas = actasByContrato[nc] || 0;
+      const parts    = (row['Fecha fin'] || '').split('/');
+      const isExpired = parts.length === 3
+        ? new Date(+parts[2], +parts[1] - 1, +parts[0]) < new Date()
+        : false;
+
+      let estadoContrato, faltante, acumulado;
+      if (row['nopago'] === true) {
+        estadoContrato = 'Cerrado'; faltante = 0; acumulado = 1;
+      } else if (numActas > 0) {
+        estadoContrato = 'Abierto'; acumulado = 1; faltante = 1;
+      } else {
+        estadoContrato = isExpired ? 'Abierto' : 'Por Aprobación'; acumulado = 0; faltante = 1;
+      }
+
       return {
-        contrato:       String(key),
-        contratista:    tercero.nombre || '',
-        nit:            tercero.nit    || '',
-        descripcion:    row['Descripcion'] || row['descripcion'] || '',
-        estadoContrato: estadoMap[row.skidestado] || '',
-        fechaInicial:   row['Fecha Inicial'] || row['fechainicial'] || null,
-        fechaFinal:     row['Fecha Final']   || row['fechafinal']   || null,
-        valorContrato,
+        contrato:       String(nc),
+        contratista:    '',
+        nit:            '',
+        descripcion:    row['descripcion'] || '',
+        estadoContrato,
+        fechaInicial:   row['Fecha inicio'] || null,
+        fechaFinal:     row['Fecha fin']    || null,
+        valorContrato:  1,
         acumulado,
         faltante,
-        saldoAnticipo:  antByEspec[key] ?? 0,
-        saldoRte:       rteByEspec[key] ?? 0,
-        proyecto:       row['Proyecto'] || '',
-        grupo:          row['Grupo']    || '',
+        saldoAnticipo:  0,
+        saldoRte:       0,
+        proyecto:       String(Math.floor(nc / 10000)),
+        grupo:          row['nombregrupo'] || '',
       };
-    })
-    .filter(r => r.valorContrato > 0);
+    });
 }
 
 /**
