@@ -69,13 +69,15 @@ export function useCostosData(activePj, instance, accounts) {
           getDim(token, 'adp_dtm_dim_capitulopresupuesto'),
           getDim(token, 'adp_dtm_dim_tercero'),
           fetchMerged(token, 'adp_dtm_fact_controlproyecto', skids),
-          getDim(token, 'adp_dtm_dim_especificaciondecontratos'),
-          getDim(token, 'adp_dtm_dim_especificaciondeactas'),
+          fetchMergedSafe(token, 'adp_dtm_dim_especificaciondecontratos', skids),
+          fetchMergedSafe(token, 'adp_dtm_dim_especificaciondeactas', skids),
         ]);
 
         if (cancelled) return;
 
         console.log(`[Sinco] ${activePj} — control:${controlRows.length} espec_contratos:${especContratosRows.length} espec_actas:${especActasRows.length}`);
+        if (especContratosRows[0]) console.log('[Sinco] contrato[0]:', JSON.stringify(especContratosRows[0]));
+        if (especActasRows[0]) console.log('[Sinco] acta[0]:', JSON.stringify(especActasRows[0]));
 
         const claseMap   = buildClaseMap(claseOrigenRows);
         const estadoMap  = buildEstadoMap(estadoRows);
