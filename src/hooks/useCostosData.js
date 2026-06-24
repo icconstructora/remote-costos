@@ -58,8 +58,8 @@ export function useCostosData(activePj, instance, accounts) {
           capRows,
           terceroRows,
           controlRows,
-          contratoRows,
-          anticipoRows,
+          especContratosRows,
+          especActasRows,
         ] = await Promise.all([
           getDim(token, 'adp_dtm_dim_controlclaseorigen'),
           getDim(token, 'adp_dtm_dim_estadopordocumento'),
@@ -67,13 +67,13 @@ export function useCostosData(activePj, instance, accounts) {
           getDim(token, 'adp_dtm_dim_capitulopresupuesto'),
           getDim(token, 'adp_dtm_dim_tercero'),
           fetchMerged(token, 'adp_dtm_fact_controlproyecto', skids),
-          fetchMerged(token, 'adp_dtm_fact_contrato', skids),
-          fetchMerged(token, 'adp_dtm_fact_anticipo', skids),
+          fetchMerged(token, 'adp_dtm_fact_especificacioncontratos', skids),
+          fetchMerged(token, 'adp_dtm_fact_especificacionactas', skids),
         ]);
 
         if (cancelled) return;
 
-        console.log(`[Sinco] ${activePj} — control:${controlRows.length} contratos:${contratoRows.length} anticipos:${anticipoRows.length}`);
+        console.log(`[Sinco] ${activePj} — control:${controlRows.length} espec_contratos:${especContratosRows.length} espec_actas:${especActasRows.length}`);
 
         const claseMap   = buildClaseMap(claseOrigenRows);
         const estadoMap  = buildEstadoMap(estadoRows);
@@ -85,8 +85,8 @@ export function useCostosData(activePj, instance, accounts) {
           error:      null,
           estadoCaps: buildEstadoCaps(controlRows, claseMap, capMap),
           consumido:  buildConsuмido(controlRows, claseMap, capMap),
-          contratos:  buildContratos(contratoRows, estadoMap, terceroMap),
-          anticipos:  buildAnticipos(anticipoRows, contratoRows, tipoContratoRows),
+          contratos:  buildContratos(especContratosRows, especActasRows, estadoMap, terceroMap),
+          anticipos:  buildAnticipos(especActasRows, especContratosRows, tipoContratoRows),
           corte:      buildCorte(controlRows),
         });
       } catch (err) {
