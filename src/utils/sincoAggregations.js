@@ -174,9 +174,8 @@ export function buildContratos(especContratosRows, especActasRows, estadoMap, te
     .filter(row => {
       const nc = row['No. Contrato'];
       if (!nc || !projectCodes.has(Math.floor(nc / 10000))) return false;
-      const sk = row['skidcontrato'];
-      if (seen.has(sk)) return false;
-      seen.add(sk);
+      if (seen.has(nc)) return false;
+      seen.add(nc);
       return true;
     })
     .map(row => {
