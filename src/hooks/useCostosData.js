@@ -14,6 +14,8 @@ import {
 } from '../utils/sincoAggregations.js';
 
 // ── Mapeo macro-proyecto → lista de skidproyecto ──────────────────────────────
+// Fórmula: skidproyecto = skidempresa(100) * 1000 + "Codigo Proyecto" de Sinco
+// Fuente: contracts_data histórico + adp_dtm_dim_capitulopresupuesto
 export const SKIDS = {
   praia:    [100101,100102,100103,100105,100106,100108,100109,100111,100112],
   oporto:   [100116,100117,100118,100214,100215],
@@ -25,27 +27,18 @@ export const SKIDS = {
   'azul-t': [100166,100167,100168,100169,100170,100171],
   'azul-c': [100172,100173,100174,100175,100176,100177],
   verde:    [100178,100179,100180,100181,100182,100183],
-  mitika:   [100184,100185,100186,100187,100188,100189],
+  // Mitika: 184=ZC-URB, 186=E1.1, 187=T6, 188=T7, 408=T5 (código fuera de secuencia)
+  mitika:   [100184,100186,100187,100188,100408],
   well:     [100190,100191,100192],
   'cast-i': [100193,100194,100195,100197,100198,100201,100202],
 };
 
 const EMPTY = { contratos: null, consumido: null, estadoCaps: null, anticipos: null, corte: null, loading: false, error: null };
 
-/**
- * Hook que carga los datos de Sinco para el proyecto activo.
- *
- * @param {string}   activePj   - id del macro-proyecto (e.g. 'mitika')
- * @param {object}   instance   - MSAL PublicClientApplication (de useMsal)
- * @param {Array}    accounts   - cuentas MSAL (de useMsal)
- *
- * @returns {{ contratos, consumido, estadoCaps, anticipos, corte, loading, error }}
- */
 export function useCostosData(activePj, instance, accounts) {
   const [state, setState] = useState(EMPTY);
 
   useEffect(() => {
-    // En modo mock (npm run dev) no hay token — salir silenciosamente
     if (isMock()) return;
 
     const skids = SKIDS[activePj] || [];
@@ -58,7 +51,6 @@ export function useCostosData(activePj, instance, accounts) {
       try {
         const token = await getToken(instance, accounts);
 
-        // Tablas de dimensión (cached tras la primera llamada) + fact tables en paralelo
         const [
           claseOrigenRows,
           estadoRows,
@@ -68,7 +60,6 @@ export function useCostosData(activePj, instance, accounts) {
           controlRows,
           contratoRows,
           anticipoRows,
-          sampleControl,
         ] = await Promise.all([
           getDim(token, 'adp_dtm_dim_controlclaseorigen'),
           getDim(token, 'adp_dtm_dim_estadopordocumento'),
@@ -78,33 +69,12 @@ export function useCostosData(activePj, instance, accounts) {
           fetchMerged(token, 'adp_dtm_fact_controlproyecto', skids),
           fetchMerged(token, 'adp_dtm_fact_contrato', skids),
           fetchMerged(token, 'adp_dtm_fact_anticipo', skids),
-          // Sin filtro — para descubrir qué skidproyecto existen realmente
-          getDim(token, 'adp_dtm_fact_controlproyecto').catch(() => []),
         ]);
 
         if (cancelled) return;
 
-        // Extraer skidproyecto únicos de la muestra sin filtro
-        const skidsEnAPI = [...new Set(sampleControl.map(r => r.skidproyecto))].sort((a,b)=>a-b);
+        console.log(`[Sinco] ${activePj} — control:${controlRows.length} contratos:${contratoRows.length} anticipos:${anticipoRows.length}`);
 
-        // Log siempre visible (producción y dev) para verificar mapeos
-        console.groupCollapsed('[Sinco] dims loaded — ' + activePj);
-        console.log('claseOrigen', claseOrigenRows);
-        console.log('estadoPorDocumento', estadoRows);
-        console.log('tipoContrato', tipoContratoRows);
-        console.log('capituloPresupuesto (sample)', capRows.slice(0, 5));
-        console.log('controlRows count', controlRows.length);
-        console.log('contratoRows count', contratoRows.length);
-        console.log('anticipoRows count', anticipoRows.length);
-        console.log('⚙️ skids usados para', activePj, '→', skids);
-        console.log('⚙️ skidproyecto que devuelve la API (sin filtro control)', skidsEnAPI);
-        // Buscar skidproyecto en capituloPresupuesto (tabla que sí devuelve datos sin filtro)
-        const skidsEnCap = [...new Set(capRows.map(r => r.skidproyecto).filter(Boolean))].sort((a,b)=>a-b);
-        console.log('⚙️ skidproyecto en capituloPresupuesto', skidsEnCap);
-        console.log('⚙️ muestra capituloPresupuesto fila[0]', capRows[0]);
-        console.groupEnd();
-
-        // Construir mapas de lookup
         const claseMap   = buildClaseMap(claseOrigenRows);
         const estadoMap  = buildEstadoMap(estadoRows);
         const capMap     = buildCapMap(capRows);
