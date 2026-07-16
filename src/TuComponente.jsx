@@ -381,6 +381,7 @@ function VistaLiquidacion({ contracts, label, onBack }) {
   const [sortDir, setSortDir] = useState(1);
   const [grupoFilter, setGrupoFilter] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
+  const [statFilter, setStatFilter] = useState('total');
 
   const rows = contracts || [];
   const grupos = [...new Set(rows.map(r => r.grupo).filter(Boolean))].sort();
@@ -394,7 +395,22 @@ function VistaLiquidacion({ contracts, label, onBack }) {
     return sign + '$' + Math.round(abs).toLocaleString('es-CO');
   };
 
-  const filtered = rows.filter(r => {
+  const cats = categorizeContracts(rows.filter(r => r.valorContrato > 0));
+  const stats = [
+    { key:'total',              label:'Total',              value:cats.total.length,               color:'#6C0000' },
+    { key:'cerrados',           label:'Cerrados',           value:cats.cerrados.length,            color:'#3A7228' },
+    { key:'porCerrar',          label:'Por Cerrar',         value:cats.porCerrar.length,           color:'#1A6080' },
+    { key:'enEjecucion',        label:'En Ejecución',       value:cats.enEjecucion.length,         color:'#4A3F8A' },
+    { key:'porAprobacion',      label:'Por Aprobación',     value:cats.porAprobacion.length,       color:'#8A6010' },
+    { key:'noIniciadosVencidos',label:'No Inic. Vencidos',  value:cats.noIniciadosVencidos.length, color:'#B85520' },
+    { key:'vencidosConSaldo',   label:'Vencidos c/Saldo',   value:cats.vencidosConSaldo.length,    color:'#A01010' },
+    { key:'liquidar',           label:'Liquidar',           value:cats.liquidar.length,            color:'#7A1070' },
+  ];
+
+  // Base de filas: la categoría de la tarjeta activa (Total = sin recorte)
+  const catRows = cats[statFilter] || cats.total;
+
+  const filtered = catRows.filter(r => {
     const q = search.toLowerCase();
     const matchQ = !q || r.contrato?.toLowerCase().includes(q) || r.contratista?.toLowerCase().includes(q) || r.descripcion?.toLowerCase().includes(q);
     return matchQ && (!grupoFilter || r.grupo === grupoFilter) && (!estadoFilter || r.estadoContrato === estadoFilter);
@@ -405,18 +421,6 @@ function VistaLiquidacion({ contracts, label, onBack }) {
     if (typeof va === 'number') return (va - vb) * sortDir;
     return String(va).localeCompare(String(vb)) * sortDir;
   });
-
-  const cats = categorizeContracts(rows.filter(r => r.valorContrato > 0));
-  const stats = [
-    { label:'Total',              value:cats.total.length,               color:'#6C0000' },
-    { label:'Cerrados',           value:cats.cerrados.length,            color:'#3A7228' },
-    { label:'Por Cerrar',         value:cats.porCerrar.length,           color:'#1A6080' },
-    { label:'En Ejecución',       value:cats.enEjecucion.length,         color:'#4A3F8A' },
-    { label:'Por Aprobación',     value:cats.porAprobacion.length,       color:'#8A6010' },
-    { label:'No Inic. Vencidos',  value:cats.noIniciadosVencidos.length, color:'#B85520' },
-    { label:'Vencidos c/Saldo',   value:cats.vencidosConSaldo.length,    color:'#A01010' },
-    { label:'Liquidar',           value:cats.liquidar.length,            color:'#7A1070' },
-  ];
 
   const thClick = col => { setSortCol(col); setSortDir(sortCol === col ? -sortDir : 1); };
   const thStyle = col => ({ cursor:'pointer', userSelect:'none', background: sortCol === col ? '#F0E8E8' : undefined, whiteSpace:'nowrap' });
@@ -429,9 +433,25 @@ function VistaLiquidacion({ contracts, label, onBack }) {
       </div>
       <div className="cv-stat-cards">
         {stats.map(s => (
-          <div key={s.label} className="cv-stat-card" style={{borderTop:`3px solid ${s.color}`}}>
-            <div className="cv-stat-val" style={{color:s.color}}>{s.value}</div>
-            <div className="cv-stat-lbl">{s.label}</div>
+          <div
+            key={s.key}
+            className={`cv-stat-card${statFilter === s.key ? ' cv-stat-card-active' : ''}`}
+            style={{
+              borderTop: `3px solid ${s.color}`,
+              ...(statFilter === s.key ? { background: s.color, boxShadow: `0 0 0 2px ${s.color}` } : {}),
+            }}
+            onClick={() => setStatFilter(statFilter === s.key ? 'total' : s.key)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setStatFilter(statFilter === s.key ? 'total' : s.key);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="cv-stat-val" style={{color: statFilter === s.key ? '#fff' : s.color}}>{s.value}</div>
+            <div className="cv-stat-lbl" style={statFilter === s.key ? {color:'#fff'} : undefined}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -445,7 +465,7 @@ function VistaLiquidacion({ contracts, label, onBack }) {
           <option value="">Todos los estados</option>
           {estados.map(e => <option key={e} value={e}>{e}</option>)}
         </select>
-        <span className="cv-count">{sorted.length} de {rows.length}</span>
+        <span className="cv-count">{sorted.length} de {catRows.length}</span>
       </div>
       <div className="cv-table-wrap">
         <table className="cv-table">

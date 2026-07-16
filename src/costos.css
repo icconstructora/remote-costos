@@ -292,7 +292,12 @@
   background: #fff; border-radius: 8px; padding: 6px 12px;
   min-width: 80px; text-align: center; flex-shrink: 0;
   box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  cursor: pointer; user-select: none;
+  transition: transform .08s ease, box-shadow .08s ease;
 }
+.costos-module .cv-stat-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.costos-module .cv-stat-card:focus-visible { outline: 2px solid var(--corp-wine); outline-offset: 2px; }
+.costos-module .cv-stat-card-active { transform: translateY(-1px); }
 .costos-module .cv-stat-val { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
 .costos-module .cv-stat-lbl { font-size: .52rem; color: var(--muted); margin-top: 2px; }
 .costos-module .cv-liq-filters {
