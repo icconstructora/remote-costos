@@ -69,6 +69,30 @@ export async function probeFactTables(token, sampleSkid) {
       console.log(`[probe] FAIL ${t} → ${e.message}`);
     }
   }
+  // Probe proyectos para ver nombres DIR/IND/NOMINA
+  try {
+    const rows = await sincoGet(token, 'adp_dtm_dim_proyecto', { skidempresa: 100 });
+    console.log(`[probe] dim_proyecto (skidempresa=100): ${Array.isArray(rows) ? rows.length : '?'} rows`);
+    if (Array.isArray(rows) && rows.length > 0) {
+      console.log('[probe] dim_proyecto campos:', Object.keys(rows[0]).join(', '));
+      console.log('[probe] dim_proyecto[0]:', JSON.stringify(rows[0]));
+      // Mostrar skids del probe project y algunos con DIR/IND en nombre
+      const dir = rows.filter(r => JSON.stringify(r).toUpperCase().includes('DIR')).slice(0,3);
+      const ind = rows.filter(r => JSON.stringify(r).toUpperCase().includes('IND')).slice(0,3);
+      if (dir.length) console.log('[probe] ejemplo DIR:', JSON.stringify(dir[0]));
+      if (ind.length) console.log('[probe] ejemplo IND:', JSON.stringify(ind[0]));
+    }
+  } catch (e) {
+    console.log('[probe] dim_proyecto FAIL:', e.message);
+    // intentar sin param
+    try {
+      const rows2 = await sincoGet(token, 'adp_dtm_dim_proyecto', { skidproyecto: sampleSkid });
+      console.log(`[probe] dim_proyecto (skidproyecto): ${Array.isArray(rows2) ? rows2.length : '?'} rows`);
+      if (Array.isArray(rows2) && rows2.length > 0) console.log('[probe] dim_proyecto[0]:', JSON.stringify(rows2[0]));
+    } catch (e2) {
+      console.log('[probe] dim_proyecto skidproyecto FAIL:', e2.message);
+    }
+  }
 }
 
 export async function getDim(token, tabla) {
