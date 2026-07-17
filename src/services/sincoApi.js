@@ -97,7 +97,7 @@ export async function probeFactTables(token, sampleSkid) {
 
 export async function getDim(token, tabla) {
   if (_dimCache[tabla]) return _dimCache[tabla];
-  const rows = await sincoGet(token, tabla);
+  const rows = await sincoGetSafe(token, tabla);
   _dimCache[tabla] = Array.isArray(rows) ? rows : [];
   return _dimCache[tabla];
 }
