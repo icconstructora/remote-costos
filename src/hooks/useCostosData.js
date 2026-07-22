@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getToken, fetchMerged, fetchMergedSafe, getDim, getDimWithSkid, isMock, probeFactTables } from '../services/sincoApi.js';
+import { getToken, fetchMergedSafe, getDim, getDimWithSkid, getDimProyecto, isMock, probeFactTables } from '../services/sincoApi.js';
 import {
   buildClaseMap,
   buildEstadoMap,
@@ -37,57 +37,27 @@ export const SKIDS = {
   'cast-i': [100193,100194,100195,100197,100198,100201,100202],
 };
 
-// ── Clasificación de cada skidproyecto por "Clase de Proyecto" en Sinco ───────
-// DIR    = administración directa (obra) → contratos con terceros
-// NOMINA = nómina de personal de obra → Clase de Proyecto también es "Directos"
-//          en Sinco, pero no tiene contratos de terceros
-// IND    = Clase de Proyecto "Indirectos" → no entra ni a control ni a contratos
-// Fuente: comentarios de gen_estado.py/gen_consumido.py (histórico Excel) +
-// patrón confirmado en adp_dtm_dim_proyecto (código intermedio de cada tríada
-// simple = Indirectos)
-export const SKID_TIPO = {
-  // MITIKA
-  100184:'DIR', 100185:'NOMINA', 100186:'DIR', 100187:'DIR', 100188:'DIR',
-  100189:'NOMINA', 100337:'NOMINA', 100408:'DIR', 100409:'NOMINA',
-  // GAIA
-  100160:'DIR', 100161:'IND', 100162:'NOMINA',
-  // AZUL TURQUESA
-  100166:'IND', 100167:'NOMINA', 100168:'DIR', 100169:'DIR', 100170:'IND', 100171:'IND',
-  // AZUL CELESTE
-  100172:'IND', 100173:'NOMINA', 100174:'DIR', 100175:'DIR', 100176:'DIR', 100177:'IND',
-  // CASTILLA IMPERIAL
-  100193:'DIR', 100194:'IND', 100195:'NOMINA', 100197:'IND', 100198:'IND',
-  100201:'DIR', 100202:'IND',
-  // CASTILLA LIVING
-  100155:'DIR', 100156:'IND', 100157:'NOMINA',
-  // BOSQUE CENTRAL
-  100141:'IND', 100142:'IND', 100143:'NOMINA', 100147:'DIR', 100148:'IND',
-  100150:'IND', 100151:'IND', 100153:'IND', 100154:'IND',
-  // LA HACIENDA JAMUNDÍ
-  100129:'IND', 100130:'IND', 100131:'NOMINA', 100133:'DIR', 100134:'IND',
-  100136:'IND', 100137:'IND', 100139:'DIR', 100140:'IND', 100457:'DIR',
-  // PRIMERA ESTE
-  100119:'DIR', 100120:'IND', 100121:'NOMINA', 100125:'DIR', 100126:'IND',
-  100127:'IND', 100128:'IND',
-  // RESERVA DE OPORTO
-  100116:'NOMINA', 100117:'DIR', 100118:'DIR', 100214:'IND', 100215:'IND', 100401:'NOMINA',
-  // PRAIA NATURA
-  100101:'DIR', 100102:'IND', 100103:'NOMINA', 100105:'DIR', 100106:'IND',
-  100108:'DIR', 100109:'IND', 100111:'IND', 100112:'IND', 100344:'NOMINA',
-  // VERDE VIVO
-  100178:'IND', 100179:'NOMINA', 100180:'DIR', 100181:'DIR', 100182:'DIR', 100183:'IND',
-  // WELL
-  100190:'DIR', 100191:'IND', 100192:'NOMINA',
-};
-
-// Codigos de "control proyecto" (estado del proyecto): DIR + NOMINA, sin IND
-function controlSkids(skids) {
-  return skids.filter(sk => SKID_TIPO[sk] !== 'IND');
+// Deriva el tipo de proyecto desde Nombre Proyecto de adp_dtm_dim_proyecto:
+// " DIR " → DIR (contratos de terceros)
+// " IND " → IND (indirectos, solo para presupuesto interno)
+// "NOMINA" → NOMINA (nómina de personal, sin contratos de terceros)
+export function buildSkidTipoMap(proyRows) {
+  const map = {};
+  for (const r of proyRows) {
+    const name = (' ' + (r['Nombre Proyecto'] || '') + ' ').toUpperCase();
+    if (name.includes('NOMINA'))  map[r.skidproyecto] = 'NOMINA';
+    else if (name.includes(' DIR ')) map[r.skidproyecto] = 'DIR';
+    else if (name.includes(' IND ')) map[r.skidproyecto] = 'IND';
+  }
+  return map;
 }
 
-// Codigos de "contratos": solo DIR (NOMINA e IND no tienen contratos de terceros)
-function contratoSkids(skids) {
-  return skids.filter(sk => SKID_TIPO[sk] === 'DIR');
+function controlSkids(skids, tipoMap) {
+  return skids.filter(sk => tipoMap[sk] !== 'IND');
+}
+
+function contratoSkids(skids, tipoMap) {
+  return skids.filter(sk => tipoMap[sk] === 'DIR');
 }
 
 const EMPTY = { contratos: null, consumido: null, estadoCaps: null, anticipos: null, corte: null, loading: false, error: null };
@@ -101,9 +71,6 @@ export function useCostosData(activePj, instance, accounts) {
     const skids = SKIDS[activePj] || [];
     if (!skids.length || !instance || !accounts?.length) return;
 
-    const skidsControl   = controlSkids(skids);   // DIR + NOMINA (sin IND)
-    const skidsContratos = contratoSkids(skids);  // solo DIR
-
     let cancelled = false;
     setState(s => ({ ...s, loading: true, error: null }));
 
@@ -111,7 +78,14 @@ export function useCostosData(activePj, instance, accounts) {
       try {
         const token = await getToken(instance, accounts);
 
-        probeFactTables(token, skidsControl[0]);
+        probeFactTables(token, skids[0]);
+
+        // Cargar dim_proyecto primero para derivar tipos DIR/IND/NOMINA
+        const proyRows = await getDimProyecto(token);
+        const tipoMap  = buildSkidTipoMap(proyRows);
+
+        const skidsControl   = controlSkids(skids, tipoMap);
+        const skidsContratos = contratoSkids(skids, tipoMap);
 
         const [
           claseOrigenRows,

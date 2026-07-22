@@ -111,4 +111,11 @@ export async function getDimWithSkid(token, tabla, skid) {
   return _dimCache[tabla];
 }
 
+export async function getDimProyecto(token) {
+  if (_dimCache['dim_proyecto']) return _dimCache['dim_proyecto'];
+  const rows = await sincoGetSafe(token, 'adp_dtm_dim_proyecto', { skidempresa: 100 });
+  _dimCache['dim_proyecto'] = Array.isArray(rows) ? rows : [];
+  return _dimCache['dim_proyecto'];
+}
+
 export const isMock = () => AUTH_MODE === 'mock';
