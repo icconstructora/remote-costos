@@ -31,12 +31,15 @@ export default defineConfig({
       },
       // Debe coincidir EXACTAMENTE con las versiones del shell — no
       // actualices estas dependencias por tu cuenta sin avisar.
+      // @azure/msal-react y @azure/msal-browser se quitaron de shared: este
+      // módulo ya no hace login ni llamadas en vivo (solo datos estáticos),
+      // así que no los usa. Declararlos igual obligaba al runtime de MF a
+      // inicializarlos al arrancar el remoto, lo cual causaba el error
+      // "no se pudo cargar el módulo" en el shell.
       shared: {
         react: { singleton: true, requiredVersion: "^18.2.0" },
         "react-dom": { singleton: true, requiredVersion: "^18.2.0" },
         "react-router-dom": { singleton: true, requiredVersion: "^6.20.0" },
-        "@azure/msal-react": { singleton: true, requiredVersion: "^2.0.0" },
-        "@azure/msal-browser": { singleton: true, requiredVersion: "^3.0.0" },
       },
     }),
   ],
