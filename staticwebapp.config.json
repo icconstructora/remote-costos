@@ -15,6 +15,18 @@
       "headers": {
         "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
       }
+    },
+    {
+      "route": "/data/*",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
+      }
+    },
+    {
+      "route": "/images/*",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
+      }
     }
   ]
 }
