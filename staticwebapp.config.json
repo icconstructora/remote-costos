@@ -13,13 +13,15 @@
     {
       "route": "/remoteEntry.js",
       "headers": {
-        "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co",
+        "Cache-Control": "no-cache, must-revalidate"
       }
     },
     {
       "route": "/data/*",
       "headers": {
-        "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co",
+        "Cache-Control": "no-cache, must-revalidate"
       }
     },
     {
