@@ -36,10 +36,16 @@ export default defineConfig({
       // así que no los usa. Declararlos igual obligaba al runtime de MF a
       // inicializarlos al arrancar el remoto, lo cual causaba el error
       // "no se pudo cargar el módulo" en el shell.
+      // react-router-dom también se quitó de shared: TuComponente usa un
+      // <MemoryRouter> propio y aislado (no se monta dentro del router del
+      // shell), así que no necesita la instancia compartida. Compartirlo
+      // obligaba al shell a negociar versión con nosotros, y esa negociación
+      // fallaba dentro del propio loader del shell (_virtual_mf___mfe_internal
+      // _shell_loadShare_react...router...), causando "no se pudo cargar el
+      // módulo". Ahora empaquetamos nuestra propia copia de react-router-dom.
       shared: {
         react: { singleton: true, requiredVersion: "^18.2.0" },
         "react-dom": { singleton: true, requiredVersion: "^18.2.0" },
-        "react-router-dom": { singleton: true, requiredVersion: "^6.20.0" },
       },
     }),
   ],
