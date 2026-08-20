@@ -128,17 +128,17 @@ export default function Panel4Anticipos({ loading, comprasData, anticiposData, m
           {/* ── Columna derecha ── */}
           <div className="p3-irr-col" style={{ width: irrColW }}>
             {/* Card A&F vs ADPRO */}
-            <div className="p3-af-box" style={{ flex: 2, minHeight: 0 }}>
+            <div className="p3-af-box">
               {ant ? (
                 <>
                   <div className="p3-af-ttl">A&amp;F vs ADPRO</div>
                   <div className="p3-af-row">
                     <span className="p3-af-lbl">Ant. Proveedores</span>
-                    <span className="p3-af-val" style={{ color: '#1565C0' }}>{fmtM(ant.ant_prov)}</span>
+                    <span className="p3-af-val" style={{ color: '#1565C0' }}>{fmtM(ant.ant_prov_af)}</span>
                   </div>
                   <div className="p3-af-row">
                     <span className="p3-af-lbl">Ant. amortizado</span>
-                    <span className="p3-af-val" style={{ color: ant.pct_amort >= 80 ? '#1A6B7C' : ant.pct_amort >= 50 ? '#8A6010' : '#B85520' }}>{fmtM(ant.ant_amort)}</span>
+                    <span className="p3-af-val" style={{ color: ant.pct_amort >= 80 ? '#1A6B7C' : ant.pct_amort >= 50 ? '#8A6010' : '#B85520' }}>{fmtM(ant.ant_amort_af)}</span>
                   </div>
                   <div className="p3-af-row">
                     <span className="p3-af-lbl">Saldo A&amp;F x amortizar</span>
@@ -178,14 +178,14 @@ export default function Panel4Anticipos({ loading, comprasData, anticiposData, m
               )}
             </div>
             {ant && ant.n_irr > 0 ? (
-              <div className="p3-irr-box" style={{ flex: 1, minHeight: 0, cursor: 'pointer' }}
+              <div className="p3-irr-box" style={{ cursor: 'pointer' }}
                    onClick={() => irDetalle('irr')}>
                 <span className="p3-irr-num">{ant.n_irr}</span>
                 <span className="p3-irr-lbl">terceros con<br/>diferencia módulos</span>
                 <span className="p3-irr-desc">Saldo A&amp;F sin registrar<br/>en ADPRO</span>
               </div>
             ) : (
-              <div className="p3-irr-box" style={{ flex: 1, minHeight: 0 }} />
+              <div className="p3-irr-box" />
             )}
           </div>
         </>)}
