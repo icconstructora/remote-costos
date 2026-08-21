@@ -1,0 +1,40 @@
+﻿{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/assets/*",
+      "/cierre_detalle.html",
+      "/cierre_data.js",
+      "/balance_data.js",
+      "/liquidados_data.js"
+    ]
+  },
+  "routes": [
+    {
+      "route": "/assets/*",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
+      }
+    },
+    {
+      "route": "/remoteEntry.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co",
+        "Cache-Control": "no-cache, must-revalidate"
+      }
+    },
+    {
+      "route": "/data/*",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co",
+        "Cache-Control": "no-cache, must-revalidate"
+      }
+    },
+    {
+      "route": "/images/*",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://vic.icconstructora.co"
+      }
+    }
+  ]
+}
