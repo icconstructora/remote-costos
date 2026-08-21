@@ -259,15 +259,15 @@ export default function ComprasDetalle() {
                   <col style={{ width: '140px' }} />
                 </colgroup>
                 <thead>
-                  <tr>
-                    <th className="col-num">No. Orden</th>
+                  <tr style={{ textAlign: 'center' }}>
+                    <th>No. Orden</th>
                     <th>Proveedor</th>
-                    <th className="col-num">Fecha Orden</th>
-                    <th className="col-num">Fecha Últ. Entrada</th>
-                    <th className="col-num">Días sin Entrada</th>
-                    <th style={{ textAlign: 'center' }}>Estado</th>
-                    <th className="col-num">Valor Orden</th>
-                    <th className="col-num">Saldo por Entregar</th>
+                    <th>Fecha Orden</th>
+                    <th>Fecha Últ. Entrada</th>
+                    <th>Días sin Entrada</th>
+                    <th>Estado</th>
+                    <th>Valor Orden</th>
+                    <th>Saldo por Entregar</th>
                   </tr>
                 </thead>
                 <tbody>
