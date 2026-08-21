@@ -39,6 +39,9 @@ jobs:
           cp public/assets/cierre/liquidados_data.js  dist/assets/cierre/
           echo "=== after copy ==="
           ls -la dist/assets/cierre/
+          cp staticwebapp.config.json dist/staticwebapp.config.json
+          echo "=== staticwebapp.config.json in dist ==="
+          cat dist/staticwebapp.config.json
 
       - name: Deploy
         uses: Azure/static-web-apps-deploy@v1
