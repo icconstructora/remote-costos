@@ -316,7 +316,7 @@ export default function Panel3Contratos({
               <div className="ov-footer" style={{marginTop:'auto'}}>
                 <button className="ov-btn ov-btn-primary" onClick={() => {
                   if (!macro?.key) return;
-                  window.location.href = `/cierre_detalle.html?proyecto=${macro.key}&label=${encodeURIComponent(macro.label || macro.key)}`;
+                  window.location.href = `/assets/cierre/cierre_detalle.html?proyecto=${macro.key}&label=${encodeURIComponent(macro.label || macro.key)}`;
                 }}>Ver estado liquidación ›</button>
               </div>
 

@@ -1,4 +1,4 @@
-﻿name: Azure Static Web Apps CI/CD
+name: Azure Static Web Apps CI/CD
 
 on:
   push:
@@ -30,12 +30,14 @@ jobs:
         run: |
           npm ci
           npm run build
+          echo "=== assets/cierre in dist ==="
+          ls -la dist/assets/cierre/ 2>/dev/null || echo "NOT FOUND - copying manually"
           mkdir -p dist/assets/cierre
-          cp public/cierre_detalle.html dist/assets/cierre/cierre_detalle.html
-          cp public/cierre_data.js      dist/assets/cierre/cierre_data.js
-          cp public/balance_data.js     dist/assets/cierre/balance_data.js
-          cp public/liquidados_data.js  dist/assets/cierre/liquidados_data.js
-          echo "=== cierre in assets ==="
+          cp public/assets/cierre/cierre_detalle.html dist/assets/cierre/
+          cp public/assets/cierre/cierre_data.js      dist/assets/cierre/
+          cp public/assets/cierre/balance_data.js     dist/assets/cierre/
+          cp public/assets/cierre/liquidados_data.js  dist/assets/cierre/
+          echo "=== after copy ==="
           ls -la dist/assets/cierre/
 
       - name: Deploy
