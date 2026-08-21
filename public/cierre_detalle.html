@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Cierre – IC Constructora</title>
+
+<script src="/Liquidacion%20contratos/cierre_data.js?v=73"></script>
+<script src="/Liquidacion%20contratos/balance_data.js?v=55"></script>
+<script src="/Liquidacion%20contratos/liquidados_data.js?v=8"></script>
+
+<style>
+
+:root {
+
+  --wine:#6C0000; --wine2:#8C1010; --accent:#B85520;
+
+  --green:#2E7D50; --red:#C62828; --amber:#E8A000;
+
+  --teal:#00897B; --gray:#9E9E9E; --slate:#607D8B;
+
+  --bg:#F4F4F4; --card:#fff; --border:#E0E0E0;
+
+  --muted:#888; --text:#1A1A1A;
+
+  --sidebar:220px;
+
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{font-family:'Century Gothic','Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+
+
+/* ── HEADER ─────────────────────────────────── */
+
+.ph{background:var(--wine);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+
+.ph-back{font-size:.72rem;font-weight:700;color:#fff;text-decoration:none;padding:5px 12px;border:1px solid rgba(255,255,255,.4);border-radius:5px;white-space:nowrap}
+
+.ph-back:hover{background:rgba(255,255,255,.15)}
+
+.ph-title{font-size:.85rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+
+.ph-sub{font-size:.62rem;color:rgba(255,255,255,.7);margin-top:1px}
+
+.ph-corte{margin-left:auto;font-size:.6rem;font-weight:700;background:rgba(255,255,255,.15);padding:3px 9px;border-radius:4px;white-space:nowrap}
+
+
+
+/* ── LAYOUT ──────────────────────────────────── */
+
+.layout{display:flex;flex:1;min-height:0;overflow:hidden}
+
+.sidebar{width:var(--sidebar);background:var(--card);border-right:1px solid var(--border);padding:14px 12px;overflow-y:auto;flex-shrink:0}
+
+.main{flex:1;padding:18px 20px;overflow-y:auto}
+
+
+
+/* ── SIDEBAR ─────────────────────────────────── */
+
+.sb-section{margin-bottom:16px}
+
+.sb-label{font-size:.58rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+
+.sb-search{width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:.65rem;font-family:inherit;outline:none}
+
+.sb-search:focus{border-color:var(--wine)}
+
+.sb-item{display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;user-select:none}
+
+.sb-item input{cursor:pointer;accent-color:var(--wine)}
+
+.sb-item label{font-size:.63rem;cursor:pointer;line-height:1.3}
+
+.sb-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;display:inline-block}
+
+.sb-count{font-size:.58rem;color:var(--muted);margin-left:auto}
+
+.sb-actions{display:flex;gap:6px;margin-top:4px}
+
+.sb-link{font-size:.6rem;color:var(--wine);cursor:pointer;text-decoration:underline}
+
+
+
+/* ── KPI CARDS ───────────────────────────────── */
+
+.kpi-row{display:flex;gap:12px;margin-bottom:18px}
+
+.kpi{background:var(--card);border-radius:8px;padding:14px 18px;flex:1;border:1px solid var(--border)}
+
+.kpi-label{font-size:.58rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+
+.kpi-val{font-size:1.8rem;font-weight:800;line-height:1}
+
+.kpi-sub{font-size:.6rem;color:var(--muted);margin-top:3px}
+
+.kpi.k-total  .kpi-val{color:var(--wine)}
+
+.kpi.k-pend   .kpi-val{color:var(--accent)}
+
+.kpi.k-cerr   .kpi-val{color:var(--green)}
+
+.kpi.k-crit   .kpi-val{color:var(--red)}
+
+
+
+/* ── EMBUDO ──────────────────────────────────── */
+
+.embudo-wrap{background:var(--card);border-radius:8px;border:1px solid var(--border);padding:16px 20px 12px;margin-bottom:18px}
+
+.embudo-title{font-size:.7rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--wine);margin-bottom:14px}
+
+.embudo-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+
+.embudo-row-label{font-size:.6rem;color:var(--muted);width:160px;flex-shrink:0;text-align:right;line-height:1.3}
+
+.embudo-bar-area{flex:1;position:relative;height:28px}
+
+.embudo-bar{position:absolute;top:0;left:0;height:100%;display:flex;border-radius:4px;overflow:hidden}
+
+.embudo-seg{display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff;transition:opacity .15s;cursor:default;overflow:hidden;white-space:nowrap;height:100%}
+
+.embudo-seg:hover{opacity:.8}
+
+.embudo-total{position:absolute;top:50%;transform:translateY(-50%);font-size:.65rem;font-weight:700;color:var(--muted);white-space:nowrap;padding-left:6px}
+
+.embudo-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+
+.leg-item{display:flex;align-items:center;gap:5px;font-size:.62rem;color:var(--text)}
+
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+.leg-count{font-weight:700}
+
+
+
+/* ── TABLA ───────────────────────────────────── */
+
+.tbl-wrap{background:var(--card);border-radius:8px;border:1px solid var(--border);overflow:hidden}
+
+.tbl-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)}
+
+.tbl-header-title{font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--wine)}
+
+.tbl-count{font-size:.6rem;color:var(--muted)}
+
+table{width:100%;border-collapse:collapse;font-size:.63rem}
+
+thead th{background:#F5EAEA;color:var(--wine);font-weight:700;padding:7px 10px;text-align:center;border-bottom:2px solid #D4AAAA;white-space:nowrap;cursor:pointer;user-select:none}
+
+thead th:hover{background:#ECD8D8}
+
+thead th.sort-asc::after{content:' ↑'}
+
+thead th.sort-desc::after{content:' ↓'}
+
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+
+tbody tr:hover{background:#FBF5F5}
+
+tbody tr.exp-open{background:#FBF5F5}
+
+td{padding:6px 10px;vertical-align:middle}
+
+td.td-saldo{text-align:right;font-weight:700;padding-right:18px}
+
+td.td-est{text-align:center}
+
+.est-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.57rem;font-weight:700;white-space:nowrap}
+
+.exp-btn{background:none;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:.65rem;padding:1px 6px;color:var(--muted)}
+
+.exp-btn:hover{border-color:var(--wine);color:var(--wine)}
+
+/* Fila expandida con historial */
+
+.obs-row td{padding:0}
+
+.obs-panel{padding:10px 16px 12px 36px;background:#FAFAFA;border-top:1px solid #EEE}
+
+.obs-entry{display:flex;gap:12px;margin-bottom:6px;font-size:.6rem;line-height:1.4}
+
+.obs-fecha{color:var(--muted);flex-shrink:0;width:72px;font-weight:600}
+
+.obs-texto{color:#444}
+
+.obs-entry:last-child{margin-bottom:0}
+
+.no-data{text-align:center;padding:28px;color:var(--muted);font-size:.7rem}
+
+.tbl-filt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);background:#FAFAFA}
+
+.tbl-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:.6rem;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all .15s;user-select:none}
+
+.tbl-chip.active{opacity:1}
+
+.tbl-chip.inactive{opacity:.35}
+
+.tbl-total{margin-left:auto;font-size:.65rem;font-weight:800;color:var(--wine);white-space:nowrap}
+
+.res-item{display:flex;align-items:stretch;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)}
+.res-subrow{display:flex;align-items:center;justify-content:space-between;width:100%}
+
+.res-item:last-child{border-bottom:none}
+
+.res-left{display:flex;align-items:center;gap:5px}
+
+.res-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+.res-label{font-size:.62rem;font-weight:700;color:#222}
+
+.res-cnt{font-size:.58rem;color:var(--muted)}
+
+.res-val{font-size:.62rem;font-weight:800;color:#222;text-align:right}
+
+/* ── EMBUDO + PANEL DERECHO ──────────────────── */
+.embudo-row-container{display:flex;gap:14px;margin-bottom:18px;align-items:flex-start}
+.embudo-row-container .embudo-wrap{flex:1;margin-bottom:0;min-width:0}
+.right-panel{width:210px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.rp-card{background:var(--card);border-radius:8px;border:1px solid var(--border);padding:12px}
+.rp-hdr{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.rp-tag{font-size:.58rem;font-weight:700;letter-spacing:.07em;padding:2px 7px;border-radius:3px;background:var(--wine);color:#fff;text-transform:uppercase;white-space:nowrap}
+.rp-title{font-size:.65rem;font-weight:700;color:var(--text)}
+.rp-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)}
+.rp-row:last-child{border-bottom:none}
+.rp-lbl{font-size:.6rem;color:var(--muted)}
+.rp-val{font-size:.75rem;font-weight:700}
+.rp-note{font-size:.57rem;color:var(--muted);margin-top:6px;padding-top:5px;border-top:1px solid var(--border)}
+.irr-rp{background:#FFF7ED;border:2px solid var(--amber);border-radius:8px;padding:12px}
+.irr-rp-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.irr-rp-icon{font-size:1.3rem;color:var(--amber)}
+.irr-rp-title{font-size:.65rem;font-weight:700;color:#7A5200}
+.irr-rp-sub{font-size:.57rem;color:#8A6200;line-height:1.4;margin-bottom:7px}
+.irr-rp-link{display:block;text-align:center;background:var(--wine);color:#fff;font-size:.58rem;font-weight:700;padding:6px;border-radius:5px;text-decoration:none;cursor:pointer;letter-spacing:.03em}
+.irr-rp-link:hover{background:var(--wine2)}
+
+</style>
+
+</head>
+
+<body>
+
+
+
+<!-- HEADER -->
+
+<div class="ph">
+
+  <a class="ph-back" href="/Liquidacion%20contratos/dashboard.html">&#8592; Dashboard</a>
+
+  <div>
+
+    <div class="ph-title" id="ph-title">Cierre de Contratos</div>
+
+    <div class="ph-sub" id="ph-sub">Detalle liquidación por tercero</div>
+
+  </div>
+
+  <div class="ph-corte" id="ph-corte"></div>
+
+</div>
+
+
+
+<div class="layout">
+
+
+
+  <!-- SIDEBAR -->
+
+  <div class="sidebar">
+
+    <div class="sb-section">
+
+      <div class="sb-label">Resumen por Estado</div>
+
+      <div id="sb-resumen"></div>
+
+    </div>
+
+    <div class="sb-section">
+
+      <div class="sb-label">Buscar Tercero</div>
+
+      <input class="sb-search" id="sb-search" type="text" placeholder="Nombre o NIT...">
+
+    </div>
+
+    <div class="sb-section">
+
+      <div class="sb-label">Estado
+
+        <span class="sb-link" style="margin-left:6px" onclick="setAll('est',true)">Todos</span>
+
+        <span class="sb-link" style="margin-left:2px" onclick="setAll('est',false)">Ninguno</span>
+
+      </div>
+
+      <div id="sb-estados"></div>
+
+    </div>
+
+    <div class="sb-section">
+
+      <div class="sb-label">Cuenta
+
+        <span class="sb-link" style="margin-left:6px" onclick="setAll('cta',true)">Todas</span>
+
+        <span class="sb-link" style="margin-left:2px" onclick="setAll('cta',false)">Ninguna</span>
+
+      </div>
+
+      <div id="sb-cuentas"></div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- MAIN -->
+
+  <div class="main">
+
+    <div id="no-data" class="no-data" style="display:none">Sin datos para este proyecto.</div>
+
+    <div id="content">
+
+      <!-- KPIs -->
+
+      <div class="kpi-row" id="kpi-row"></div>
+
+      <!-- Embudo + Panel derecho -->
+
+      <div class="embudo-row-container">
+
+        <div class="embudo-wrap">
+
+          <div class="embudo-title">Embudo de Estados</div>
+
+          <div id="embudo-rows"></div>
+
+          <div class="embudo-legend" id="embudo-legend"></div>
+
+        </div>
+
+
+      </div>
+
+      <!-- Tabla -->
+
+      <div class="tbl-wrap">
+
+        <div class="tbl-header">
+
+          <span class="tbl-header-title">Detalle por Tercero</span>
+
+          <span class="tbl-count" id="tbl-count"></span>
+
+          <button onclick="exportarExcel()" style="margin-left:auto;background:#1E6B3A;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:.65rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">⬇ Excel</button>
+
+        </div>
+
+        <div class="tbl-filt-bar" id="tbl-filt-bar"></div>
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th onclick="sortBy('terc')" style="width:220px;max-width:220px">Tercero</th>
+
+              <th onclick="sortBy('cta_n')" style="width:90px;max-width:90px">Cuenta</th>
+
+              <th onclick="sortBy('est')" style="text-align:center">Estado</th>
+
+              <th onclick="sortBy('saldo')" style="width:130px;min-width:130px">Saldo</th>
+
+              <th>Gestión</th>
+
+              <th onclick="sortBy('cron')">Cronograma</th>
+
+              <th>Última observación</th>
+
+              <th onclick="sortBy('apro')">APRO</th>
+
+              <th></th>
+
+            </tr>
+
+          </thead>
+
+          <tbody id="tbl-body"></tbody>
+
+        </table>
+
+      </div>
+
+    </div><!-- /content -->
+
+  </div><!-- /main -->
+
+</div><!-- /layout -->
+
+
+
+<script>
+
+// ─── Config estados: color + etiqueta normalizada ───────────────────────────
+
+const ESTADO_CFG = [
+
+  { key:'OBRA',                  color:'#E06820', label:'EN EJECUCIÓN'          },
+  { key:'EN EJECUCION',         color:'#E06820', label:'EN EJECUCIÓN'          },
+
+  { key:'NO',                    color:'#9E9E9E', label:'NO'                    },
+
+  { key:'JURIDICO',              color:'#C62828', label:'JURÍDICO'              },
+  { key:'JURIDICA',              color:'#C62828', label:'JURÍDICO'              },
+
+  { key:'CONCILIACION OBRA',     color:'#E8A000', label:'CONCILIACIÓN OBRA'     },
+  { key:'EN CONCILIACION OBRA',  color:'#E8A000', label:'CONCILIACIÓN OBRA'     },
+
+  { key:'EN VALIDACION SOCIOS',  color:'#6A1B9A', label:'EN VALIDACIÓN SOCIOS'  },
+
+  { key:'EN LIQUIDACION',        color:'#1565C0', label:'EN LIQUIDACIÓN'        },
+
+  { key:'SI',                    color:'#2E7D50', label:'SI'                    },
+
+  { key:'LIQUIDADO',             color:'#00897B', label:'LIQUIDADO'             },
+
+  { key:'CONTABILIDAD',          color:'#AD1457', label:'CONTABILIDAD'          },
+
+  { key:'ONCE EN CIERRE',        color:'#0277BD', label:'ONCE EN CIERRE'        },
+
+];
+
+// Orden fijo de segmentos en el embudo
+const SEGMENT_ORDER = [
+  'EN EJECUCION','OBRA','NO','JURIDICO','JURIDICA','CONCILIACION OBRA','EN CONCILIACION OBRA',
+  'EN VALIDACION SOCIOS','EN LIQUIDACION','SI','LIQUIDADO',
+  'CONTABILIDAD','ONCE EN CIERRE'
+];
+
+
+
+// Normaliza texto (quita tildes, upper)
+
+function norm(s){ return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim(); }
+
+
+
+function getEstCfg(est){
+
+  const n = norm(est);
+
+  // Primero: coincidencia exacta
+
+  let found = ESTADO_CFG.find(c => norm(c.key) === n);
+
+  // Segundo: si no hay exacta, buscar por inclusión (más específico primero)
+
+  if(!found) found = ESTADO_CFG.find(c => n === norm(c.key));
+
+  return found || null;
+
+}
+
+function getColor(est){ const c = getEstCfg(est); return c ? c.color : '#607D8B'; }
+
+function getLabel(est){ const c = getEstCfg(est); return c ? c.label : est; }
+
+
+
+function fmtM(v){ return v === 0 ? '$0' : '$' + (v/1e6).toFixed(1) + 'M'; }
+
+function shortCron(s){
+  if(!s) return '—';
+  // ISO primero: yyyy-mm-dd (con o sin hora) → dd/mm/yy
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
+  // dd/mm/yyyy o dd/mm/yy
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(m){
+    const d = m[1].padStart(2,'0'), mo = m[2].padStart(2,'0');
+    const y = m[3].length===4 ? m[3].slice(2) : m[3];
+    return `${d}/${mo}/${y}`;
+  }
+  // Si no hay fecha reconocible, mostrar primeros 10 chars
+  return s.slice(0,10);
+}
+
+function fmtCOP(v){ return v === 0 ? '$0' : '$' + Math.round(Math.abs(v)).toLocaleString('es-CO'); }
+
+
+
+// ─── Variables globales (TODAS antes de cualquier llamada) ───────────────────
+
+let activeFilt  = { est: {}, cta: {} };
+
+let sortCol     = 'est', sortDir = 1;
+
+let allRows     = [];
+
+let expandedIdx = new Set();
+
+let tblEstFilt  = new Set();   // filtro rápido de estado en la tabla (vacío = todos)
+
+
+
+const FUNNEL_ROWS = [
+
+  { label: 'Total contratos',           excl: [] },
+
+  { label: 'Pendientes',                 excl: ['SI','LIQUIDADO'] },
+
+  { label: 'En Conciliación',            incl: ['EN EJECUCION','OBRA','NO','JURIDICO','JURIDICA','CONCILIACION OBRA','EN CONCILIACION OBRA'], dim: ['EN EJECUCION','OBRA'] },
+
+  { label: 'Críticos',                  incl: ['EN EJECUCION','OBRA','NO','JURIDICO','JURIDICA'], dim: ['EN EJECUCION','OBRA'] },
+
+  { label: 'En Ejecución',             incl: ['EN EJECUCION','OBRA'] },
+
+];
+
+
+
+const SHORT_CTA = {
+
+  'ANTICIPO A PROVEEDORES':        'Ant. Prov.',
+
+  'ANTICIPOS A PROVEEDORES':       'Ant. Prov.',
+
+  'ANTICIPOS A CONTRATISTAS':      'Ant. Cont.',
+
+  'GARANTIA CUMPLIMIENTO CONTRATO':'Gta. Cumpl.',
+
+};
+
+
+
+// ─── Leer URL params y arrancar ──────────────────────────────────────────────
+
+const params  = new URLSearchParams(location.search);
+
+const pjKeyRaw = params.get('proyecto') || '';
+const pjLabel  = decodeURIComponent(params.get('label') || pjKeyRaw);
+
+// Alias: claves del dashboard → clave en CIERRE_DATA
+const KEY_ALIAS = {
+  'mitika':  'mit-11',
+  'mit-12':  'mit-11',
+  'mit-t5':  'mit-11',
+  'mit-t6':  'mit-11',
+  'mit-t7':  'mit-11',
+  'azt-e1':  'azul-t',
+  'azt-e2':  'azul-t',
+  'azc-e1':  'azul-c',
+  'azc-e2':  'azul-c',
+  'azc-e3':  'azul-c',
+  'opo-e12': 'oporto',
+  'opo-e3':  'oporto',
+  'pri-e12': 'primera',
+  'pri-zc':  'primera',
+  'ver-e1':  'verde',
+  'ver-e2':  'verde',
+  'ver-e3':  'verde',
+  'cai-e2b': 'cast-i',
+  'cai-zc':  'cast-i',
+  'hac-e1':  'hacienda',
+  'hac-e3':  'hacienda',
+  'pra-e1':  'praia',
+  'pra-e2':  'praia',
+};
+const pjKey = (typeof CIERRE_DATA !== 'undefined' && CIERRE_DATA[pjKeyRaw])
+  ? pjKeyRaw
+  : (KEY_ALIAS[pjKeyRaw] || pjKeyRaw);
+
+document.getElementById('ph-title').textContent = 'Cierre — ' + pjLabel.toUpperCase();
+
+document.getElementById('ph-sub').textContent   = 'Detalle de liquidación por tercero';
+
+
+
+if(typeof CIERRE_DATA === 'undefined' || !CIERRE_DATA[pjKey]){
+
+  document.getElementById('no-data').style.display = '';
+
+  document.getElementById('content').style.display = 'none';
+
+} else {
+
+  init(CIERRE_DATA[pjKey]);
+
+}
+
+
+
+function init(data){
+
+  try {
+
+    document.getElementById('ph-corte').textContent = data.corte || '';
+
+    allRows = data.rows || [];
+
+    console.log('[init] allRows:', allRows.length);
+
+
+
+    const ests = [...new Set(allRows.map(r => r.est).filter(Boolean))].sort();
+
+    const ctas = [...new Set(allRows.map(r => r.cta_n).filter(Boolean))].sort();
+
+    console.log('[init] ests:', ests, 'ctas:', ctas);
+
+
+
+    ests.forEach(e => { activeFilt.est[norm(e)] = true; });
+
+    ctas.forEach(c => { activeFilt.cta[c] = true; });
+
+    console.log('[init] filtros:', JSON.stringify(activeFilt));
+
+
+
+    buildSidebarEstados(ests);
+
+    console.log('[init] sidebar estados OK');
+
+    buildSidebarCuentas(ctas);
+
+    console.log('[init] sidebar cuentas OK');
+
+
+
+    document.getElementById('sb-search').addEventListener('input', render);
+
+    render();
+
+    console.log('[init] render OK');
+
+  } catch(err) {
+
+    console.error('[init] ERROR:', err.message, err.stack);
+
+    // Mostrar error en pantalla
+
+    const dbg = document.createElement('div');
+
+    dbg.style = 'background:#fee;color:red;padding:10px;margin:10px;font-size:12px;border:1px solid red';
+
+    dbg.textContent = 'Error: ' + err.message;
+
+    document.querySelector('.main').prepend(dbg);
+
+  }
+
+}
+
+
+
+function buildSidebarEstados(ests){
+
+  const el = document.getElementById('sb-estados');
+
+  let html = '';
+
+  ests.forEach((e, i) => {
+
+    const nk  = norm(e);
+
+    const cnt = allRows.filter(r => norm(r.est) === nk).length;
+
+    const sid = 'est_' + i;  // índice numérico evita problemas con espacios en IDs
+
+    html += `<div class="sb-item" data-nk="${nk}">
+
+      <input type="checkbox" id="${sid}" data-nk="${nk}" checked>
+
+      <span class="sb-dot" style="background:${getColor(e)}"></span>
+
+      <label for="${sid}">${getLabel(e)}</label>
+
+      <span class="sb-count">${cnt}</span>
+
+    </div>`;
+
+  });
+
+  el.innerHTML = html;
+
+  el.querySelectorAll('input[type=checkbox]').forEach(cb => {
+
+    cb.addEventListener('change', ev => {
+
+      activeFilt.est[ev.target.dataset.nk] = ev.target.checked;
+
+      render();
+
+    });
+
+  });
+
+}
+
+
+
+function buildSidebarCuentas(ctas){
+
+  const el = document.getElementById('sb-cuentas');
+
+  const SHORT = {
+
+    'ANTICIPO A PROVEEDORES':        'Ant. Proveedores',
+
+    'ANTICIPOS A PROVEEDORES':       'Ant. Proveedores',
+
+    'ANTICIPOS A CONTRATISTAS':      'Ant. Contratistas',
+
+    'GARANTIA CUMPLIMIENTO CONTRATO':'Gta. Cumplimiento',
+
+  };
+
+  let html = '';
+
+  ctas.forEach((c, i) => {
+
+    const cnt = allRows.filter(r => r.cta_n === c).length;
+
+    const sid = 'cta_' + i;
+
+    html += `<div class="sb-item" data-cta="${c}">
+
+      <input type="checkbox" id="${sid}" data-cta="${c}" checked>
+
+      <label for="${sid}">${SHORT[c] || c}</label>
+
+      <span class="sb-count">${cnt}</span>
+
+    </div>`;
+
+  });
+
+  el.innerHTML = html;
+
+  el.querySelectorAll('input[type=checkbox]').forEach(cb => {
+
+    cb.addEventListener('change', ev => {
+
+      activeFilt.cta[ev.target.dataset.cta] = ev.target.checked;
+
+      render();
+
+    });
+
+  });
+
+}
+
+
+
+function setAll(type, val){
+
+  const grp = activeFilt[type];
+
+  Object.keys(grp).forEach(k => grp[k] = val);
+
+  const attr = type === 'est' ? 'data-nk' : 'data-cta';
+
+  document.querySelectorAll(`#sb-${type==='est'?'estados':'cuentas'} input[type=checkbox]`)
+
+    .forEach(cb => cb.checked = val);
+
+  render();
+
+}
+
+
+
+// ─── Filtrado ────────────────────────────────────────────────────────────────
+
+function getFiltered(){
+
+  const q = norm(document.getElementById('sb-search').value);
+
+  const hasEstFilt = Object.keys(activeFilt.est).length > 0;
+
+  const hasCtaFilt = Object.keys(activeFilt.cta).length > 0;
+
+  return allRows.filter(r => {
+
+    if(hasEstFilt && activeFilt.est[norm(r.est)] === false) return false;
+
+    if(hasCtaFilt && activeFilt.cta[r.cta_n]    === false) return false;
+
+    if(q && !norm(r.terc).includes(q) && !norm(r.nit).includes(q)) return false;
+
+    return true;
+
+  });
+
+}
+
+
+
+// ─── Render principal ─────────────────────────────────────────────────────────
+
+function render(){
+
+  const rows = getFiltered();
+
+  renderResumen(rows);
+
+  renderKPIs(rows);
+
+  renderEmbudo(rows);
+
+  renderTable(rows);
+
+}
+
+
+
+function renderResumen(rows){
+
+  const EXCL = ['SI','LIQUIDADO'];
+
+  const pendientes = rows.filter(r => !EXCL.includes(norm(r.est)));
+
+  function fmtMM(v){
+    const mm = Math.abs(v) / 1e6;
+    const s  = mm >= 1000 ? '$' + (mm/1000).toFixed(1) + 'B'
+             : mm >= 1    ? '$' + Math.round(mm).toLocaleString('es-CO') + 'MM'
+             : '$' + Math.round(Math.abs(v)/1e3).toLocaleString('es-CO') + 'K';
+    return s;
+  }
+
+  // Agrupar por label normalizado → fusiona estados con mismo nombre (ej: OBRA + EN EJECUCION)
+  const map = {};
+  pendientes.forEach(r => {
+    const k = norm(getLabel(r.est));
+    if(!map[k]) map[k] = { label: getLabel(r.est), color: getColor(r.est),
+                           cntPos: 0, sumPos: 0, cntNeg: 0, sumNeg: 0 };
+    if(r.saldo >= 0){ map[k].cntPos++; map[k].sumPos += r.saldo; }
+    else             { map[k].cntNeg++; map[k].sumNeg += r.saldo; }
+  });
+
+  // Ordenar por total absoluto descendente
+  const lista = Object.values(map).sort((a,b) =>
+    (Math.abs(b.sumPos) + Math.abs(b.sumNeg)) - (Math.abs(a.sumPos) + Math.abs(a.sumNeg)));
+
+  const el = document.getElementById('sb-resumen');
+  if(!lista.length){ el.innerHTML = '<span style="font-size:.6rem;color:var(--muted)">Sin pendientes</span>'; return; }
+
+  el.innerHTML = lista.map(g => {
+    const hasPos  = g.cntPos > 0;
+    const hasNeg  = g.cntNeg > 0;
+    const showBoth = hasPos && hasNeg;
+
+    // Cabecera: dot + label + count total
+    const header = `
+      <div class="res-subrow">
+        <div class="res-left">
+          <span class="res-dot" style="background:${g.color}"></span>
+          <span class="res-label">${g.label}</span>
+          <span class="res-cnt">(${g.cntPos + g.cntNeg})</span>
+        </div>
+      </div>`;
+
+    // Si solo un tipo → una sola línea con el valor alineado a la derecha
+    if(!showBoth){
+      const val   = hasPos ? fmtMM(g.sumPos) : fmtMM(g.sumNeg);
+      const color = hasNeg ? '#c62828' : '#222';
+      return `<div class="res-item" style="flex-direction:row;align-items:center">
+        <div class="res-left">
+          <span class="res-dot" style="background:${g.color}"></span>
+          <span class="res-label">${g.label}</span>
+          <span class="res-cnt">(${g.cntPos + g.cntNeg})</span>
+        </div>
+        <span class="res-val" style="color:${color}">${val}</span>
+      </div>`;
+    }
+
+    // Ambos tipos → cabecera + dos sub-líneas indentadas
+    const linePos = `
+      <div class="res-subrow" style="padding-left:13px">
+        <span class="res-cnt">(${g.cntPos})</span>
+        <span class="res-val" style="color:#222;margin-left:auto">${fmtMM(g.sumPos)}</span>
+      </div>`;
+    const lineNeg = `
+      <div class="res-subrow" style="padding-left:13px">
+        <span class="res-cnt" style="color:#c62828">(${g.cntNeg})</span>
+        <span class="res-val" style="color:#c62828;margin-left:auto">${fmtMM(g.sumNeg)}</span>
+      </div>`;
+
+    return `<div class="res-item" style="flex-direction:column;align-items:stretch;gap:1px">
+      ${header}${linePos}${lineNeg}
+    </div>`;
+  }).join('');
+
+}
+
+
+
+// ─── KPIs ────────────────────────────────────────────────────────────────────
+
+function renderKPIs(rows){
+
+  const total = rows.length;
+
+  const cerr  = rows.filter(r => ['SI','LIQUIDADO'].some(c => norm(r.est) === c)).length;
+
+  const pend  = total - cerr;
+
+  const crit  = rows.filter(r => ['JURIDICO','NO','CONTABILIDAD'].some(c => norm(r.est) === c)).length;
+
+
+
+  document.getElementById('kpi-row').innerHTML = `
+
+    <div class="kpi k-total">
+
+      <div class="kpi-label">Total Terceros</div>
+
+      <div class="kpi-val">${total}</div>
+
+      <div class="kpi-sub">contratos activos y cerrados</div>
+
+    </div>
+
+    <div class="kpi k-pend">
+
+      <div class="kpi-label">Pendientes</div>
+
+      <div class="kpi-val">${pend}</div>
+
+      <div class="kpi-sub">aún no liquidados</div>
+
+    </div>
+
+    <div class="kpi k-cerr">
+
+      <div class="kpi-label">Cerrados</div>
+
+      <div class="kpi-val">${cerr}</div>
+
+      <div class="kpi-sub">SI + Liquidado</div>
+
+    </div>
+
+    <div class="kpi k-crit">
+
+      <div class="kpi-label">Críticos</div>
+
+      <div class="kpi-val">${crit}</div>
+
+      <div class="kpi-sub">Jurídico + NO</div>
+
+    </div>`;
+
+}
+
+
+
+// ─── Embudo ───────────────────────────────────────────────────────────────────
+
+
+
+function renderEmbudo(rows){
+
+  const container  = document.getElementById('embudo-rows');
+
+  const legendEl   = document.getElementById('embudo-legend');
+
+  if(!rows.length){ container.innerHTML='<div class="no-data">Sin datos</div>'; return; }
+
+
+
+  const maxTotal = rows.length;
+
+
+
+  // Agrupar por estado
+
+  const estMap = {};
+
+  rows.forEach(r => {
+
+    const k = norm(r.est);
+
+    if(!estMap[k]) estMap[k] = { label: getLabel(r.est), color: getColor(r.est), count: 0 };
+
+    estMap[k].count++;
+
+  });
+
+  const estList = Object.values(estMap).sort((a,b) => b.count - a.count);
+
+
+
+  container.innerHTML = '';
+
+  FUNNEL_ROWS.forEach(fr => {
+
+    let subset = rows;
+
+    if(fr.incl){ subset = rows.filter(r => fr.incl.some(c => norm(r.est) === norm(c))); }
+
+    else if(fr.excl && fr.excl.length){ subset = rows.filter(r => !fr.excl.some(c => norm(r.est) === norm(c))); }
+
+    const total = subset.length;
+
+    if(total === 0) return;
+
+
+
+    // Count per estado in subset
+
+    const seg = {};
+
+    subset.forEach(r => {
+
+      const k = norm(r.est);
+
+      seg[k] = (seg[k]||0)+1;
+
+    });
+
+
+
+    const pct = (total / maxTotal) * 100;
+
+    const dimSet = new Set((fr.dim||[]).map(d => norm(d)));
+    const barHtml = Object.entries(seg).sort((a,b)=>{
+      const ia = SEGMENT_ORDER.indexOf(norm(a[0]));
+      const ib = SEGMENT_ORDER.indexOf(norm(b[0]));
+      const oa = ia === -1 ? 999 : ia;
+      const ob = ib === -1 ? 999 : ib;
+      return oa - ob;
+    }).map(([k,cnt])=>{
+
+      const isDim = dimSet.has(norm(k));
+      const c   = isDim ? '#C8C8C8' : getColor(k);
+      const tc  = isDim ? '#888' : '#fff';
+      const w   = (cnt/total)*100;
+
+      const lbl = cnt > 1 || w > 5 ? cnt : '';
+
+      return `<div class="embudo-seg" style="width:${w.toFixed(1)}%;background:${c};color:${tc};opacity:${isDim?'0.55':'1'}" title="${getLabel(k)}: ${cnt}">${lbl}</div>`;
+
+    }).join('');
+
+
+
+    container.innerHTML += `
+
+      <div class="embudo-row">
+
+        <div class="embudo-row-label">${fr.label}</div>
+
+        <div class="embudo-bar-area">
+
+          <div class="embudo-bar" style="width:${pct.toFixed(1)}%">${barHtml}</div>
+
+          <span class="embudo-total" style="left:calc(${pct.toFixed(1)}% + 6px)">${total}</span>
+
+        </div>
+
+      </div>`;
+
+  });
+
+
+
+  // Leyenda
+
+  legendEl.innerHTML = estList.map(e =>
+
+    `<div class="leg-item">
+
+      <span class="leg-dot" style="background:${e.color}"></span>
+
+      <span class="leg-count">${e.count}</span>
+
+      <span>${e.label}</span>
+
+    </div>`
+
+  ).join('');
+
+}
+
+
+
+// ─── Tabla ────────────────────────────────────────────────────────────────────
+
+
+
+function sortBy(col){
+
+  if(sortCol === col) sortDir *= -1;
+
+  else { sortCol = col; sortDir = 1; }
+
+  document.querySelectorAll('thead th').forEach(th => {
+
+    th.classList.remove('sort-asc','sort-desc');
+
+    if(th.textContent.toLowerCase().includes(colLabel(col).toLowerCase())){
+
+      th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+
+    }
+
+  });
+
+  render();
+
+}
+
+function colLabel(c){ return {terc:'Tercero',cta_n:'Cuenta',saldo:'Saldo',est:'Estado',cron:'Cronograma',apro:'APRO'}[c]||c; }
+
+
+
+// Grupo de prioridad:
+// 1 = Críticos: NO, CONCILIACION OBRA, JURIDICO, EN LIQUIDACION, CONTABILIDAD, ONCE EN CIERRE
+// 2 = En Ejecución: EN EJECUCION, OBRA
+// 3 = Cerrados: SI, LIQUIDADO
+function prioGroup(r){
+  const e = norm(r.est);
+  if(e === 'SI' || e === 'LIQUIDADO')                           return 3;
+  if(e === 'EN EJECUCION' || e === 'OBRA')                     return 2;
+  // Grupo 1: NO, CONCILIACION OBRA, JURIDICO, EN LIQUIDACION, CONTABILIDAD, ONCE EN CIERRE, etc.
+  return 1;
+}
+
+// Orden dentro del grupo 1 y 2: negativos primero (más negativo → menor valor), luego positivos (mayor → menor)
+// Grupo 3 (SI/LIQUIDADO): de mayor a menor por saldo absoluto
+function prioSaldo(a, b, grupo){
+  if(grupo === 3) return Math.abs(b.saldo) - Math.abs(a.saldo);
+  const sa = a.saldo, sb = b.saldo;
+  if(sa < 0 && sb < 0) return sa - sb;   // ambos neg: más negativo primero
+  if(sa >= 0 && sb >= 0) return sb - sa; // ambos pos: mayor primero
+  return sa < 0 ? -1 : 1;               // negativos antes de positivos
+}
+
+function defaultSort(rows){
+  return [...rows].sort((a, b) => {
+    const ga = prioGroup(a), gb = prioGroup(b);
+    if(ga !== gb) return ga - gb;
+    return prioSaldo(a, b, ga);
+  });
+}
+
+
+
+function renderTable(rows){
+
+  // ── Barra de chips de estado ─────────────────────────────────────────────
+
+  const bar = document.getElementById('tbl-filt-bar');
+
+  const estGroups = {};
+
+  rows.forEach(r => {
+
+    // Agrupar por label normalizado para fusionar estados con mismo nombre (ej: OBRA + EN EJECUCION)
+    const k = norm(getLabel(r.est));
+
+    if(!estGroups[k]) estGroups[k] = { label: getLabel(r.est), color: getColor(r.est), cnt: 0, total: 0 };
+
+    estGroups[k].cnt++;
+
+    estGroups[k].total += r.saldo;
+
+  });
+
+  const chipList  = Object.entries(estGroups).sort((a,b) => b[1].total - a[1].total);
+
+  const totalCnt  = rows.length;
+
+  const isTotalOn = tblEstFilt.size === 0;
+
+  const totalChip = `<span class="tbl-chip ${isTotalOn?'active':'inactive'}"
+    style="background:#6C000020;color:var(--wine);border-color:#6C000060"
+    onclick="resetTblFilt()">TOTAL <strong>${totalCnt}</strong></span>`;
+
+  bar.innerHTML = totalChip + chipList.map(([k, g]) => {
+
+    const on = !isTotalOn && tblEstFilt.has(k);
+
+    return `<span class="tbl-chip ${on?'active':'inactive'}"
+      style="background:${g.color}20;color:${g.color};border-color:${g.color}60"
+      onclick="toggleTblEst('${k}')">${g.label} <strong>${g.cnt}</strong></span>`;
+
+  }).join('') + `<span class="tbl-total" id="tbl-total"></span>`;
+
+
+
+  // ── Aplicar filtro rápido (comparar por label normalizado) ───────────────────
+
+  const filtered = tblEstFilt.size === 0 ? rows
+
+    : rows.filter(r => tblEstFilt.has(norm(getLabel(r.est))));
+
+
+
+  // ── Ordenar ──────────────────────────────────────────────────────────────
+
+  const sorted = sortCol === 'est'
+
+    ? defaultSort(filtered)
+
+    : [...filtered].sort((a,b) => {
+
+        let va = a[sortCol]||'', vb = b[sortCol]||'';
+
+        if(typeof va === 'number') return (va-vb)*sortDir;
+
+        return va.toString().localeCompare(vb.toString()) * sortDir;
+
+      });
+
+
+
+  // ── Total saldo visible ──────────────────────────────────────────────────
+
+  const totalSaldo = sorted.reduce((s, r) => s + r.saldo, 0);
+
+  const totalEl = document.getElementById('tbl-total');
+
+  if(totalEl) totalEl.textContent = `Total: ${fmtCOP(totalSaldo)}`;
+
+
+
+  document.getElementById('tbl-count').textContent = `${sorted.length} registros`;
+
+  const body = document.getElementById('tbl-body');
+
+  body.innerHTML = '';
+
+
+
+  sorted.forEach((r, i) => {
+
+    const color  = getColor(r.est);
+
+    const label  = getLabel(r.est);
+
+    const lastOb = r.obs && r.obs.length ? r.obs[r.obs.length-1] : null;
+
+    const hasObs = r.obs && r.obs.length > 0;
+
+
+
+    // Tipo de saldo (solo para no-EN EJECUCIÓN)
+
+    const esEjecucion = norm(r.est) === 'OBRA';
+
+    const tipoSaldo = esEjecucion ? '' :
+
+      r.saldo < 0 ? `<span style="font-size:.58rem;font-weight:700;color:var(--red);background:#FDDADA;padding:2px 7px;border-radius:10px;white-space:nowrap">RECUPERACIÓN</span>` :
+
+      r.saldo > 0 ? `<span style="font-size:.58rem;font-weight:700;color:var(--teal);background:#D0F0EC;padding:2px 7px;border-radius:10px;white-space:nowrap">A PAGAR</span>` :
+
+      `<span style="font-size:.58rem;font-weight:700;color:var(--green);background:#D8F0D0;padding:2px 7px;border-radius:10px;white-space:nowrap">SALDADO</span>`;
+
+
+
+    const obsCircle = '';
+
+
+
+    const saldoColor = r.saldo < 0 ? 'var(--red)' : '#1A1A1A';
+
+
+
+    const tr = document.createElement('tr');
+
+    tr.innerHTML = `
+
+      <td style="width:220px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.terc}"><strong>${r.terc}</strong><br><span style="font-size:.57rem;color:var(--muted)">${r.nit}</span></td>
+
+      <td>${SHORT_CTA[r.cta_n]||r.cta_n}</td>
+
+      <td class="td-est"><span class="est-badge" style="background:${color}20;color:${color};border:1px solid ${color}40">${label}</span></td>
+
+      <td class="td-saldo" style="color:${saldoColor}">${fmtCOP(r.saldo)}</td>
+
+      <td style="text-align:center">${tipoSaldo}</td>
+
+      <td style="font-size:.6rem;color:var(--muted);text-align:center;white-space:nowrap" title="${r.cron}">${shortCron(r.cron)}</td>
+
+      <td style="font-size:.6rem;color:#555;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lastOb?lastOb.t:''}">
+
+        ${lastOb ? `<span style="display:inline-flex;align-items:center"><span><span style="color:var(--muted)">${lastOb.f} — </span>${lastOb.t}</span></span>` : '—'}
+
+      </td>
+
+      <td style="font-size:.6rem;text-align:center">${r.apro||'—'}</td>
+
+      <td>${hasObs ? `<button class="exp-btn" onclick="toggleObs(${i},this)">+${r.obs.length}</button>` : ''}</td>`;
+
+
+
+    body.appendChild(tr);
+
+
+
+    // Fila de observaciones (oculta por defecto)
+
+    if(hasObs){
+
+      const obsRow = document.createElement('tr');
+
+      obsRow.className = 'obs-row';
+
+      obsRow.id = `obs-${i}`;
+
+      obsRow.style.display = 'none';
+
+      const obsHtml = r.obs.map(o =>
+
+        `<div class="obs-entry">
+
+          <span class="obs-fecha">${o.f||'—'}</span>
+
+          <span class="obs-texto">${o.t}</span>
+
+        </div>`
+
+      ).join('');
+
+      obsRow.innerHTML = `<td colspan="9"><div class="obs-panel">${obsHtml}</div></td>`;
+
+      body.appendChild(obsRow);
+
+    }
+
+  });
+
+}
+
+
+
+function resetTblFilt(){
+
+  tblEstFilt.clear();
+
+  render();
+
+}
+
+
+
+function toggleTblEst(k){
+
+  if(tblEstFilt.has(k)) tblEstFilt.delete(k);
+  else                   tblEstFilt.add(k);
+
+  render();
+
+}
+
+
+
+function toggleObs(i, btn){
+
+  const row = document.getElementById(`obs-${i}`);
+
+  if(!row) return;
+
+  const open = row.style.display !== 'none';
+
+  row.style.display = open ? 'none' : '';
+
+  btn.textContent   = open ? `+${btn.textContent.replace(/[-+]/,'')}` : `-${btn.textContent.replace(/[-+]/,'')}`;
+
+  btn.closest('tr').classList.toggle('exp-open', !open);
+
+}
+
+function renderRightPanel(corte){
+  const el = document.getElementById('right-panel');
+  if(!el) return;
+
+  // A&F: balance del proyecto actual
+  const bdata = (typeof BALANCE_DATA !== 'undefined')
+    ? (BALANCE_DATA[pjKeyRaw] || BALANCE_DATA[pjKey] || null)
+    : null;
+
+  let gtaSum = 0, antSum = 0, liqSum = 0;
+  if(bdata && bdata.rows){
+    bdata.rows.forEach(r => {
+      if(r.acct === 'Gta. Cumplimiento' && r.saldo > 0) gtaSum += r.saldo;
+      else if(r.acct === 'Ant. Contratistas' && r.saldo > 0) antSum += r.saldo;
+      else if(r.acct === 'Liquidado' && r.saldo > 0) liqSum += r.saldo;
+    });
+  }
+
+  // F029: contratos con acta de liquidación
+  const liqCount = (typeof LIQUIDADOS_DATA !== 'undefined') ? Object.keys(LIQUIDADOS_DATA).length : 0;
+  const corteLiq = (typeof CORTE_LIQUIDADOS !== 'undefined') ? CORTE_LIQUIDADOS : corte || '—';
+
+  // Link a irregularidades
+  const irrUrl = `/Liquidacion%20contratos/liquidacion_standalone_2.html?bkey=${encodeURIComponent(pjKeyRaw)}&card=irr`;
+
+  const balanceHtml = bdata ? `
+    <div class="rp-card">
+      <div class="rp-hdr">
+        <span class="rp-tag">ADPRO</span>
+        <span class="rp-title">A&amp;F · Balance</span>
+      </div>
+      ${gtaSum > 0 ? `<div class="rp-row"><span class="rp-lbl">Gta. Cumplimiento</span><span class="rp-val" style="color:var(--amber)">${fmtM(gtaSum)}</span></div>` : ''}
+      ${antSum > 0 ? `<div class="rp-row"><span class="rp-lbl">Ant. Contratistas</span><span class="rp-val" style="color:var(--accent)">${fmtM(antSum)}</span></div>` : ''}
+      ${liqSum > 0 ? `<div class="rp-row"><span class="rp-lbl">Con acta</span><span class="rp-val" style="color:var(--green)">${fmtM(liqSum)}</span></div>` : ''}
+      <div class="rp-note">Balance a ${corte || '—'}</div>
+    </div>` : '';
+
+  const f029Html = liqCount > 0 ? `
+    <div class="rp-card">
+      <div class="rp-hdr">
+        <span class="rp-tag">ADPRO</span>
+        <span class="rp-title">F029 · Actas liq.</span>
+      </div>
+      <div class="rp-row">
+        <span class="rp-lbl">Contratos con acta</span>
+        <span class="rp-val">${liqCount}</span>
+      </div>
+      <div class="rp-note">Corte: ${corteLiq}</div>
+    </div>` : '';
+
+  el.innerHTML = balanceHtml + f029Html + `
+    <div class="irr-rp">
+      <div class="irr-rp-top">
+        <span class="irr-rp-icon">⚠</span>
+        <span class="irr-rp-title">Irregularidades</span>
+      </div>
+      <div class="irr-rp-sub">Gta. Cumplimiento sin retención activa ni acta de liquidación correspondiente.</div>
+      <a class="irr-rp-link" href="${irrUrl}">Ver contratos irregulares ›</a>
+    </div>`;
+}
+
+function exportarExcel(){
+  const proj  = document.getElementById('proj-title')?.textContent || 'Proyecto';
+  const rows  = getFiltered ? getFiltered() : [];
+  const cols  = ['Tercero','Cuenta','Estado','Saldo','Gestión','Cronograma','Última Obs.','Fecha Obs.','APRO'];
+  const lines = [cols.join('\t')];
+  rows.forEach(r => {
+    const lastObs  = r.obs && r.obs.length ? r.obs[r.obs.length-1].t : '';
+    const lastFech = r.obs && r.obs.length ? r.obs[r.obs.length-1].f : '';
+    lines.push([
+      r.terc   || '',
+      r.cta_n  || '',
+      r.est    || '',
+      r.saldo  || 0,
+      r.rad    || '',
+      r.cron   || '',
+      lastObs,
+      lastFech,
+      r.apro   || ''
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join('\t'));
+  });
+  const bom  = '';
+  const blob = new Blob([bom + lines.join('\n')], { type:'text/tab-separated-values;charset=utf-8' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `Cierre_${proj.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.xls`;
+  a.click();
+}
+
+</script>
+
+<script>
+// Escala proporcional según ancho y alto de ventana (base diseño: 1440x860px)
+(function(){
+  const BASE_W = 1440;
+  function applyZoom(){
+    const ratio = Math.min(window.innerWidth / BASE_W, 1.0);
+    document.documentElement.style.zoom = ratio;
+  }
+  applyZoom();
+  window.addEventListener('resize', applyZoom);
+})();
+</script>
+
+</body>
+
+</html>
+
+

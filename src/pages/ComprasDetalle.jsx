@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useStaticProyectos, useStaticCostosData } from '../hooks/useStaticData.js';
-import { remoteUrl } from '../assetBase.js';
 
 function fmtPesos(v) {
   if (!v && v !== 0) return '—';
@@ -143,7 +142,7 @@ export default function ComprasDetalle() {
           <span className="det-hdr-dot" />
           {comprasEntry?.total_n ?? '—'} órdenes · {macroLabel}
         </div>
-        <img className="det-hdr-ic" src={remoteUrl('/images/IC.jpg')} alt="IC" />
+        <img className="det-hdr-ic" src="/images/IC.jpg" alt="IC" />
       </div>
 
       {/* TICKER */}
