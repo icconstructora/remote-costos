@@ -3,6 +3,8 @@
     "rewrite": "/index.html",
     "exclude": [
       "/assets/*",
+      "/remoteEntry.js",
+      "/remoteEntry.ssr.js",
       "/cierre_detalle.html",
       "/cierre_data.js",
       "/balance_data.js",
