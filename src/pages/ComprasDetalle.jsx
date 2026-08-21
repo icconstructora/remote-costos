@@ -248,14 +248,24 @@ export default function ComprasDetalle() {
           ) : (
             <div className="det-table-wrap">
               <table className="det-table">
+                <colgroup>
+                  <col style={{ width: '90px' }} />
+                  <col style={{ width: '22%' }} />
+                  <col style={{ width: '100px' }} />
+                  <col style={{ width: '120px' }} />
+                  <col style={{ width: '80px' }} />
+                  <col style={{ width: '140px' }} />
+                  <col style={{ width: '130px' }} />
+                  <col style={{ width: '140px' }} />
+                </colgroup>
                 <thead>
                   <tr>
                     <th className="col-num">No. Orden</th>
                     <th>Proveedor</th>
-                    <th>Fecha Orden</th>
-                    <th>Fecha Última Entrada</th>
+                    <th className="col-num">Fecha Orden</th>
+                    <th className="col-num">Fecha Últ. Entrada</th>
                     <th className="col-num">Días sin Entrada</th>
-                    <th>Estado</th>
+                    <th style={{ textAlign: 'center' }}>Estado</th>
                     <th className="col-num">Valor Orden</th>
                     <th className="col-num">Saldo por Entregar</th>
                   </tr>
@@ -275,7 +285,7 @@ export default function ComprasDetalle() {
                       <td>{r.fecha_compra || '—'}</td>
                       <td>{r.fecha_ultima_entrada || '—'}</td>
                       <td className="col-num">{fmtDias(r.dias_sin_entrada)}</td>
-                      <td>
+                      <td style={{ textAlign: 'center' }}>
                         <span style={{
                           background: GRUPO_COLOR[r.estado] || '#999',
                           color: '#fff',
