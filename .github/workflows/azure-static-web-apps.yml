@@ -1,4 +1,4 @@
-name: Azure Static Web Apps CI/CD
+﻿name: Azure Static Web Apps CI/CD
 
 on:
   push:
@@ -30,16 +30,13 @@ jobs:
         run: |
           npm ci
           npm run build
-          echo "=== dist/ contents ==="
-          ls -la dist/
-          echo "=== copying standalone pages ==="
-          cp staticwebapp.config.json dist/
-          cp public/cierre_detalle.html dist/ && echo "OK cierre_detalle.html" || echo "FAIL cierre_detalle.html"
-          cp public/cierre_data.js dist/     && echo "OK cierre_data.js"      || echo "FAIL cierre_data.js"
-          cp public/balance_data.js dist/    && echo "OK balance_data.js"     || echo "FAIL balance_data.js"
-          cp public/liquidados_data.js dist/ && echo "OK liquidados_data.js"  || echo "FAIL liquidados_data.js"
-          echo "=== final dist/ ==="
-          ls dist/*.html dist/*.js 2>/dev/null || true
+          mkdir -p dist/assets/cierre
+          cp public/cierre_detalle.html dist/assets/cierre/cierre_detalle.html
+          cp public/cierre_data.js      dist/assets/cierre/cierre_data.js
+          cp public/balance_data.js     dist/assets/cierre/balance_data.js
+          cp public/liquidados_data.js  dist/assets/cierre/liquidados_data.js
+          echo "=== cierre in assets ==="
+          ls -la dist/assets/cierre/
 
       - name: Deploy
         uses: Azure/static-web-apps-deploy@v1
