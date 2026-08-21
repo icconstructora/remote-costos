@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useStaticProyectos, useStaticCostosData } from '../hooks/useStaticData.js';
-import { remoteUrl } from '../assetBase.js';
 
 function fmtPesos(v) {
   if (!v && v !== 0) return '—';
@@ -59,7 +58,7 @@ export default function ComprasDetalle() {
   const estadoValores = useMemo(() => {
     const m = {};
     allRows.forEach(r => {
-      const v = Number(r['Valor Total'] || 0);
+      const v = Number(r.valor_compra || 0);
       m[r.estado] = (m[r.estado] || 0) + v;
     });
     return m;
@@ -72,7 +71,11 @@ export default function ComprasDetalle() {
     if (filtroActivo) r = r.filter(x => x.estado === filtroActivo);
     if (busqueda.trim()) {
       const q = busqueda.trim().toLowerCase();
-      r = r.filter(x => Object.values(x).some(v => v && String(v).toLowerCase().includes(q)));
+      r = r.filter(x =>
+        String(x.compra_no || '').includes(q) ||
+        (x.proveedor || '').toLowerCase().includes(q) ||
+        (x.estado || '').toLowerCase().includes(q)
+      );
     }
     return r;
   }, [allRows, filtroActivo, busqueda]);
@@ -86,22 +89,6 @@ export default function ComprasDetalle() {
     );
   }, [filtroActivo, irrTercs, busqueda]);
 
-  // Columnas dinámicas del primer row
-  const cols = useMemo(() => {
-    if (!allRows.length) return [];
-    const skip = new Set(['skidproyecto', 'skidestado', 'estado']);
-    const preferred = ['No. Orden', 'NoOrden', 'no_orden', 'Número Orden',
-                       'Tercero', 'tercero', 'Nombre Tercero', 'nit',
-                       'Descripcion', 'descripcion', 'Descripción',
-                       'Fecha', 'Fecha Creacion',
-                       'Valor Total'];
-    const sample = allRows[0];
-    const found = [];
-    for (const p of preferred) { if (p in sample && !skip.has(p)) found.push(p); }
-    for (const k of Object.keys(sample)) { if (!skip.has(k) && !found.includes(k)) found.push(k); }
-    return found.slice(0, 8);
-  }, [allRows]);
-
   const macroLabel = macro?.label || macroKey || '';
   const filtroLabel = filtroActivo === 'irr' ? 'Diferencia módulos'
     : filtroActivo ? filtroActivo : null;
@@ -113,6 +100,11 @@ export default function ComprasDetalle() {
   function vEntry(key) {
     if (!key) return comprasEntry?.total_valor ?? 0;
     return estadoValores[key] ?? comprasEntry?.estados?.[key]?.valor ?? 0;
+  }
+
+  function fmtDias(d) {
+    if (d == null) return '—';
+    return `${d}d`;
   }
 
   return (
@@ -133,7 +125,7 @@ export default function ComprasDetalle() {
           <span className="det-hdr-dot" />
           {comprasEntry?.total_n ?? '—'} órdenes · {macroLabel}
         </div>
-        <img className="det-hdr-ic" src={remoteUrl('/images/IC.jpg')} alt="IC" />
+        <img className="det-hdr-ic" src="/images/IC.jpg" alt="IC" />
       </div>
 
       {/* TICKER */}
@@ -258,22 +250,31 @@ export default function ComprasDetalle() {
               <table className="det-table">
                 <thead>
                   <tr>
+                    <th className="col-num">No. Orden</th>
+                    <th>Proveedor</th>
+                    <th>Fecha Orden</th>
+                    <th>Fecha Última Entrada</th>
+                    <th className="col-num">Días sin Entrada</th>
                     <th>Estado</th>
-                    {cols.map(c => (
-                      <th key={c} className={c === 'Valor Total' ? 'col-num' : ''}>{c}</th>
-                    ))}
+                    <th className="col-num">Valor Orden</th>
+                    <th className="col-num">Saldo por Entregar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rowsFiltrados.length === 0 && (
                     <tr>
-                      <td colSpan={cols.length + 1} style={{ textAlign: 'center', color: '#999' }}>
+                      <td colSpan={8} style={{ textAlign: 'center', color: '#999' }}>
                         Sin resultados
                       </td>
                     </tr>
                   )}
                   {rowsFiltrados.map((r, i) => (
                     <tr key={i}>
+                      <td className="col-num" style={{ fontFamily: 'monospace' }}>{r.compra_no}</td>
+                      <td>{r.proveedor || '—'}</td>
+                      <td>{r.fecha_compra || '—'}</td>
+                      <td>{r.fecha_ultima_entrada || '—'}</td>
+                      <td className="col-num">{fmtDias(r.dias_sin_entrada)}</td>
                       <td>
                         <span style={{
                           background: GRUPO_COLOR[r.estado] || '#999',
@@ -287,15 +288,8 @@ export default function ComprasDetalle() {
                           {r.estado}
                         </span>
                       </td>
-                      {cols.map(c => {
-                        const v = r[c];
-                        const isValor = c === 'Valor Total' || String(c).toLowerCase().includes('valor');
-                        return (
-                          <td key={c} className={isValor ? 'col-num' : ''}>
-                            {isValor ? fmtPesos(v) : (v ?? '—')}
-                          </td>
-                        );
-                      })}
+                      <td className="col-num">{fmtPesos(r.valor_compra)}</td>
+                      <td className="col-num">{fmtPesos(r.saldo_por_entregar)}</td>
                     </tr>
                   ))}
                 </tbody>
