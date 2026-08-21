@@ -280,11 +280,11 @@ export default function ComprasDetalle() {
                   )}
                   {rowsFiltrados.map((r, i) => (
                     <tr key={i}>
-                      <td className="col-num" style={{ fontFamily: 'monospace' }}>{r.compra_no}</td>
+                      <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>{r.compra_no}</td>
                       <td>{r.proveedor || '—'}</td>
-                      <td>{r.fecha_compra || '—'}</td>
-                      <td>{r.fecha_ultima_entrada || '—'}</td>
-                      <td className="col-num">{fmtDias(r.dias_sin_entrada)}</td>
+                      <td style={{ textAlign: 'center' }}>{r.fecha_compra || '—'}</td>
+                      <td style={{ textAlign: 'center' }}>{r.fecha_ultima_entrada || '—'}</td>
+                      <td style={{ textAlign: 'center' }}>{fmtDias(r.dias_sin_entrada)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <span style={{
                           background: GRUPO_COLOR[r.estado] || '#999',
