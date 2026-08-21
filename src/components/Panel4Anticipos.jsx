@@ -152,7 +152,11 @@ export default function Panel4Anticipos({ loading, comprasData, anticiposData, m
                     <span className="p3-af-lbl">Diferencia entre módulos</span>
                     <span className="p3-af-val" style={{ color: ant.diferencia < 0 ? '#C62828' : ant.diferencia > 0 ? '#E8A000' : '#2E7D32' }}>{fmtM(ant.diferencia)}</span>
                   </div>
-                  <div className="p3-af-row">
+                  <div
+                    className="p3-af-row"
+                    style={ant.n_sin_mov > 0 ? { cursor: 'pointer' } : {}}
+                    onClick={() => ant.n_sin_mov > 0 && irDetalle('sin_mov')}
+                  >
                     <span className="p3-af-lbl">Ant. &gt;2m sin mov</span>
                     <span className="p3-af-val" style={{ color: '#C62828' }}>
                       {fmtM(ant.sin_mov)}

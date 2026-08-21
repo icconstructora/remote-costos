@@ -46,8 +46,9 @@ export default function ComprasDetalle() {
     return ad ? (ad[macroKey] || null) : null;
   }, [dataStatic, macroKey]);
 
-  const allRows    = useMemo(() => comprasEntry?.rows || [], [comprasEntry]);
-  const irrTercs   = useMemo(() => anticiposEntry?.irr_terceros || [], [anticiposEntry]);
+  const allRows      = useMemo(() => comprasEntry?.rows || [], [comprasEntry]);
+  const irrTercs     = useMemo(() => anticiposEntry?.irr_terceros || [], [anticiposEntry]);
+  const sinMovTercs  = useMemo(() => anticiposEntry?.sin_mov_terceros || [], [anticiposEntry]);
 
   // Conteos por estado para las cards
   const estadoCounts = useMemo(() => {
@@ -59,7 +60,7 @@ export default function ComprasDetalle() {
   const estadoValores = useMemo(() => {
     const m = {};
     allRows.forEach(r => {
-      const v = Number(r['Valor Total'] || 0);
+      const v = Number(r.valor_compra || 0);
       m[r.estado] = (m[r.estado] || 0) + v;
     });
     return m;
@@ -67,43 +68,47 @@ export default function ComprasDetalle() {
 
   // Filas filtradas
   const rowsFiltrados = useMemo(() => {
-    if (filtroActivo === 'irr') return [];
+    if (filtroActivo === 'irr' || filtroActivo === 'sin_mov') return [];
     let r = allRows;
     if (filtroActivo) r = r.filter(x => x.estado === filtroActivo);
     if (busqueda.trim()) {
       const q = busqueda.trim().toLowerCase();
-      r = r.filter(x => Object.values(x).some(v => v && String(v).toLowerCase().includes(q)));
+      r = r.filter(x =>
+        String(x.compra_no || '').includes(q) ||
+        (x.proveedor || '').toLowerCase().includes(q) ||
+        (x.estado || '').toLowerCase().includes(q)
+      );
     }
-    return r;
+    return [...r].sort((a, b) => (b.dias_sin_entrada ?? -1) - (a.dias_sin_entrada ?? -1));
   }, [allRows, filtroActivo, busqueda]);
 
   const irrFiltrados = useMemo(() => {
     if (filtroActivo !== 'irr') return [];
-    if (!busqueda.trim()) return irrTercs;
-    const q = busqueda.trim().toLowerCase();
-    return irrTercs.filter(t =>
-      (t.nombre || '').toLowerCase().includes(q) || (t.nit || '').toLowerCase().includes(q)
-    );
+    let arr = irrTercs;
+    if (busqueda.trim()) {
+      const q = busqueda.trim().toLowerCase();
+      arr = arr.filter(t =>
+        (t.nombre || '').toLowerCase().includes(q) || (t.nit || '').toLowerCase().includes(q)
+      );
+    }
+    return [...arr].sort((a, b) => Math.abs((b.saldo_af||0) - (b.saldo_adpro||0)) - Math.abs((a.saldo_af||0) - (a.saldo_adpro||0)));
   }, [filtroActivo, irrTercs, busqueda]);
 
-  // Columnas dinámicas del primer row
-  const cols = useMemo(() => {
-    if (!allRows.length) return [];
-    const skip = new Set(['skidproyecto', 'skidestado', 'estado']);
-    const preferred = ['No. Orden', 'NoOrden', 'no_orden', 'Número Orden',
-                       'Tercero', 'tercero', 'Nombre Tercero', 'nit',
-                       'Descripcion', 'descripcion', 'Descripción',
-                       'Fecha', 'Fecha Creacion',
-                       'Valor Total'];
-    const sample = allRows[0];
-    const found = [];
-    for (const p of preferred) { if (p in sample && !skip.has(p)) found.push(p); }
-    for (const k of Object.keys(sample)) { if (!skip.has(k) && !found.includes(k)) found.push(k); }
-    return found.slice(0, 8);
-  }, [allRows]);
+  const sinMovFiltrados = useMemo(() => {
+    if (filtroActivo !== 'sin_mov') return [];
+    let arr = sinMovTercs;
+    if (busqueda.trim()) {
+      const q = busqueda.trim().toLowerCase();
+      arr = arr.filter(t =>
+        (t.nombre || '').toLowerCase().includes(q) || (t.nit || '').toLowerCase().includes(q)
+      );
+    }
+    return [...arr].sort((a, b) => (b.dias_sin_mov || 0) - (a.dias_sin_mov || 0));
+  }, [filtroActivo, sinMovTercs, busqueda]);
 
   const macroLabel = macro?.label || macroKey || '';
-  const filtroLabel = filtroActivo === 'irr' ? 'Diferencia módulos'
+  const filtroLabel = filtroActivo === 'irr'     ? 'Diferencia módulos'
+    : filtroActivo === 'sin_mov' ? 'Anticipos con más de 2 meses sin movimiento'
     : filtroActivo ? filtroActivo : null;
 
   function nEntry(key) {
@@ -113,6 +118,11 @@ export default function ComprasDetalle() {
   function vEntry(key) {
     if (!key) return comprasEntry?.total_valor ?? 0;
     return estadoValores[key] ?? comprasEntry?.estados?.[key]?.valor ?? 0;
+  }
+
+  function fmtDias(d) {
+    if (d == null) return '—';
+    return `${d}d`;
   }
 
   return (
@@ -167,21 +177,38 @@ export default function ComprasDetalle() {
           ))}
         </div>
 
-        {irrTercs.length > 0 && (
+        {(irrTercs.length > 0 || sinMovTercs.length > 0) && (
           <div className="det-cards-row2">
-            <div
-              className={`det-card2 det-card2-click${filtroActivo === 'irr' ? ' det-card2-active' : ''}`}
-              style={{ '--dc-col': '#C62828', flex: '0 0 260px' }}
-              onClick={() => setFiltroActivo(filtroActivo === 'irr' ? null : 'irr')}
-            >
-              <span className="dc2-icon">⚠️</span>
-              <span className="dc2-lbl">DIFERENCIA MÓDULOS</span>
-              <div className="dc2-irr-num">
-                <span className="dc2-num" style={{ color: '#C62828' }}>{irrTercs.length}</span>
-                <span className="dc2-irr-unit">Terceros</span>
+            {irrTercs.length > 0 && (
+              <div
+                className={`det-card2 det-card2-click${filtroActivo === 'irr' ? ' det-card2-active' : ''}`}
+                style={{ '--dc-col': '#C62828', flex: '0 0 260px' }}
+                onClick={() => setFiltroActivo(filtroActivo === 'irr' ? null : 'irr')}
+              >
+                <span className="dc2-icon">⚠️</span>
+                <span className="dc2-lbl">DIFERENCIA MÓDULOS</span>
+                <div className="dc2-irr-num">
+                  <span className="dc2-num" style={{ color: '#C62828' }}>{irrTercs.length}</span>
+                  <span className="dc2-irr-unit">Terceros</span>
+                </div>
+                <span className="dc2-sub dc2-irr-sub">Saldo A&amp;F sin amortizar en anticipos</span>
               </div>
-              <span className="dc2-sub dc2-irr-sub">Saldo A&amp;F sin amortizar en anticipos</span>
-            </div>
+            )}
+            {sinMovTercs.length > 0 && (
+              <div
+                className={`det-card2 det-card2-click${filtroActivo === 'sin_mov' ? ' det-card2-active' : ''}`}
+                style={{ '--dc-col': '#E8A000', flex: '0 0 260px' }}
+                onClick={() => setFiltroActivo(filtroActivo === 'sin_mov' ? null : 'sin_mov')}
+              >
+                <span className="dc2-icon">🕐</span>
+                <span className="dc2-lbl">ANT. SIN MOVIMIENTO</span>
+                <div className="dc2-irr-num">
+                  <span className="dc2-num" style={{ color: '#E8A000' }}>{sinMovTercs.length}</span>
+                  <span className="dc2-irr-unit">Terceros</span>
+                </div>
+                <span className="dc2-sub dc2-irr-sub">Anticipos &gt;2 meses sin movimiento</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -191,10 +218,12 @@ export default function ComprasDetalle() {
 
         {filtroActivo && (
           <div className="det-panel-hdr">
-            <span className="det-ph-icon">{filtroActivo === 'irr' ? '⚠️' : '📦'}</span>
+            <span className="det-ph-icon">{filtroActivo === 'irr' ? '⚠️' : filtroActivo === 'sin_mov' ? '🕐' : '📦'}</span>
             <span className="det-ph-lbl">{filtroLabel}</span>
             {filtroActivo === 'irr'
               ? <span className="det-ph-badge">{irrTercs.length} terceros</span>
+              : filtroActivo === 'sin_mov'
+              ? <span className="det-ph-badge">{sinMovTercs.length} terceros</span>
               : <span className="det-ph-badge">{rowsFiltrados.length} órdenes</span>
             }
             <button className="det-ph-cerrar" onClick={() => { setFiltroActivo(null); setBusqueda(''); }}>
@@ -213,6 +242,8 @@ export default function ComprasDetalle() {
           <span className="det-count-label">
             {filtroActivo === 'irr'
               ? `${irrFiltrados.length} tercero${irrFiltrados.length !== 1 ? 's' : ''}`
+              : filtroActivo === 'sin_mov'
+              ? `${sinMovFiltrados.length} tercero${sinMovFiltrados.length !== 1 ? 's' : ''}`
               : `${rowsFiltrados.length} orden${rowsFiltrados.length !== 1 ? 'es' : ''}`}
           </span>
         </div>
@@ -220,23 +251,74 @@ export default function ComprasDetalle() {
         {/* Tabla irregularidades */}
         {filtroActivo === 'irr' && (
           <div className="det-table-wrap">
-            <table className="det-table">
+            <table className="det-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '120px' }} />
+                <col style={{ width: '34%' }} />
+                <col style={{ width: '180px' }} />
+                <col style={{ width: '180px' }} />
+                <col style={{ width: '180px' }} />
+              </colgroup>
               <thead>
-                <tr>
+                <tr style={{ textAlign: 'center' }}>
                   <th>NIT</th>
-                  <th>Proveedor</th>
-                  <th className="col-num">Saldo A&amp;F</th>
+                  <th style={{ textAlign: 'left' }}>Proveedor</th>
+                  <th>Saldo ADPRO</th>
+                  <th>Saldo A&amp;F</th>
+                  <th>Diferencia</th>
                 </tr>
               </thead>
               <tbody>
                 {irrFiltrados.length === 0 && (
-                  <tr><td colSpan={3} style={{ textAlign: 'center', color: '#999' }}>Sin resultados</td></tr>
+                  <tr><td colSpan={5} style={{ textAlign: 'center', color: '#999' }}>Sin resultados</td></tr>
                 )}
-                {irrFiltrados.map((t, i) => (
+                {irrFiltrados.map((t, i) => {
+                  const diff = (t.saldo_af || 0) - (t.saldo_adpro || 0);
+                  return (
+                    <tr key={i}>
+                      <td style={{ fontFamily: 'monospace', fontSize: '.85em' }}>{t.nit}</td>
+                      <td>{t.nombre || t.nit}</td>
+                      <td className="col-num">{fmtPesos(t.saldo_adpro)}</td>
+                      <td className="col-num" style={{ color: '#C62828', fontWeight: 600 }}>{fmtPesos(t.saldo_af)}</td>
+                      <td className="col-num" style={{ color: diff < 0 ? '#C62828' : '#E8A000', fontWeight: 700 }}>{fmtPesos(diff)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Tabla sin_mov */}
+        {filtroActivo === 'sin_mov' && (
+          <div className="det-table-wrap">
+            <table className="det-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '120px' }} />
+                <col style={{ width: '34%' }} />
+                <col style={{ width: '210px' }} />
+                <col style={{ width: '190px' }} />
+              </colgroup>
+              <thead>
+                <tr style={{ textAlign: 'center' }}>
+                  <th>NIT</th>
+                  <th style={{ textAlign: 'left' }}>Tercero</th>
+                  <th>Días sin Movimiento</th>
+                  <th>Saldo A&amp;F</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sinMovFiltrados.length === 0 && (
+                  <tr><td colSpan={4} style={{ textAlign: 'center', color: '#999' }}>Sin resultados</td></tr>
+                )}
+                {sinMovFiltrados.map((t, i) => (
                   <tr key={i}>
                     <td style={{ fontFamily: 'monospace', fontSize: '.85em' }}>{t.nit}</td>
                     <td>{t.nombre || t.nit}</td>
-                    <td className="col-num" style={{ color: '#C62828', fontWeight: 600 }}>{fmtPesos(t.saldo_af)}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 600, color: t.dias_sin_mov > 180 ? '#C62828' : '#E8A000' }}>
+                      {t.dias_sin_mov != null ? `${t.dias_sin_mov}d` : '—'}
+                    </td>
+                    <td className="col-num" style={{ color: '#C62828', fontWeight: 600 }}>{fmtPesos(t.saldo)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -245,7 +327,7 @@ export default function ComprasDetalle() {
         )}
 
         {/* Tabla compras */}
-        {filtroActivo !== 'irr' && (
+        {filtroActivo !== 'irr' && filtroActivo !== 'sin_mov' && (
           allRows.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', color: '#888' }}>
               <p style={{ fontWeight: 600 }}>Detalle de órdenes no disponible.</p>
@@ -256,25 +338,44 @@ export default function ComprasDetalle() {
           ) : (
             <div className="det-table-wrap">
               <table className="det-table">
+                <colgroup>
+                  <col style={{ width: '90px' }} />
+                  <col style={{ width: '22%' }} />
+                  <col style={{ width: '100px' }} />
+                  <col style={{ width: '120px' }} />
+                  <col style={{ width: '80px' }} />
+                  <col style={{ width: '140px' }} />
+                  <col style={{ width: '130px' }} />
+                  <col style={{ width: '140px' }} />
+                </colgroup>
                 <thead>
-                  <tr>
+                  <tr style={{ textAlign: 'center' }}>
+                    <th>No. Orden</th>
+                    <th>Proveedor</th>
+                    <th>Fecha Orden</th>
+                    <th>Fecha Últ. Entrada</th>
+                    <th>Días sin Entrada</th>
                     <th>Estado</th>
-                    {cols.map(c => (
-                      <th key={c} className={c === 'Valor Total' ? 'col-num' : ''}>{c}</th>
-                    ))}
+                    <th>Valor Orden</th>
+                    <th>Saldo por Entregar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rowsFiltrados.length === 0 && (
                     <tr>
-                      <td colSpan={cols.length + 1} style={{ textAlign: 'center', color: '#999' }}>
+                      <td colSpan={8} style={{ textAlign: 'center', color: '#999' }}>
                         Sin resultados
                       </td>
                     </tr>
                   )}
                   {rowsFiltrados.map((r, i) => (
                     <tr key={i}>
-                      <td>
+                      <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>{r.compra_no}</td>
+                      <td>{r.proveedor || '—'}</td>
+                      <td style={{ textAlign: 'center' }}>{r.fecha_compra || '—'}</td>
+                      <td style={{ textAlign: 'center' }}>{r.fecha_ultima_entrada || '—'}</td>
+                      <td style={{ textAlign: 'center', color: r.estado === 'En Proceso Entrega' && r.dias_sin_entrada > 40 ? '#C62828' : undefined, fontWeight: r.estado === 'En Proceso Entrega' && r.dias_sin_entrada > 40 ? 700 : undefined }}>{fmtDias(r.dias_sin_entrada)}</td>
+                      <td style={{ textAlign: 'center' }}>
                         <span style={{
                           background: GRUPO_COLOR[r.estado] || '#999',
                           color: '#fff',
@@ -287,15 +388,8 @@ export default function ComprasDetalle() {
                           {r.estado}
                         </span>
                       </td>
-                      {cols.map(c => {
-                        const v = r[c];
-                        const isValor = c === 'Valor Total' || String(c).toLowerCase().includes('valor');
-                        return (
-                          <td key={c} className={isValor ? 'col-num' : ''}>
-                            {isValor ? fmtPesos(v) : (v ?? '—')}
-                          </td>
-                        );
-                      })}
+                      <td className="col-num">{fmtPesos(r.valor_compra)}</td>
+                      <td className="col-num">{fmtPesos(r.saldo_por_entregar)}</td>
                     </tr>
                   ))}
                 </tbody>
