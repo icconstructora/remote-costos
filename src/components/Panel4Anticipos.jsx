@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const fmtM = v => {
@@ -21,8 +21,14 @@ const GRUPOS = [
   { key: 'Anulada',            color: '#795548', alpha: 0.55, activa: false },
 ];
 
+const fmtPesos = v => {
+  if (!v && v !== 0) return '—';
+  return '$' + Math.round(Number(v)).toLocaleString('es-CO');
+};
+
 export default function Panel4Anticipos({ loading, comprasData, anticiposData, macroKey, macro }) {
   const navigate = useNavigate();
+  const [sinMovAbierto, setSinMovAbierto] = useState(false);
   const entry = useMemo(() => {
     if (!comprasData || !macroKey) return null;
     return comprasData[macroKey] || null;
@@ -152,13 +158,39 @@ export default function Panel4Anticipos({ loading, comprasData, anticiposData, m
                     <span className="p3-af-lbl">Diferencia entre módulos</span>
                     <span className="p3-af-val" style={{ color: ant.diferencia < 0 ? '#C62828' : ant.diferencia > 0 ? '#E8A000' : '#2E7D32' }}>{fmtM(ant.diferencia)}</span>
                   </div>
-                  <div className="p3-af-row">
+                  <div
+                    className="p3-af-row"
+                    style={ant.n_sin_mov > 0 ? { cursor: 'pointer', borderRadius: 4, padding: '2px 4px', margin: '0 -4px' } : {}}
+                    onClick={() => ant.n_sin_mov > 0 && setSinMovAbierto(v => !v)}
+                  >
                     <span className="p3-af-lbl">Ant. &gt;2m sin mov</span>
                     <span className="p3-af-val" style={{ color: '#C62828' }}>
                       {fmtM(ant.sin_mov)}
                       {ant.n_sin_mov > 0 && <span className="p3-af-badge">{ant.n_sin_mov}</span>}
                     </span>
                   </div>
+                  {sinMovAbierto && ant.sin_mov_terceros?.length > 0 && (
+                    <div style={{ marginTop: 8, borderTop: '1px solid #e0e0e0', paddingTop: 8 }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78em' }}>
+                        <thead>
+                          <tr style={{ color: '#666', textAlign: 'left' }}>
+                            <th style={{ paddingBottom: 4, fontWeight: 600 }}>Tercero</th>
+                            <th style={{ paddingBottom: 4, fontWeight: 600, textAlign: 'center' }}>Días</th>
+                            <th style={{ paddingBottom: 4, fontWeight: 600, textAlign: 'right' }}>Saldo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ant.sin_mov_terceros.map((t, i) => (
+                            <tr key={i} style={{ borderTop: '1px solid #f0f0f0' }}>
+                              <td style={{ padding: '3px 0', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={t.nombre}>{t.nombre}</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', color: t.dias_sin_mov > 180 ? '#C62828' : '#E8A000', fontWeight: 600 }}>{t.dias_sin_mov ?? '—'}d</td>
+                              <td style={{ padding: '3px 0', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtPesos(t.saldo)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                   <div className="p3-af-divider" />
                   <div className="p3-af-row p3-af-pct-row">
                     <span className="p3-af-lbl">% Amortizado</span>
