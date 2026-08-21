@@ -214,20 +214,22 @@ export default function ComprasDetalle() {
           <div className="det-table-wrap">
             <table className="det-table">
               <thead>
-                <tr>
+                <tr style={{ textAlign: 'center' }}>
                   <th>NIT</th>
                   <th>Proveedor</th>
-                  <th className="col-num">Saldo A&amp;F</th>
+                  <th>Saldo ADPRO</th>
+                  <th>Saldo A&amp;F</th>
                 </tr>
               </thead>
               <tbody>
                 {irrFiltrados.length === 0 && (
-                  <tr><td colSpan={3} style={{ textAlign: 'center', color: '#999' }}>Sin resultados</td></tr>
+                  <tr><td colSpan={4} style={{ textAlign: 'center', color: '#999' }}>Sin resultados</td></tr>
                 )}
                 {irrFiltrados.map((t, i) => (
                   <tr key={i}>
-                    <td style={{ fontFamily: 'monospace', fontSize: '.85em' }}>{t.nit}</td>
+                    <td style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: '.85em' }}>{t.nit}</td>
                     <td>{t.nombre || t.nit}</td>
+                    <td className="col-num">{fmtPesos(t.saldo_adpro)}</td>
                     <td className="col-num" style={{ color: '#C62828', fontWeight: 600 }}>{fmtPesos(t.saldo_af)}</td>
                   </tr>
                 ))}
