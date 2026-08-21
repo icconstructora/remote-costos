@@ -45,8 +45,9 @@ export default function ComprasDetalle() {
     return ad ? (ad[macroKey] || null) : null;
   }, [dataStatic, macroKey]);
 
-  const allRows    = useMemo(() => comprasEntry?.rows || [], [comprasEntry]);
-  const irrTercs   = useMemo(() => anticiposEntry?.irr_terceros || [], [anticiposEntry]);
+  const allRows      = useMemo(() => comprasEntry?.rows || [], [comprasEntry]);
+  const irrTercs     = useMemo(() => anticiposEntry?.irr_terceros || [], [anticiposEntry]);
+  const sinMovTercs  = useMemo(() => anticiposEntry?.sin_mov_terceros || [], [anticiposEntry]);
 
   // Conteos por estado para las cards
   const estadoCounts = useMemo(() => {
@@ -66,7 +67,7 @@ export default function ComprasDetalle() {
 
   // Filas filtradas
   const rowsFiltrados = useMemo(() => {
-    if (filtroActivo === 'irr') return [];
+    if (filtroActivo === 'irr' || filtroActivo === 'sin_mov') return [];
     let r = allRows;
     if (filtroActivo) r = r.filter(x => x.estado === filtroActivo);
     if (busqueda.trim()) {
@@ -89,8 +90,18 @@ export default function ComprasDetalle() {
     );
   }, [filtroActivo, irrTercs, busqueda]);
 
+  const sinMovFiltrados = useMemo(() => {
+    if (filtroActivo !== 'sin_mov') return [];
+    if (!busqueda.trim()) return sinMovTercs;
+    const q = busqueda.trim().toLowerCase();
+    return sinMovTercs.filter(t =>
+      (t.nombre || '').toLowerCase().includes(q) || (t.nit || '').toLowerCase().includes(q)
+    );
+  }, [filtroActivo, sinMovTercs, busqueda]);
+
   const macroLabel = macro?.label || macroKey || '';
-  const filtroLabel = filtroActivo === 'irr' ? 'Diferencia módulos'
+  const filtroLabel = filtroActivo === 'irr'     ? 'Diferencia módulos'
+    : filtroActivo === 'sin_mov' ? 'Ant. >2m sin movimiento'
     : filtroActivo ? filtroActivo : null;
 
   function nEntry(key) {
@@ -183,10 +194,12 @@ export default function ComprasDetalle() {
 
         {filtroActivo && (
           <div className="det-panel-hdr">
-            <span className="det-ph-icon">{filtroActivo === 'irr' ? '⚠️' : '📦'}</span>
+            <span className="det-ph-icon">{filtroActivo === 'irr' ? '⚠️' : filtroActivo === 'sin_mov' ? '🕐' : '📦'}</span>
             <span className="det-ph-lbl">{filtroLabel}</span>
             {filtroActivo === 'irr'
               ? <span className="det-ph-badge">{irrTercs.length} terceros</span>
+              : filtroActivo === 'sin_mov'
+              ? <span className="det-ph-badge">{sinMovTercs.length} terceros</span>
               : <span className="det-ph-badge">{rowsFiltrados.length} órdenes</span>
             }
             <button className="det-ph-cerrar" onClick={() => { setFiltroActivo(null); setBusqueda(''); }}>
@@ -205,6 +218,8 @@ export default function ComprasDetalle() {
           <span className="det-count-label">
             {filtroActivo === 'irr'
               ? `${irrFiltrados.length} tercero${irrFiltrados.length !== 1 ? 's' : ''}`
+              : filtroActivo === 'sin_mov'
+              ? `${sinMovFiltrados.length} tercero${sinMovFiltrados.length !== 1 ? 's' : ''}`
               : `${rowsFiltrados.length} orden${rowsFiltrados.length !== 1 ? 'es' : ''}`}
           </span>
         </div>
@@ -238,8 +253,39 @@ export default function ComprasDetalle() {
           </div>
         )}
 
+        {/* Tabla sin_mov */}
+        {filtroActivo === 'sin_mov' && (
+          <div className="det-table-wrap">
+            <table className="det-table">
+              <thead>
+                <tr style={{ textAlign: 'center' }}>
+                  <th>NIT</th>
+                  <th>Tercero</th>
+                  <th>Días sin Movimiento</th>
+                  <th>Saldo A&amp;F</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sinMovFiltrados.length === 0 && (
+                  <tr><td colSpan={4} style={{ textAlign: 'center', color: '#999' }}>Sin resultados</td></tr>
+                )}
+                {sinMovFiltrados.map((t, i) => (
+                  <tr key={i}>
+                    <td style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: '.85em' }}>{t.nit}</td>
+                    <td>{t.nombre || t.nit}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 600, color: t.dias_sin_mov > 180 ? '#C62828' : '#E8A000' }}>
+                      {t.dias_sin_mov != null ? `${t.dias_sin_mov}d` : '—'}
+                    </td>
+                    <td className="col-num" style={{ color: '#C62828', fontWeight: 600 }}>{fmtPesos(t.saldo)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Tabla compras */}
-        {filtroActivo !== 'irr' && (
+        {filtroActivo !== 'irr' && filtroActivo !== 'sin_mov' && (
           allRows.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', color: '#888' }}>
               <p style={{ fontWeight: 600 }}>Detalle de órdenes no disponible.</p>
