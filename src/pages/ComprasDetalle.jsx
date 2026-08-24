@@ -29,23 +29,24 @@ export default function ComprasDetalle() {
 
   const filtroInicial = location.state?.filtroEstado ?? null;
   const subLabel      = location.state?.subLabel || null;
+  const subKey        = location.state?.subKey   || null;
+  const dataKey       = subKey || macroKey;
   const [filtroActivo, setFiltroActivo] = useState(filtroInicial);
   const [busqueda, setBusqueda]         = useState('');
 
   const { macros }  = useStaticProyectos();
-  // El hook necesita cualquier macro no-null para disparar la carga del JSON global
-  const macro       = macros.find(m => m.key === macroKey) || macros[0] || null;
+  const macro       = macros.find(m => m.key === macroKey) || null;
   const dataStatic  = useStaticCostosData(macro);
 
   const comprasEntry = useMemo(() => {
     const cd = dataStatic?.comprasData;
-    return cd ? (cd[macroKey] || null) : null;
-  }, [dataStatic, macroKey]);
+    return cd ? (cd[dataKey] || null) : null;
+  }, [dataStatic, dataKey]);
 
   const anticiposEntry = useMemo(() => {
     const ad = dataStatic?.anticiposData;
-    return ad ? (ad[macroKey] || null) : null;
-  }, [dataStatic, macroKey]);
+    return ad ? (ad[dataKey] || null) : null;
+  }, [dataStatic, dataKey]);
 
   const allRows      = useMemo(() => comprasEntry?.rows || [], [comprasEntry]);
   const irrTercs     = useMemo(() => anticiposEntry?.irr_terceros || [], [anticiposEntry]);

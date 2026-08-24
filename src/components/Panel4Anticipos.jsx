@@ -41,11 +41,11 @@ export default function Panel4Anticipos({ loading, comprasData, anticiposData, m
   }, [entry]);
 
   function irDetalle(estadoKey) {
-    const navKey = macroKey || macro?.key;
-    if (!navKey) return;
-    navigate(`/compras/${navKey}`, {
+    if (!macro?.key) return;
+    navigate(`/compras/${macro.key}`, {
       state: {
         filtroEstado: estadoKey,
+        subKey:   activeSub?.key   || null,
         subLabel: activeSub?.key ? activeSub.label : null,
       },
     });
