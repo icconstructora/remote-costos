@@ -608,7 +608,7 @@ function init(data){
 
   try {
 
-    document.getElementById('ph-corte').textContent = data.corte || '';
+    document.getElementById('ph-corte').textContent = (typeof CIERRE_FECHA !== 'undefined' ? 'Actualizado: ' + CIERRE_FECHA : data.corte || '');
 
     allRows = data.rows || [];
 
