@@ -28,11 +28,13 @@ export default function ComprasDetalle() {
   const navigate      = useNavigate();
 
   const filtroInicial = location.state?.filtroEstado ?? null;
+  const subLabel      = location.state?.subLabel || null;
   const [filtroActivo, setFiltroActivo] = useState(filtroInicial);
   const [busqueda, setBusqueda]         = useState('');
 
   const { macros }  = useStaticProyectos();
-  const macro       = macros.find(m => m.key === macroKey) || null;
+  // El hook necesita cualquier macro no-null para disparar la carga del JSON global
+  const macro       = macros.find(m => m.key === macroKey) || macros[0] || null;
   const dataStatic  = useStaticCostosData(macro);
 
   const comprasEntry = useMemo(() => {
@@ -134,7 +136,7 @@ export default function ComprasDetalle() {
           <div className="det-title">
             ESTADO DE COMPRAS
             <span className="det-title-sep">/</span>
-            <span className="det-title-proj">{macroLabel}</span>
+            <span className="det-title-proj">{macroLabel}{subLabel ? ` · ${subLabel}` : ''}</span>
           </div>
         </div>
         <div className="det-hdr-spacer" />

@@ -264,6 +264,7 @@ function DashboardInner({ macros, loadingMacros, errorMacros }) {
             anticiposData={data.anticiposData}
             macroKey={balanceKey}
             macro={effectiveMacro}
+            activeSub={activeSub}
           />
         </div>
       </div>

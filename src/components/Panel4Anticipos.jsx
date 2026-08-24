@@ -21,7 +21,7 @@ const GRUPOS = [
   { key: 'Anulada',            color: '#795548', alpha: 0.55, activa: false },
 ];
 
-export default function Panel4Anticipos({ loading, comprasData, anticiposData, macroKey, macro }) {
+export default function Panel4Anticipos({ loading, comprasData, anticiposData, macroKey, macro, activeSub }) {
   const navigate = useNavigate();
   const entry = useMemo(() => {
     if (!comprasData || !macroKey) return null;
@@ -41,8 +41,14 @@ export default function Panel4Anticipos({ loading, comprasData, anticiposData, m
   }, [entry]);
 
   function irDetalle(estadoKey) {
-    if (!macro?.key) return;
-    navigate(`/compras/${macro.key}`, { state: { filtroEstado: estadoKey } });
+    const navKey = macroKey || macro?.key;
+    if (!navKey) return;
+    navigate(`/compras/${navKey}`, {
+      state: {
+        filtroEstado: estadoKey,
+        subLabel: activeSub?.key ? activeSub.label : null,
+      },
+    });
   }
 
   // Ancho columna derecha — igual que P3
