@@ -316,7 +316,8 @@ export default function Panel3Contratos({
               <div className="ov-footer" style={{marginTop:'auto'}}>
                 <button className="ov-btn ov-btn-primary" onClick={() => {
                   if (!macro?.key) return;
-                  window.location.href = `/assets/cierre/cierre_detalle.html?proyecto=${macro.key}&label=${encodeURIComponent(macro.label || macro.key)}`;
+                  const remoteBase = 'https://proud-stone-03dea5710.7.azurestaticapps.net';
+                  window.open(`${remoteBase}/assets/cierre/cierre_detalle.html?proyecto=${macro.key}&label=${encodeURIComponent(macro.label || macro.key)}`, '_blank');
                 }}>Ver estado liquidación ›</button>
               </div>
 
