@@ -11,7 +11,7 @@ const fmtFull = v => {
 const fmtM = v => {
   const abs = Math.abs(v);
   const sign = v < 0 ? '-' : '';
-  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(1)}B`;
+  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(1)}MM`;
   if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1)}M`;
   return `${sign}$${Math.round(abs).toLocaleString('es-CO')}`;
 };
