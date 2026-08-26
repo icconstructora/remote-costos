@@ -10,9 +10,9 @@
 
 <title>Cierre – IC Constructora</title>
 
-<script src="/cierre_data.js"></script>
-<script src="/balance_data.js"></script>
-<script src="/liquidados_data.js"></script>
+<script src="/Liquidacion%20contratos/cierre_data.js?v=79"></script>
+<script src="/Liquidacion%20contratos/balance_data.js?v=61"></script>
+<script src="/Liquidacion%20contratos/liquidados_data.js?v=14"></script>
 
 <style>
 
@@ -608,7 +608,9 @@ function init(data){
 
   try {
 
-    document.getElementById('ph-corte').textContent = data.corte || '';
+    document.getElementById('ph-corte').textContent = data.archivo_fecha
+      ? ('Archivo: ' + data.archivo_fecha + ' - validado ' + (data.relectura_fecha || ''))
+      : (typeof CIERRE_FECHA !== 'undefined' ? 'Actualizado: ' + CIERRE_FECHA : data.corte || '');
 
     allRows = data.rows || [];
 
