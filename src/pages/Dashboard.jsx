@@ -169,7 +169,7 @@ function DashboardInner({ macros, loadingMacros, errorMacros }) {
         <div className="hdr-right">
           <span className="dot-live" style={{ background: '#999' }} />
           <span>Datos estáticos</span>
-          <img src={remoteUrl('/images/IC.jpg')} alt="IC Constructora" className="ic-logo" />
+          <img src={remoteUrl('/images/IC_logo.png')} alt="IC Constructora" className="ic-logo" />
         </div>
       </header>
 

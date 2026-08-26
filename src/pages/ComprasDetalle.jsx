@@ -145,7 +145,7 @@ export default function ComprasDetalle() {
           <span className="det-hdr-dot" />
           {comprasEntry?.total_n ?? '—'} órdenes · {macroLabel}
         </div>
-        <img className="det-hdr-ic" src="/images/IC.jpg" alt="IC" />
+        <img className="det-hdr-ic" src="/images/IC_logo.png" alt="IC" />
       </div>
 
       {/* TICKER */}

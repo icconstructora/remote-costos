@@ -392,7 +392,7 @@ export default function ContratosDetalle() {
           <span className="det-hdr-dot" />
           {contratos.length} registros · {macroLabel}
         </div>
-        <img className="det-hdr-ic" src={remoteUrl('/images/IC.jpg')} alt="IC" />
+        <img className="det-hdr-ic" src={remoteUrl('/images/IC_logo.png')} alt="IC" />
       </div>
 
       {/* TICKER */}

@@ -139,7 +139,7 @@ export default function BalanceDetalle() {
           <span className="det-hdr-dot" />
           {tableRows.length} terceros · {macroLabel}
         </div>
-        <img className="det-hdr-ic" src={remoteUrl('/images/IC.jpg')} alt="IC" />
+        <img className="det-hdr-ic" src={remoteUrl('/images/IC_logo.png')} alt="IC" />
       </div>
 
       {/* TICKER */}

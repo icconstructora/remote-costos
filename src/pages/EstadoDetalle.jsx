@@ -258,7 +258,7 @@ export default function EstadoDetalle() {
         >
           ← Volver
         </button>
-        <img src={remoteUrl('/images/IC.jpg')} alt="IC" style={{ width: 46, height: 46, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
+        <img src={remoteUrl('/images/IC_logo.png')} alt="IC" style={{ width: 46, height: 46, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
         <div>
           <h1 style={{ fontFamily: "'Oswald','Century Gothic',sans-serif", fontSize: '1rem', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}>
             {label} · Por Asegurar
