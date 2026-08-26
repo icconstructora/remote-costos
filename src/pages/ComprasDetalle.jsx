@@ -14,7 +14,7 @@ const GRUPOS = [
   { key: 'En Proceso Entrega', icon: '🚚', color: '#2E7D32' },
   { key: 'Generada',           icon: '📝', color: '#E8A000' },
   { key: 'Completada',         icon: '✔️', color: '#00897B' },
-  { key: 'Cerrada',            icon: '🔒', color: '#607D8B' },
+  { key: 'Cerrada',            icon: '🔒', color: '#607D8B', subDe: 'Completada' },
   { key: 'Cancelada',          icon: '🚫', color: '#C62828' },
   { key: 'Anulada',            icon: '❌', color: '#795548' },
 ];

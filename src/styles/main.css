@@ -509,6 +509,10 @@ header h1 {
 .p3-grupo.cat-apro, .p3-grupo.cat-ejec, .p3-grupo.cat-liq, .p3-grupo.cat-cerr { background: none; }
 
 /* ── PANEL 4: COMPRAS ───────────────────────────────────────────────── */
+.p4 .p3-cats { justify-content: space-evenly; }
+.p4 .p3-cats .p3-grupo:first-child { margin-top: 18px; }
+.p4 .p3-grupo { height: 59px; flex-shrink: 0; }
+.p4 .p3-grupo { height: 59px; flex-shrink: 0; }
 .p4-vr { font-size: .68rem; color: #444; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .p4-vr::before { content: 'VR:'; color: #777; font-weight: 400; }
 
