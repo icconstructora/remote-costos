@@ -93,7 +93,7 @@ header h1 {
   display: flex; align-items: center; gap: 6px;
   font-size: .68rem; color: var(--muted);
 }
-.ic-logo { width: 57px; height: 57px; object-fit: contain; }
+.ic-logo { width: 57px; height: 57px; object-fit: contain; background: #fff; border-radius: 6px; padding: 4px; }
 .dot-live {
   width: 6px; height: 6px;
   background: var(--accent2);
