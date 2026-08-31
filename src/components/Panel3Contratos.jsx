@@ -300,14 +300,10 @@ export default function Panel3Contratos({
                       {/* Col 5 filas 1-2: Ant/Rte */}
                       {(ant >= 1000 || rte >= 1000) && (
                         <span className="p3-saldos" style={{ gridColumn:5, gridRow: hasSub ? '1/3' : '1' }}>
-                          {rte >= 1000 && (
-                            <span style={{display:'flex', alignItems:'center', gap:3, flexWrap:'nowrap'}}>
-                              <span className="p3-rte">{fmtM(rte)}</span>
-                              {g.key === 'liquidar' && afData?.gta && (
-                                <span style={{color:'#A01010', fontSize:'0.72rem', fontWeight:700}}>
-                                  {Math.round(rte / afData.gta * 100)}%
-                                </span>
-                              )}
+                          {rte >= 1000 && <span className="p3-rte">{fmtM(rte)}</span>}
+                          {g.key === 'liquidar' && afData?.gta && rte >= 1000 && (
+                            <span style={{color:'#A01010', fontSize:'0.75rem', fontWeight:800, lineHeight:1.1}}>
+                              {Math.round(rte / afData.gta * 100)}%
                             </span>
                           )}
                           {ant >= 1000 && <span className="p3-ant">{fmtM(ant)}</span>}
