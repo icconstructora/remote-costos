@@ -301,11 +301,18 @@ export default function Panel3Contratos({
                       {(ant >= 1000 || rte >= 1000) && (
                         <span className="p3-saldos" style={{ gridColumn:5, gridRow: hasSub ? '1/3' : '1' }}>
                           {rte >= 1000 && <span className="p3-rte">{fmtM(rte)}</span>}
-                          {g.key === 'liquidar' && afData?.gta && rte >= 1000 && (
-                            <span style={{color:'#A01010', fontSize:'0.75rem', fontWeight:800, lineHeight:1.1}}>
-                              {Math.round(rte / afData.gta * 100)}%
-                            </span>
-                          )}
+                          {g.key === 'liquidar' && afData?.gta && rte >= 1000 && (() => {
+                            const saldoGta = afData.gta - (afData.con_acta || 0) - (afData.con_acta_ek || 0);
+                            const pctSaldo = Math.round(saldoGta / rte * 100);
+                            return (
+                              <>
+                                <span style={{color:'#A01010', fontSize:'0.68rem', fontWeight:800, lineHeight:1.1, whiteSpace:'nowrap'}}>
+                                  <span style={{fontWeight:400, color:'#777'}}>Saldo Gta </span>{pctSaldo}%
+                                </span>
+                                <span style={{marginTop:'2px', alignSelf:'flex-start', background:'#A01010', color:'#fff', fontSize:'0.55rem', fontWeight:700, padding:'1px 4px', borderRadius:'3px', letterSpacing:'0.03em', whiteSpace:'nowrap'}}>LIQUIDAR</span>
+                              </>
+                            );
+                          })()}
                           {ant >= 1000 && <span className="p3-ant">{fmtM(ant)}</span>}
                         </span>
                       )}
