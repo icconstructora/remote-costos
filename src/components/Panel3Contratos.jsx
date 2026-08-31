@@ -303,7 +303,7 @@ export default function Panel3Contratos({
                           {rte >= 1000 && <span className="p3-rte">{fmtM(rte)}</span>}
                           {g.key === 'liquidar' && afData?.gta && rte >= 1000 && (() => {
                             const saldoGta = afData.gta - (afData.con_acta || 0) - (afData.con_acta_ek || 0);
-                            const pctSaldo = Math.round(saldoGta / rte * 100);
+                            const pctSaldo = saldoGta > 0 ? Math.round(rte / saldoGta * 100) : 0;
                             return (
                               <>
                                 <span style={{color:'#A01010', fontSize:'0.68rem', fontWeight:800, lineHeight:1.1, whiteSpace:'nowrap'}}>
