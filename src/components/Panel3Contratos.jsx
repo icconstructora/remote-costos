@@ -300,16 +300,14 @@ export default function Panel3Contratos({
                       {/* Col 5 filas 1-2: Ant/Rte */}
                       {(ant >= 1000 || rte >= 1000) && (
                         <span className="p3-saldos" style={{ gridColumn:5, gridRow: hasSub ? '1/3' : '1' }}>
-                          {rte >= 1000 && <span className="p3-rte">{fmtM(rte)}</span>}
+                          {rte >= 1000 && g.key !== 'liquidar' && <span className="p3-rte">{fmtM(rte)}</span>}
                           {g.key === 'liquidar' && afData?.gta && rte >= 1000 && (() => {
                             const saldoGta = afData.gta - (afData.con_acta || 0) - (afData.con_acta_ek || 0);
                             const pctSaldo = saldoGta > 0 ? Math.round(rte / saldoGta * 100) : 0;
                             return (
                               <>
-                                <span style={{color:'#A01010', fontSize:'0.68rem', fontWeight:800, lineHeight:1.1, whiteSpace:'nowrap'}}>
-                                  <span style={{fontWeight:400, color:'#777'}}>Saldo Gta </span>{pctSaldo}%
-                                </span>
-                                <span style={{marginTop:'2px', alignSelf:'flex-start', background:'#A01010', color:'#fff', fontSize:'0.55rem', fontWeight:700, padding:'1px 4px', borderRadius:'3px', letterSpacing:'0.03em', whiteSpace:'nowrap'}}>LIQUIDAR</span>
+                                <span style={{fontSize:'0.65rem', color:'#555', lineHeight:1.2, whiteSpace:'nowrap'}}>Rte: {fmtM(rte)} / Saldo Gta</span>
+                                <span style={{marginTop:'2px', alignSelf:'flex-start', background:'#A01010', color:'#fff', fontSize:'0.68rem', fontWeight:800, padding:'1px 5px', borderRadius:'3px', whiteSpace:'nowrap'}}>Liquidar {pctSaldo}%</span>
                               </>
                             );
                           })()}
