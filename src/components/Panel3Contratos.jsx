@@ -301,6 +301,11 @@ export default function Panel3Contratos({
                       {(ant >= 1000 || rte >= 1000) && (
                         <span className="p3-saldos" style={{ gridColumn:5, gridRow: hasSub ? '1/3' : '1' }}>
                           {rte >= 1000 && <span className="p3-rte">{fmtM(rte)}</span>}
+                          {g.key === 'liquidar' && afData?.gta && rte >= 1000 && (
+                            <span style={{color:'#A01010', fontSize:'0.68rem', fontWeight:700, lineHeight:1}}>
+                              {Math.round(afData.gta / rte * 100)}%
+                            </span>
+                          )}
                           {ant >= 1000 && <span className="p3-ant">{fmtM(ant)}</span>}
                         </span>
                       )}
