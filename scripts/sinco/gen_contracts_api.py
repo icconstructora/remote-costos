@@ -26,8 +26,7 @@ SCOPE     = ['api://1da0f9dd-cc35-489c-937b-c66387864730/access_as_user']
 API_BASE  = 'https://api.icconstructora.co/api/sinco/data'
 
 BASE     = os.path.dirname(os.path.abspath(__file__))
-_out_dir = os.environ.get('OUTPUT_DIR') or os.path.join(BASE, '..', 'control-costos', 'public', 'data')
-DEST     = os.path.join(_out_dir, 'contracts_data.json')
+DEST     = os.path.join(BASE, '..', 'control-costos', 'public', 'data', 'contracts_data.json')
 CACHE_F  = os.path.join(BASE, 'token_cache.json')
 
 MESES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
@@ -52,14 +51,6 @@ MACRO_PREFIXES = {
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 def get_token():
-    user = os.environ.get('SINCO_USER')
-    pwd  = os.environ.get('SINCO_PASS')
-    if user and pwd:
-        app = msal.PublicClientApplication(CLIENT_ID, authority=f'https://login.microsoftonline.com/{TENANT_ID}')
-        result = app.acquire_token_by_username_password(username=user, password=pwd, scopes=SCOPE)
-        if 'access_token' not in result:
-            raise RuntimeError(f'Login ROPC fallido: {result.get("error_description", result)}')
-        return result['access_token']
     cache = msal.SerializableTokenCache()
     if os.path.exists(CACHE_F):
         cache.deserialize(open(CACHE_F, encoding='utf-8').read())
@@ -191,6 +182,7 @@ def main():
                 '_proyecto': proy_info['nombre'],
                 '_macro':    proy_info['macro'],
                 '_actas':    0,
+                '_ultima_acta':    0,
                 '_acumulado':      0.0,
                 '_saldoRte':       0.0,
                 '_saldoAnt':       0.0,
@@ -264,6 +256,10 @@ def main():
             continue
         # Acumulado: sumar siempre (ítems del acta)
         contratos[nc]['_acumulado'] += float(r.get('Valor Total') or 0)
+        # Fecha más reciente de acta
+        sf = int(r.get('skidfecha') or 0)
+        if sf > contratos[nc]['_ultima_acta']:
+            contratos[nc]['_ultima_acta'] = sf
         # Retenciones: una sola vez por acta
         no_acta = r.get('No Acta')
         clave = (nc, no_acta)
@@ -361,6 +357,7 @@ def main():
             'fechaFinal':     r.get('Fecha fin')    or '',
             'descripcion':    r.get('descripcion')  or '',
             'estadoSinco':    estado,
+            'ultimaActa':     r['_ultima_acta'],
             'valorContrato':  valor_contrato,
             'acumulado':      acumulado,
             'saldoAnticipo':  saldo_ant,
