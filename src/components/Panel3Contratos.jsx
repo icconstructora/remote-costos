@@ -307,7 +307,7 @@ export default function Panel3Contratos({
                             return (
                               <>
                                 <span style={{fontSize:'0.65rem', color:'#555', lineHeight:1.2, whiteSpace:'nowrap'}}>Rte: {fmtM(rte)} / Saldo Gta</span>
-                                <span style={{marginTop:'2px', alignSelf:'flex-start', background:'#A01010', color:'#fff', fontSize:'0.75rem', fontWeight:700, padding:'2px 6px', borderRadius:'3px', whiteSpace:'nowrap', letterSpacing:'0.02em'}}>Liquidar {pctSaldo}%</span>
+                                <span style={{marginTop:'1px', alignSelf:'flex-start', color:'#C0392B', fontSize:'0.82rem', fontWeight:700, whiteSpace:'nowrap'}}>Liquidar {pctSaldo}%</span>
                               </>
                             );
                           })()}
