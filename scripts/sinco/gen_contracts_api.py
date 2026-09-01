@@ -26,7 +26,8 @@ SCOPE     = ['api://1da0f9dd-cc35-489c-937b-c66387864730/access_as_user']
 API_BASE  = 'https://api.icconstructora.co/api/sinco/data'
 
 BASE     = os.path.dirname(os.path.abspath(__file__))
-DEST     = os.path.join(BASE, '..', 'control-costos', 'public', 'data', 'contracts_data.json')
+_out_dir = os.environ.get('OUTPUT_DIR') or os.path.join(BASE, '..', 'control-costos', 'public', 'data')
+DEST     = os.path.join(_out_dir, 'contracts_data.json')
 CACHE_F  = os.path.join(BASE, 'token_cache.json')
 
 MESES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
@@ -51,6 +52,14 @@ MACRO_PREFIXES = {
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 def get_token():
+    user = os.environ.get('SINCO_USER')
+    pwd  = os.environ.get('SINCO_PASS')
+    if user and pwd:
+        app = msal.PublicClientApplication(CLIENT_ID, authority=f'https://login.microsoftonline.com/{TENANT_ID}')
+        result = app.acquire_token_by_username_password(username=user, password=pwd, scopes=SCOPE)
+        if 'access_token' not in result:
+            raise RuntimeError(f'Login ROPC fallido: {result.get("error_description", result)}')
+        return result['access_token']
     cache = msal.SerializableTokenCache()
     if os.path.exists(CACHE_F):
         cache.deserialize(open(CACHE_F, encoding='utf-8').read())
