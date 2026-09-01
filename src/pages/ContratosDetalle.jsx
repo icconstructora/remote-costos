@@ -29,6 +29,14 @@ function diasVencido(fechaFinalStr) {
   return Math.floor((d - new Date()) / 86400000);
 }
 
+function diasSinActa(skidfecha) {
+  if (!skidfecha) return null;
+  const s = String(skidfecha);
+  if (s.length !== 8) return null;
+  const d = new Date(+s.slice(0,4), +s.slice(4,6)-1, +s.slice(6,8));
+  return Math.floor((new Date() - d) / 86400000);
+}
+
 function fmtPesos(v) {
   if (!v && v !== 0) return '—';
   const n = Number(v);
@@ -160,6 +168,7 @@ export default function ContratosDetalle() {
       fechaFinal:    r.fechaFinal   || '',
       estado:        r.estado       || 'sin_clasificar',
       estadoSinco:   r.estadoSinco  || '',
+      ultimaActa:    r.ultimaActa   || 0,
       valorContrato: r.valorContrato || 0,
       acumulado:     r.acumulado     || 0,
       saldoAnticipo:    r.saldoAnticipo    || 0,
@@ -554,6 +563,9 @@ export default function ContratosDetalle() {
                 <th>F. FINAL</th>
                 <th className="col-num">DÍAS VENC.</th>
                 <th>ESTADO SINCO</th>
+                {filtroActivo !== 'cerrado' && filtroActivo !== 'irr' && filtroActivo !== 'irr-ant' && (
+                  <th className="col-num">DÍAS S/ACTA</th>
+                )}
                 <th className="col-num">VALOR CONTRATO</th>
                 <th className="col-num">ACUMULADO</th>
                 <th className="col-num">SALDO ANTICIPO</th>
@@ -600,6 +612,11 @@ export default function ContratosDetalle() {
                     <td className={`col-fecha ${ffCls}`}>{fmtFecha(c.fechaFinal)}</td>
                     <td className={`col-num ${diasCls}`}>{diasStr}</td>
                     <td><span className={`badge ${c.estadoSinco ? (SINCO_CLS[c.estadoSinco] || 'sinco-otro') : ESTADO_CLS[c.estado]}`}>{c.estadoSinco || ESTADO_LABEL[c.estado]}</span></td>
+                    {filtroActivo !== 'cerrado' && filtroActivo !== 'irr' && filtroActivo !== 'irr-ant' && (() => {
+                      const dsa = diasSinActa(c.ultimaActa);
+                      const dsaCls = dsa === null ? '' : dsa > 90 ? ' txt-err' : dsa > 60 ? ' txt-warn' : '';
+                      return <td className={`col-num${dsaCls}`}>{dsa !== null ? dsa : '—'}</td>;
+                    })()}
                     <td className="col-num">{fmtPesos(c.valorContrato) !== '$0' ? fmtPesos(c.valorContrato) : '—'}</td>
                     <td className="col-num">{fmtPesos(c.acumulado)}</td>
                     <td className={`col-num${c.saldoAnticipo > 0 ? ' txt-warn' : ''}`}>{fmtPesos(c.saldoAnticipo)}</td>

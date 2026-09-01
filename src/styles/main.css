@@ -731,6 +731,7 @@ header h1 {
 
 /* Colores de texto */
 .txt-red  { color: var(--danger); font-weight: 700; }
+.txt-err  { color: var(--danger); font-weight: 600; }
 .txt-warn { color: var(--warn); }
 
 /* Fila totales */
