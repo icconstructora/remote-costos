@@ -1,0 +1,98 @@
+name: Actualizar datos Control Costos
+
+on:
+  schedule:
+    # 7:00am Colombia (COT = UTC-5) → 12:00 UTC  · lunes a viernes
+    - cron: '0 12 * * 1-5'
+  workflow_dispatch:
+    # También se puede lanzar manualmente desde GitHub → Actions → Run workflow
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ── 1. Checkout ───────────────────────────────────────────────────────
+      - name: Checkout remote-costos
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+          fetch-depth: 1
+
+      # ── 2. Python ─────────────────────────────────────────────────────────
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: pip install msal requests openpyxl
+
+      # ── 3. Scripts SINCO ──────────────────────────────────────────────────
+      # Los scripts leen SINCO_USER y SINCO_PASS del entorno.
+      # OUTPUT_DIR apunta a public/data/ dentro del checkout.
+      - name: gen_contracts_api
+        env:
+          SINCO_USER: ${{ secrets.SINCO_USER }}
+          SINCO_PASS: ${{ secrets.SINCO_PASS }}
+          OUTPUT_DIR: ${{ github.workspace }}/public/data
+        run: python scripts/sinco/gen_contracts_api.py
+        timeout-minutes: 15
+
+      - name: gen_balance_api
+        env:
+          SINCO_USER: ${{ secrets.SINCO_USER }}
+          SINCO_PASS: ${{ secrets.SINCO_PASS }}
+          OUTPUT_DIR: ${{ github.workspace }}/public/data
+        run: python scripts/sinco/gen_balance_api.py
+        timeout-minutes: 15
+
+      - name: gen_consumido_api
+        env:
+          SINCO_USER: ${{ secrets.SINCO_USER }}
+          SINCO_PASS: ${{ secrets.SINCO_PASS }}
+          OUTPUT_DIR: ${{ github.workspace }}/public/data
+        run: python scripts/sinco/gen_consumido_api.py
+        timeout-minutes: 15
+
+      - name: gen_compras_api
+        env:
+          SINCO_USER: ${{ secrets.SINCO_USER }}
+          SINCO_PASS: ${{ secrets.SINCO_PASS }}
+          OUTPUT_DIR: ${{ github.workspace }}/public/data
+        run: python scripts/sinco/gen_compras_api.py
+        timeout-minutes: 15
+
+      - name: gen_anticipos_api
+        env:
+          SINCO_USER: ${{ secrets.SINCO_USER }}
+          SINCO_PASS: ${{ secrets.SINCO_PASS }}
+          OUTPUT_DIR: ${{ github.workspace }}/public/data
+        run: python scripts/sinco/gen_anticipos_api.py
+        timeout-minutes: 15
+
+      # gen_estado_api tarda hasta 2h — se corre solo los lunes
+      - name: gen_estado_api (solo lunes)
+        if: github.event_name == 'workflow_dispatch' || format('{0}', github.event.schedule) == '0 12 * * 1-5' && contains(fromJson('["Mon"]'), steps.day.outputs.day)
+        env:
+          SINCO_USER: ${{ secrets.SINCO_USER }}
+          SINCO_PASS: ${{ secrets.SINCO_PASS }}
+          OUTPUT_DIR: ${{ github.workspace }}/public/data
+        run: python scripts/sinco/gen_estado_api.py
+        timeout-minutes: 55
+        continue-on-error: true   # No bloquea el deploy si falla
+
+      # ── 4. Commit y push → Azure SWA construye automáticamente ───────────
+      - name: Commit JSON actualizados
+        run: |
+          git config user.name  "IC-Bot"
+          git config user.email "bot@icconstructora.co"
+          git add public/data/*.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios en los JSON — nada que commitear"
+          else
+            git commit -m "Data update $(date +'%d %b %Y %H:%M') UTC"
+            git push
+          fi
