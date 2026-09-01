@@ -319,6 +319,14 @@ export default function ContratosDetalle() {
         c.descripcion.toLowerCase().includes(q)
       );
     }
+    // Ordenar por días sin acta: mayor a menor (sin acta al final con Infinity)
+    if (filtroActivo !== 'cerrado' && filtroActivo !== 'irr' && filtroActivo !== 'irr-ant') {
+      list = [...list].sort((a, b) => {
+        const da = a.ultimaActa ? Math.floor((Date.now() - new Date(+String(a.ultimaActa).slice(0,4), +String(a.ultimaActa).slice(4,6)-1, +String(a.ultimaActa).slice(6,8))) / 86400000) : Infinity;
+        const db = b.ultimaActa ? Math.floor((Date.now() - new Date(+String(b.ultimaActa).slice(0,4), +String(b.ultimaActa).slice(4,6)-1, +String(b.ultimaActa).slice(6,8))) / 86400000) : Infinity;
+        return db - da;
+      });
+    }
     return list;
   }, [contratos, contratosBase, filtroActivo, filtroTercero, busqueda, irrTerceros, irrAntTerceros]);
 
@@ -562,7 +570,7 @@ export default function ContratosDetalle() {
                 <th>F. INICIO</th>
                 <th>F. FINAL</th>
                 <th className="col-num">DÍAS VENC.</th>
-                <th>ESTADO SINCO</th>
+                <th style={{paddingLeft:'18px', textAlign:'center'}}>ESTADO SINCO</th>
                 {filtroActivo !== 'cerrado' && filtroActivo !== 'irr' && filtroActivo !== 'irr-ant' && (
                   <th className="col-num">DÍAS S/ACTA</th>
                 )}
@@ -611,7 +619,7 @@ export default function ContratosDetalle() {
                     <td className="col-fecha">{fmtFecha(c.fechaInicial)}</td>
                     <td className={`col-fecha ${ffCls}`}>{fmtFecha(c.fechaFinal)}</td>
                     <td className={`col-num ${diasCls}`}>{diasStr}</td>
-                    <td><span className={`badge ${c.estadoSinco ? (SINCO_CLS[c.estadoSinco] || 'sinco-otro') : ESTADO_CLS[c.estado]}`}>{c.estadoSinco || ESTADO_LABEL[c.estado]}</span></td>
+                    <td style={{paddingLeft:'18px', textAlign:'center'}}><span className={`badge ${c.estadoSinco ? (SINCO_CLS[c.estadoSinco] || 'sinco-otro') : ESTADO_CLS[c.estado]}`}>{c.estadoSinco || ESTADO_LABEL[c.estado]}</span></td>
                     {filtroActivo !== 'cerrado' && filtroActivo !== 'irr' && filtroActivo !== 'irr-ant' && (() => {
                       const dsa = diasSinActa(c.ultimaActa);
                       const dsaCls = dsa === null ? '' : dsa > 90 ? ' txt-err' : dsa > 60 ? ' txt-warn' : '';
