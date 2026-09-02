@@ -18,10 +18,29 @@ const LABELS = {
 
 const MESES_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-const CAUSA_COLORS = [
-  '#5A5A8A','#3A7228','#A01010','#B85520','#7A1070',
-  '#8A6010','#1A6070','#4A3F8A','#6A1030','#2A6030',
-];
+const CAUSA_COLORS = {
+  'Presupuesto':                        '#5A5A8A',
+  'Diseño':                             '#3A7228',
+  'C. Cantidades':                      '#A01010',
+  'Imprevistos':                        '#B85520',
+  'Gestión de obra ':                   '#7A1070',
+  'Incrementos precio':                 '#8A6010',
+  'Incrementos ':                       '#9A7020',
+  'Descuentos ':                        '#1A6070',
+  'Re Contratacion':                    '#4A3F8A',
+  'No calidad de obra ':                '#C04040',
+  'GCC Compras y contratos':            '#2A5A3A',
+  'GUNC Cambio gerencial':              '#6A3A70',
+  'Reformas inmobiliarias ':            '#6A1030',
+  'Mayor duración en venta':            '#2A6030',
+  'Provision':                          '#888888',
+  'Preinversion':                       '#4A6A8A',
+  'Proyectos IC':                       '#7A5A20',
+  'Proyectos socios ':                  '#5A7A40',
+  'AJUSTE POR EJERCER NEGATIVO EK ':    '#AAAAAA',
+  'AJUSTE POR EJERCER NEGATIVO GENERICO EK': '#CCCCCC',
+};
+const CAUSA_COLOR_DEFAULT = '#999999';
 
 const fmtM = v => {
   if (v === null || v === undefined) return '—';
@@ -177,7 +196,7 @@ export default function ProyeccionesDetalle() {
   const causaColors = useMemo(() => {
     if (!data?.causas) return {};
     const map = {};
-    data.causas.forEach((c, i) => { map[c] = { color: CAUSA_COLORS[i % CAUSA_COLORS.length], data: {} }; });
+    data.causas.forEach((c) => { map[c] = { color: CAUSA_COLORS[c] || CAUSA_COLOR_DEFAULT, data: {} }; });
     return map;
   }, [data]);
 
