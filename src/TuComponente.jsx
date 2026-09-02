@@ -5,6 +5,7 @@ import ContratosDetalle from './pages/ContratosDetalle.jsx';
 import EstadoDetalle from './pages/EstadoDetalle.jsx';
 import BalanceDetalle from './pages/BalanceDetalle.jsx';
 import ComprasDetalle from './pages/ComprasDetalle.jsx';
+import ProyeccionesDetalle from './pages/ProyeccionesDetalle.jsx';
 import './styles/main.css';
 
 // Módulo remoto "Control de Costos" — datos estáticos (JSON regenerados cada
@@ -24,7 +25,8 @@ export default function TuComponente() {
         <Route path="/contratos/:macroKey"   element={<ContratosDetalle />} />
         <Route path="/estado/:macroKey"      element={<EstadoDetalle />} />
         <Route path="/balance/:macroKey"     element={<BalanceDetalle />} />
-        <Route path="/compras/:macroKey"     element={<ComprasDetalle />} />
+        <Route path="/compras/:macroKey"      element={<ComprasDetalle />} />
+        <Route path="/proyecciones/:macroKey" element={<ProyeccionesDetalle />} />
         <Route path="*"                      element={<Navigate to="/" replace />} />
       </Routes>
     </MemoryRouter>

@@ -62,7 +62,7 @@ const gap = 3;
 const thinW = (barW - gap) / 2;
 const FONT = 'Century Gothic,Nunito,sans-serif';
 
-export default function Panel1Estado({ loading, corte, detalleData, macroKey, macro }) {
+export default function Panel1Estado({ loading, corte, detalleData, macroKey, macro, estadoData }) {
   const navigate = useNavigate();
 
   const data = useMemo(() => {
@@ -385,7 +385,14 @@ export default function Panel1Estado({ loading, corte, detalleData, macroKey, ma
 
         {data && (macroKey || macro?.key) && (
           <div className="ov-footer">
-            <button className="ov-btn ov-btn-primary" style={{marginLeft:'auto'}} onClick={() => navigate(`/estado/${macroKey || macro.key}`)}>Ver detalle por asegurar »</button>
+            <button className="ov-btn ov-btn-primary"
+              onClick={() => navigate(`/proyecciones/${macroKey || macro.key}`)}>
+              Ver detalle proyecciones »
+            </button>
+            <button className="ov-btn ov-btn-primary" style={{marginLeft:'auto'}}
+              onClick={() => navigate(`/estado/${macroKey || macro.key}`)}>
+              Ver detalle por asegurar »
+            </button>
           </div>
         )}
       </div>
