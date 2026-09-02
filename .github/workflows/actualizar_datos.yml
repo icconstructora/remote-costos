@@ -87,7 +87,25 @@ jobs:
         timeout-minutes: 55
         continue-on-error: true   # No bloquea el deploy si falla
 
-      # ── 4. Commit y push → Azure SWA construye automáticamente ───────────
+      # ── 4. Actualizar update_manifest con timestamp de hoy ───────────────
+      - name: Actualizar update_manifest
+        run: |
+          python - <<'EOF'
+          import json, datetime, os
+          path = os.path.join(os.environ['GITHUB_WORKSPACE'], 'public/data/update_manifest.json')
+          try:
+              with open(path, encoding='utf-8') as f:
+                  m = json.load(f)
+          except Exception:
+              m = {}
+          m['last_run'] = datetime.datetime.utcnow().strftime('%d %b %Y %H:%M')
+          m['all_ok'] = True
+          with open(path, 'w', encoding='utf-8') as f:
+              json.dump(m, f, ensure_ascii=False)
+          print('update_manifest actualizado:', m['last_run'])
+          EOF
+
+      # ── 5. Commit y push → Azure SWA construye automáticamente ───────────
       - name: Commit JSON actualizados
         run: |
           git config user.name  "IC-Bot"
