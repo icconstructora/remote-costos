@@ -211,9 +211,27 @@ export default function Panel3Contratos({
     { key: 'en_ejecucion',   label: 'En Ejecución',   cls: 'cat-ejec', color: '#4A3F8A', alpha: 0.65,
       sub: { key: 'venc_con_saldo', label: '· Vencidos con Saldo', color: '#A01010', alpha: 0.70 } },
     { key: 'liquidar',       label: 'Liquidar',        cls: 'cat-liq',  color: '#7A1070', alpha: 0.65,
-      sub: { key: 'por_cerrar',     label: '· Cerrar',             color: '#1A6080', alpha: 0.65 } },
-    { key: 'cerrado',        label: 'Cerrados',        cls: 'cat-cerr', color: '#3A7228', alpha: 0.60, sub: null },
+      sub: { key: 'por_cerrar',     label: '· Cerrar',             color: '#3A7228', alpha: 0.65 } },
+    { key: 'cerrado',        label: 'Cerrados',        cls: 'cat-cerr', color: '#888888', alpha: 0.65, sub: null },
   ];
+
+  // Segmentos apilados de abajo hacia arriba (cerrados = base gris)
+  const STACK_SEGS = [
+    { key: 'cerrado',        color: '#888888', alpha: 0.65 },
+    { key: 'por_cerrar',     color: '#3A7228', alpha: 0.65 },
+    { key: 'liquidar',       color: '#7A1070', alpha: 0.65 },
+    { key: 'venc_con_saldo', color: '#A01010', alpha: 0.70 },
+    { key: 'en_ejecucion',   color: '#4A3F8A', alpha: 0.65 },
+    { key: 'no_inic_venc',   color: '#B85520', alpha: 0.70 },
+    { key: 'por_aprobacion', color: '#8A6010', alpha: 0.65 },
+  ];
+  const SEG_MAP = Object.fromEntries(STACK_SEGS.map(s => [s.key, s]));
+  const CUMUL_KEYS = {
+    cerrado:        ['cerrado'],
+    liquidar:       ['cerrado','por_cerrar','liquidar'],
+    en_ejecucion:   ['cerrado','por_cerrar','liquidar','venc_con_saldo','en_ejecucion'],
+    por_aprobacion: ['cerrado','por_cerrar','liquidar','venc_con_saldo','en_ejecucion','no_inic_venc','por_aprobacion'],
+  };
 
   function irDetalle(estadoKey) {
     if (!macro?.key) return;
@@ -272,28 +290,39 @@ export default function Panel3Contratos({
               })()}
 
               <div className="p3-cats">
-                {GRUPOS.map(g => {
+                {(() => {
+                  const c = data.counts;
+                  const acumCerr = c.cerrado || 0;
+                  const acumLiq  = acumCerr + (c.por_cerrar || 0) + (c.liquidar || 0);
+                  const acumEjec = acumLiq  + (c.venc_con_saldo || 0) + (c.en_ejecucion || 0);
+                  const acumApro = acumEjec + (c.no_inic_venc || 0) + (c.por_aprobacion || 0);
+                  const ACUM = { cerrado: acumCerr, liquidar: acumLiq, en_ejecucion: acumEjec, por_aprobacion: acumApro };
+                  return GRUPOS.map(g => {
                   const count      = data.counts[g.key] || 0;
                   const subCount   = g.sub ? (data.counts[g.sub.key] || 0) : 0;
                   const groupTotal = count + subCount;
                   const pct  = data.total > 0 ? Math.round(groupTotal / data.total * 100) : 0;
-                  const mainW = data.total > 0 ? (count / data.total * 100) : 0;
-                  const subW  = data.total > 0 ? (subCount / data.total * 100) : 0;
                   const hasSub = g.sub && subCount > 0;
                   const ant = (data.antByK?.[g.key] || 0) + (g.sub ? (data.antByK?.[g.sub.key] || 0) : 0);
                   const rte = (data.rteByK?.[g.key] || 0) + (g.sub ? (data.rteByK?.[g.sub.key] || 0) : 0);
+                  const cumul = ACUM[g.key] || 0;
+                  const barSegs = (CUMUL_KEYS[g.key] || [])
+                    .map(k => ({ ...SEG_MAP[k], w: data.total > 0 ? (data.counts[k] || 0) / data.total * 100 : 0 }))
+                    .filter(s => s.w > 0);
                   return (
                     // Grid 2D: columnas [label 130px | cnt 28px | bar 1fr | % 28px | saldos 68px]
                     //          filas [main | sub] — bar y saldos abarcan las dos filas
                     <div key={g.key} className={`p3-grupo ${g.cls}`} onClick={() => irDetalle(g.key)}>
                       {/* Col 1 fila 1: label principal */}
                       <span className="p3-lbl" style={{ gridColumn:1, gridRow:1, color: g.color }}>{g.label}</span>
-                      {/* Col 2 fila 1: count principal */}
+                      {/* Col 2 fila 1: count categoría (posición original) */}
                       <span className="p3-cnt" style={{ gridColumn:2, gridRow:1 }}>{count}</span>
-                      {/* Col 3 filas 1-2: barra dual centrada verticalmente */}
-                      <div className="p3-bar-wrap" style={{ gridColumn:3, gridRow: hasSub ? '1/3' : '1' }}>
-                        {mainW > 0 && <div className="p3-bar" style={{ width: mainW+'%', background: g.color, opacity: g.alpha, float:'left' }} />}
-                        {g.sub && subW > 0 && <div className="p3-bar" style={{ width: subW+'%', background: g.sub.color, opacity: g.sub.alpha, float:'left' }} />}
+                      {/* Col 3 filas 1-2: barra acumulada + número centrado encima */}
+                      <div className="p3-bar-wrap" style={{ gridColumn:3, gridRow: hasSub ? '1/3' : '1', position:'relative' }}>
+                        {barSegs.map(s => (
+                          <div key={s.key} className="p3-bar" style={{ width: s.w+'%', background: s.color, opacity: s.alpha, float:'left' }} />
+                        ))}
+                        <span style={{position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)', fontSize:'0.62rem', fontWeight:700, color:'rgba(0,0,0,0.82)', lineHeight:1, pointerEvents:'none'}}>{cumul}</span>
                       </div>
                       {/* Col 4 fila 1: % */}
                       <span className="p3-pct" style={{ gridColumn:4, gridRow:1 }}>{pct}%</span>
@@ -320,7 +349,8 @@ export default function Panel3Contratos({
                       {hasSub && <span className="p3-sub-cnt" style={{ gridColumn:2, gridRow:2 }}>{subCount}</span>}
                     </div>
                   );
-                })}
+                });
+                })()}
               </div>
 
               <div className="ov-footer" style={{marginTop:'auto'}}>
