@@ -97,5 +97,6 @@ jobs:
             echo "Sin cambios en los JSON — nada que commitear"
           else
             git commit -m "Data update $(date +'%d %b %Y %H:%M') UTC"
+            git pull --rebase
             git push
           fi
