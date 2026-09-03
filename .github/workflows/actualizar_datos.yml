@@ -72,13 +72,8 @@ jobs:
         run: python scripts/sinco/gen_anticipos_api.py
         timeout-minutes: 15
 
-      - name: Detectar día de semana
-        id: day
-        run: echo "day=$(date +'%a')" >> $GITHUB_OUTPUT
-
-      # gen_estado_api tarda hasta 2h — se corre solo los lunes o manualmente
-      - name: gen_estado_api (solo lunes)
-        if: github.event_name == 'workflow_dispatch' || steps.day.outputs.day == 'Mon'
+- name: gen_estado_api
+        if: true
         env:
           SINCO_USER: ${{ secrets.SINCO_USER }}
           SINCO_PASS: ${{ secrets.SINCO_PASS }}
