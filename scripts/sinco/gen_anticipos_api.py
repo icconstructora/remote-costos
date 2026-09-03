@@ -504,7 +504,13 @@ def main():
                 nit_saldo[nit] += actual
         irr_list = []
         for nit, saldo_af_nit in sorted(nit_saldo.items(), key=lambda x: -x[1]):
-            s_adpro = round(adpro_gir_by_nit.get((key, nit), 0) - adpro_amort_by_nit.get((key, nit), 0), 2)
+            gir_nit   = adpro_gir_by_nit.get((key, nit), 0)
+            gir_total = adpro_total_by_key.get(key, 0)
+            saldo_key = adpro_saldo_by_key.get(key, 0)
+            if gir_total > 0:
+                s_adpro = round(gir_nit / gir_total * saldo_key, 2)
+            else:
+                s_adpro = round(gir_nit - adpro_amort_by_nit.get((key, nit), 0), 2)
             s_af    = round(saldo_af_nit, 2)
             if abs(s_af - s_adpro) < 100:
                 continue
