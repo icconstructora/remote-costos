@@ -29,9 +29,9 @@ SKID_TO_KEY = {
     100186: 'pra-e1',   100187: 'pra-e2',   100306: 'pra-zc',
     100188: 'opo-e12',  100302: 'opo-e3',
     100189: 'pri-e12',  100305: 'pri-zc',
-    100190: 'hac-e1',   100303: 'hac-ref',   100307: 'hac-e3',
-    100191: 'bosque',
-    100192: 'cast-l',
+    100190: 'well',     100192: 'well',
+    100303: 'hac-ref',  100307: 'hac-e3',
+    100147: 'bosque',   100143: 'bosque',
     100193: 'gaia',
     100194: 'mit-11',   100308: 'mit-12',
     100195: 'azt-e1',   100196: 'azt-e2',
@@ -53,9 +53,9 @@ MACRO_SUBS = {
 }
 
 def skid_fecha_to_ym(v):
-    """20240229 → '2024-02'"""
+    """20240229 → '2024-02'. Retorna None para fechas inválidas (< 2020)."""
     s = str(v)
-    if len(s) == 8:
+    if len(s) == 8 and s[:4].isdigit() and int(s[:4]) >= 2020:
         return f'{s[:4]}-{s[4:6]}'
     return None
 
@@ -110,6 +110,8 @@ def main():
             continue
 
         ym = skid_fecha_to_ym(row.get('skidfechaaprobacion'))
+        if not ym:
+            ym = skid_fecha_to_ym(row.get('skidfechanovedad'))
         if not ym:
             continue
 
