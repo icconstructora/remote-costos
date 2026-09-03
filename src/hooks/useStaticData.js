@@ -210,7 +210,7 @@ export function useStaticCostosData(macro) {
           contratos,
           corte:        CORTE_CONTRATOS || CORTE_LIQUIDADOS,
           liquidados:   LIQUIDADOS_DATA,
-          detalleData:  DETALLE_DATA,
+          detalleData:  DETALLE_DATA?.data ?? DETALLE_DATA,
           balanceData:  BALANCE_DATA,
           consumidoData:    CONSUMIDO_DATA,
           consumidoDetalle: CONSUMIDO_DETALLE,
