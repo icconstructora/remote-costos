@@ -609,6 +609,19 @@ def main():
         f.write(js_res)
     print(f'  OK {DEST_RES}')
 
+    # Validacion: si el ppto total es cero en todos los proyectos es señal de
+    # que el API no devolvio datos de clase='P' — abortamos para no sobrescribir
+    # el archivo anterior con datos corruptos.
+    total_ppto = sum(
+        v.get('totales', {}).get('cdd', {}).get('ppto', 0) +
+        v.get('totales', {}).get('cid', {}).get('ppto', 0)
+        for v in detalle_data.values()
+    )
+    if total_ppto < 1e12:
+        print(f'ERROR: ppto total = {total_ppto:,.0f} — sospechosamente bajo.')
+        print('  No se sobreescribe el JSON anterior. Revise adp_dtm_fact_controlproyecto clase=P.')
+        sys.exit(1)
+
     dest_json = os.path.normpath(DEST_DET_JSON)
     with open(dest_json, 'w', encoding='utf-8') as f:
         json.dump({'data': detalle_data}, f, ensure_ascii=False, separators=(',', ':'))
