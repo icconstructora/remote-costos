@@ -72,7 +72,7 @@ jobs:
         run: python scripts/sinco/gen_anticipos_api.py
         timeout-minutes: 15
 
-- name: gen_estado_api
+      - name: gen_estado_api
         if: true
         env:
           SINCO_USER: ${{ secrets.SINCO_USER }}
