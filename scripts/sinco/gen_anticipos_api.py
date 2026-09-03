@@ -341,6 +341,7 @@ def main():
     adpro_total_by_key  = defaultdict(float)   # total anticipos girados (histórico)
     adpro_gir_by_nit    = defaultdict(float)   # girado por (key, nit)
     adpro_amort_by_nit  = defaultdict(float)   # amortizado por (key, nit)
+    adpro_saldo_by_nit  = defaultdict(float)   # saldo (Valor × (1-Pct/100)) por (key, nit)
 
     for r in ant_rows:
         skid_raw = r.get('skidproyecto')
@@ -348,11 +349,14 @@ def main():
         if not keys:
             continue
         val = float(r.get('Valor Anticipo') or 0)
+        pct = float(r.get('Porcentaje') or 0)
+        saldo_r = val * (1 - pct / 100)
         nit_ant = skid_to_nit.get(r.get('skidtercero'), '')
         for key in keys:
             adpro_total_by_key[key] += val
             if nit_ant:
-                adpro_gir_by_nit[(key, nit_ant)] += val
+                adpro_gir_by_nit[(key, nit_ant)]   += val
+                adpro_saldo_by_nit[(key, nit_ant)] += saldo_r
 
     # ── 4b. adp_dtm_fact_entradasalmacen → amortizado ADPRO por key ─────────────
     # Cada "skidespecificacionentradasalmacen" es una línea única; el campo
@@ -500,7 +504,7 @@ def main():
                 nit_saldo[nit] += actual
         irr_list = []
         for nit, saldo_af_nit in sorted(nit_saldo.items(), key=lambda x: -x[1]):
-            s_adpro = round(adpro_gir_by_nit.get((key, nit), 0) - adpro_amort_by_nit.get((key, nit), 0), 2)
+            s_adpro = round(adpro_saldo_by_nit.get((key, nit), 0), 2)
             s_af    = round(saldo_af_nit, 2)
             if abs(s_af - s_adpro) < 100:
                 continue
