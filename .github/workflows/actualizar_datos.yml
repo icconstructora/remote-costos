@@ -3,7 +3,7 @@ name: Actualizar datos Control Costos
 on:
   schedule:
     # 7:00am Colombia (COT = UTC-5) → 12:00 UTC  · lunes a viernes
-    - cron: '0 12 * * 1-5'
+    - cron: '17 12 * * 1-5'
   workflow_dispatch:
     # También se puede lanzar manualmente desde GitHub → Actions → Run workflow
 
