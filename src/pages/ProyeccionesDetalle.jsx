@@ -42,18 +42,15 @@ const CAUSA_COLORS = {
 };
 const CAUSA_COLOR_DEFAULT = '#999999';
 
-// Mapeo num → grupo (desde Excel del usuario)
+// Mapeo num → grupo (desde Excel capitulos_control_proyecto.xlsx)
 const NUM_TO_GROUP = {
   CDD01:'gg', CDD02:'gg', CDD03:'gg', CDD37:'gg', CDD38:'gg', CDD39:'gg', CDD40:'gg',
   CDD04:'ce', CDD05:'ce', CDD06:'ce', CDD07:'ce', CDD08:'ce', CDD45:'ce',
-  CDD36:'imp',
   CDD09:'it', CDD10:'it', CDD11:'it', CDD12:'it', CDD13:'it', CDD14:'it', CDD43:'it',
   CDD15:'oga',CDD16:'oga',CDD17:'oga',CDD18:'oga',CDD19:'oga',CDD20:'oga',CDD21:'oga',
   CDD22:'oga',CDD23:'oga',CDD24:'oga',CDD26:'oga',CDD27:'oga',CDD28:'oga',CDD29:'oga',CDD30:'oga',
   CDD31:'zv', CDD32:'zv', CDD33:'zv', CDD34:'zv',
-  CDD35:'ref',
-  CDD42:'prov',
-  CDD44:'pre',
+  CDD35:'imp', CDD36:'imp', CDD42:'imp', CDD44:'imp',
   CDD99:'dsc',
   CID:'nom',  CID51:'nom',
   CID52:'spu',
@@ -64,20 +61,17 @@ const NUM_TO_GROUP = {
 // Categorías del donut — CDD en verdes, CID en naranjas
 // Arco visual: CDD=72% (259°), CID=28% (101°), gap=2° entre grupos y 1° entre items
 const CAT_DEFS = [
-  { key:'gg',   label:'Gastos Generales',         color:'#1A5C28', tipo:'cdd' },
-  { key:'ce',   label:'Cimentación y Estructura', color:'#2E7D32', tipo:'cdd' },
-  { key:'it',   label:'Instalaciones Técnicas',   color:'#388E3C', tipo:'cdd' },
-  { key:'oga',  label:'Obra Gris y Acabados',     color:'#4CAF50', tipo:'cdd' },
-  { key:'zv',   label:'Zonas Verdes y Vías',      color:'#66BB6A', tipo:'cdd' },
-  { key:'ref',  label:'Reformas',                 color:'#81C784', tipo:'cdd' },
-  { key:'prov', label:'Provisión Adicional',      color:'#A5D6A7', tipo:'cdd' },
-  { key:'pre',  label:'Preinversión',             color:'#C8E6C9', tipo:'cdd' },
-  { key:'imp',  label:'Imprevistos',              color:'#1565C0', tipo:'imp' },
-  { key:'dsc',  label:'Descuentos',               color:'#6A1B9A', tipo:'dsc' },
-  { key:'nom',  label:'Nómina',                   color:'#BF360C', tipo:'cid' },
-  { key:'spu',  label:'Servicios Púb.',           color:'#E64A19', tipo:'cid' },
-  { key:'gob',  label:'Gastos Obra',              color:'#FF7043', tipo:'cid' },
-  { key:'sst',  label:'SST',                      color:'#FF8A65', tipo:'cid' },
+  { key:'gg',  label:'Gastos Generales',      color:'#1A5C28', tipo:'cdd' },
+  { key:'ce',  label:'Cimentación',           color:'#2E7D32', tipo:'cdd' },
+  { key:'it',  label:'Inst. Técnicas',        color:'#388E3C', tipo:'cdd' },
+  { key:'oga', label:'Obra Gris y Acabados',  color:'#4CAF50', tipo:'cdd' },
+  { key:'zv',  label:'Zonas Verdes y Vías',   color:'#66BB6A', tipo:'cdd' },
+  { key:'imp', label:'Imprevistos',           color:'#1565C0', tipo:'imp' },
+  { key:'dsc', label:'Descuentos',            color:'#6A1B9A', tipo:'dsc' },
+  { key:'nom', label:'Nómina Adm.',           color:'#BF360C', tipo:'cid' },
+  { key:'spu', label:'Servicios Públicos',    color:'#E64A19', tipo:'cid' },
+  { key:'gob', label:'Gastos de Obra',        color:'#FF7043', tipo:'cid' },
+  { key:'sst', label:'Seg. Industrial',       color:'#FF8A65', tipo:'cid' },
 ];
 // Grados asignados a cada tipo (visual, independiente del valor real)
 // 70% verdes CDD / 8% azules IMP / 20% naranjas CID / 2% morado DSC — gaps 3° x3
