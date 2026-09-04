@@ -166,7 +166,7 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
   const baseAngles = rings[0] ? calcAngles(catDefs, rings[0].vals) : {};
 
   return (
-    <div style={{ width: '100%', maxWidth: 260, margin: '0 auto', flex: '1 1 auto', minHeight: 0 }}>
+    <div style={{ width: '100%', maxWidth: 360, margin: '0 auto', flex: '1 1 auto', minHeight: 0 }}>
     <div style={{ position: 'relative', width: '100%', paddingBottom: '100%' }}>
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}>
 
