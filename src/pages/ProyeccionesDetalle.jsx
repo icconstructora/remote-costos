@@ -632,7 +632,7 @@ export default function ProyeccionesDetalle() {
                       <span style={{width:8,height:8,borderRadius:2,background:'#2E7D32',display:'inline-block'}}/> CDD
                     </span>
                     <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#1565C0',fontWeight:600}}>
-                      <span style={{width:8,height:8,borderRadius:2,background:'#1565C0',display:'inline-block'}}/> PREV
+                      <span style={{width:8,height:8,borderRadius:2,background:'#1565C0',display:'inline-block'}}/> IMP
                     </span>
                     <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#BF360C',fontWeight:600}}>
                       <span style={{width:8,height:8,borderRadius:2,background:'#BF360C',display:'inline-block'}}/> CID
