@@ -60,19 +60,30 @@ def skid_fecha_to_ym(v):
     return None
 
 def api_get_paginado(token, tabla, page_size=2000):
+    import time
     headers = {'Authorization': f'Bearer {token}'}
     url = f'{API_BASE}/{tabla}'
     all_rows, skip = [], 0
     while True:
         print(f'  Página skip={skip}...', flush=True)
-        r = requests.get(url, headers=headers,
-                         params={'$top': page_size, '$skip': skip},
-                         timeout=300, stream=True)
-        if not r.ok:
-            print(f'  WARN HTTP {r.status_code} en skip={skip}')
-            break
-        data = r.json()
-        rows = data if isinstance(data, list) else data.get('value', data.get('data', []))
+        for intento in range(3):
+            try:
+                r = requests.get(url, headers=headers,
+                                 params={'$top': page_size, '$skip': skip},
+                                 timeout=300)
+                if not r.ok:
+                    print(f'  WARN HTTP {r.status_code} en skip={skip}')
+                    return all_rows
+                rows = r.json()
+                rows = rows if isinstance(rows, list) else rows.get('value', rows.get('data', []))
+                break
+            except Exception as e:
+                print(f'  ERROR skip={skip} intento {intento+1}: {e}', flush=True)
+                if intento < 2:
+                    time.sleep(5)
+                else:
+                    print('  Abortando paginación.')
+                    return all_rows
         if not rows:
             break
         all_rows.extend(rows)
@@ -175,7 +186,7 @@ def main():
             }}
 
     resultado = {
-        'generatedAt': datetime.datetime.utcnow().strftime('%d %b %Y %H:%M'),
+        'generatedAt': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).strftime('%d %b %Y %H:%M'),
         'causas': sorted(causas_set),
         'proyectos': out,
     }
