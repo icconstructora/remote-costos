@@ -45,7 +45,8 @@ const CAUSA_COLOR_DEFAULT = '#999999';
 // Mapeo num → grupo (desde Excel del usuario)
 const NUM_TO_GROUP = {
   CDD01:'gg', CDD02:'gg', CDD03:'gg', CDD37:'gg', CDD38:'gg', CDD39:'gg', CDD40:'gg',
-  CDD04:'ce', CDD05:'ce', CDD06:'ce', CDD07:'ce', CDD08:'ce', CDD36:'ce', CDD45:'ce',
+  CDD04:'ce', CDD05:'ce', CDD06:'ce', CDD07:'ce', CDD08:'ce', CDD45:'ce',
+  CDD36:'imp',
   CDD09:'it', CDD10:'it', CDD11:'it', CDD12:'it', CDD13:'it', CDD14:'it', CDD43:'it',
   CDD15:'oga',CDD16:'oga',CDD17:'oga',CDD18:'oga',CDD19:'oga',CDD20:'oga',CDD21:'oga',
   CDD22:'oga',CDD23:'oga',CDD24:'oga',CDD26:'oga',CDD27:'oga',CDD28:'oga',CDD29:'oga',CDD30:'oga',
@@ -72,13 +73,14 @@ const CAT_DEFS = [
   { key:'prov', label:'Provisión Adicional',      color:'#A5D6A7', tipo:'cdd' },
   { key:'pre',  label:'Preinversión',             color:'#C8E6C9', tipo:'cdd' },
   { key:'des',  label:'Descuentos',               color:'#B2DFDB', tipo:'cdd' },
+  { key:'imp',  label:'Imprevistos',              color:'#1565C0', tipo:'cdd' },
   { key:'nom',  label:'Nómina',                   color:'#BF360C', tipo:'cid' },
   { key:'spu',  label:'Servicios Púb.',           color:'#E64A19', tipo:'cid' },
   { key:'gob',  label:'Gastos Obra',              color:'#FF7043', tipo:'cid' },
   { key:'sst',  label:'SST',                      color:'#FF8A65', tipo:'cid' },
 ];
 // Grados asignados a cada tipo (visual, independiente del valor real)
-const TIPO_DEGS = { cdd: 252, cid: 100 }; // + 4° gap entre tipos + 1° entre items
+const TIPO_DEGS = { cdd: 254, cid: 98 }; // + 4° gap entre tipos + 0.8° entre items
 
 const fmtM = v => {
   if (v === null || v === undefined) return '—';
