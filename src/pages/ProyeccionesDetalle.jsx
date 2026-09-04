@@ -199,16 +199,6 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
                 />
               );
             })}
-            {/* Etiqueta año */}
-            {ri > 0 && (() => {
-              const [lx, ly] = polarToCart(cx, cy, (r1+r2)/2, 270);
-              return (
-                <text x={lx} y={ly - 2} textAnchor="middle" fontSize={5.5} fill="#444"
-                  fontFamily="Century Gothic,sans-serif">
-                  {ring.label}{deltaLabels?.[ri] ? ` ${deltaLabels[ri]}` : ''}
-                </text>
-              );
-            })()}
           </g>
         );
       })}
