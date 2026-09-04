@@ -464,6 +464,26 @@ export default function ProyeccionesDetalle() {
     return Object.values(pptoCats).reduce((s, v) => s + v, 0);
   }, [pptoCats, detalle, macroKey]);
 
+  // ── P1: causas acumuladas (todas) — debe ir antes de proyTotal/donutRings ───
+  const causaAcumTotal = useMemo(() => {
+    if (!proyData) return {};
+    const acum = {};
+    Object.values(proyData.meses).forEach(md => {
+      Object.entries(md.causas || {}).forEach(([c, v]) => {
+        acum[c] = (acum[c] || 0) + v;
+      });
+    });
+    return acum;
+  }, [proyData]);
+
+  const totalVariacion = useMemo(() =>
+    Object.values(causaAcumTotal).reduce((s, v) => s + v, 0)
+  , [causaAcumTotal]);
+
+  const numMesesEjecucion = useMemo(() =>
+    proyData ? Object.keys(proyData.meses).length : 0
+  , [proyData]);
+
   const proyTotal = useMemo(() =>
     pptoTotal + Object.values(causaAcumTotal).reduce((s, v) => s + v, 0)
   , [pptoTotal, causaAcumTotal]);
@@ -495,26 +515,6 @@ export default function ProyeccionesDetalle() {
   const deltaLabels = useMemo(() =>
     donutRings.map((r, i) => i === 0 ? null : (r.delta >= 0 ? '+' : '') + fmtM(r.delta))
   , [donutRings]);
-
-  // ── P1: causas acumuladas (todas) ───────────────────────────────────────────
-  const causaAcumTotal = useMemo(() => {
-    if (!proyData) return {};
-    const acum = {};
-    Object.values(proyData.meses).forEach(md => {
-      Object.entries(md.causas || {}).forEach(([c, v]) => {
-        acum[c] = (acum[c] || 0) + v;
-      });
-    });
-    return acum;
-  }, [proyData]);
-
-  const totalVariacion = useMemo(() =>
-    Object.values(causaAcumTotal).reduce((s, v) => s + v, 0)
-  , [causaAcumTotal]);
-
-  const numMesesEjecucion = useMemo(() =>
-    proyData ? Object.keys(proyData.meses).length : 0
-  , [proyData]);
 
   // ── P1/P2: meses del año seleccionado ──────────────────────────────────────
   const { p1Meses, p1CausaColors, p1Max } = useMemo(() => {
