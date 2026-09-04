@@ -134,7 +134,7 @@ def main():
             continue
 
         causa_desc = row.get('Descripcion Causa') or 'Otra'
-        valor = float(row.get('Valor Total') or 0)
+        valor = float(row.get('Valor_Total') or row.get('Valor Total') or 0)
         folio = row.get('skidreforma')
         capitulo = row.get('skidcapitulo') or ''
         comentario = row.get('comentario') or ''
