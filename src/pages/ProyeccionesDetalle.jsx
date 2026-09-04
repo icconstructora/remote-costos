@@ -280,10 +280,14 @@ export default function ProyeccionesDetalle() {
   );
 
   if (!proyData) return (
-    <div style={{padding:20}}>
-      <button className="ov-btn" onClick={() => navigate(-1)}>← Volver</button>
-      <p style={{marginTop:16,color:'#666'}}>Sin datos de proyecciones para {titulo}.</p>
-      <p style={{color:'#999',fontSize:'0.8rem'}}>Corre gen_proyecciones_api.py para generar proyecciones_data.json</p>
+    <div className="det-page">
+      <div className="det-header">
+        <button className="det-back" onClick={() => navigate(-1)}>← Volver</button>
+        <div className="det-title">PROYECCIONES<span className="det-title-sep">/</span><span className="det-title-proj">{titulo}</span></div>
+        <div className="det-hdr-spacer" />
+        <img className="det-hdr-ic" src="/images/IC_logo.png" alt="IC" />
+      </div>
+      <p style={{padding:'24px 16px',color:'#666'}}>Sin datos de proyecciones para {titulo}.</p>
     </div>
   );
 
@@ -295,23 +299,30 @@ export default function ProyeccionesDetalle() {
     <div style={{display:'flex',flexDirection:'column',height:'100vh',background:'var(--c-bg,#f8f8f8)'}}>
 
       {/* ── Header ── */}
-      <div style={{display:'flex',alignItems:'center',gap:12,padding:'8px 16px',
-        background:'var(--c-surface,#fff)',borderBottom:'1px solid #ddd',flexShrink:0}}>
-        <button className="ov-btn" onClick={() => navigate(-1)}>← Volver</button>
-        <span style={{fontWeight:700,fontSize:'0.95rem',color:'#333'}}>{titulo} — Proyecciones</span>
-        <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:6}}>
-          <span style={{fontSize:'0.75rem',color:'#666'}}>Año:</span>
+      <div className="det-header">
+        <button className="det-back" onClick={() => navigate(-1)}>← Volver</button>
+        <div>
+          <div className="det-title">
+            PROYECCIONES
+            <span className="det-title-sep">/</span>
+            <span className="det-title-proj">{titulo}</span>
+          </div>
+        </div>
+        <div className="det-hdr-spacer" />
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <span style={{fontSize:'0.75rem',color:'#888'}}>Año:</span>
           {anos.map(a => (
             <button key={a}
               style={{padding:'2px 8px',border:'1px solid #ccc',borderRadius:4,cursor:'pointer',
                 fontSize:'0.75rem',fontWeight: a===anioP1?700:400,
                 background: a===anioP1?'#5A5A8A':'transparent',
-                color: a===anioP1?'#fff':'#333'}}
+                color: a===anioP1?'#fff':'#555'}}
               onClick={() => { setAnioP1(a); setSelectedP1(null); setSelectedP2(null); }}>
               {a}
             </button>
           ))}
         </div>
+        <img className="det-hdr-ic" src="/images/IC_logo.png" alt="IC" />
       </div>
 
       {/* ── Leyenda causas ── */}
