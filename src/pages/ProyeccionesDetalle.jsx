@@ -464,11 +464,9 @@ export default function ProyeccionesDetalle() {
     return Object.values(pptoCats).reduce((s, v) => s + v, 0);
   }, [pptoCats, detalle, macroKey]);
 
-  const proyTotal = useMemo(() => {
-    const tot = detalle?.[macroKey]?.totales;
-    if (!tot) return null;
-    return (tot.cdd?.proy || 0) + (tot.cid?.proy || 0);
-  }, [detalle, macroKey]);
+  const proyTotal = useMemo(() =>
+    pptoTotal + Object.values(causaAcumTotal).reduce((s, v) => s + v, 0)
+  , [pptoTotal, causaAcumTotal]);
 
   // ── Anillos donut (base + un anillo por año) ────────────────────────────────
   const donutRings = useMemo(() => {

@@ -113,8 +113,15 @@ def main():
     })})
 
     causas_set = set()
+    seen_ids = set()
 
     for row in rows:
+        row_id = row.get('_row_id')
+        if row_id is not None:
+            if row_id in seen_ids:
+                continue
+            seen_ids.add(row_id)
+
         skid = row.get('skidproyecto')
         sub_key = SKID_TO_KEY.get(skid)
         if not sub_key:
