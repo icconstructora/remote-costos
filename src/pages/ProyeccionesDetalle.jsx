@@ -61,11 +61,11 @@ const NUM_TO_GROUP = {
 // Categorías del donut — CDD en verdes, CID en naranjas
 // Arco visual: CDD=72% (259°), CID=28% (101°), gap=2° entre grupos y 1° entre items
 const CAT_DEFS = [
-  { key:'gg',  label:'Gastos Generales',      color:'#1A5C28', tipo:'cdd' },
-  { key:'ce',  label:'Cimentación',           color:'#2E7D32', tipo:'cdd' },
-  { key:'it',  label:'Inst. Técnicas',        color:'#388E3C', tipo:'cdd' },
-  { key:'oga', label:'Obra Gris y Acabados',  color:'#4CAF50', tipo:'cdd' },
-  { key:'zv',  label:'Zonas Verdes y Vías',   color:'#66BB6A', tipo:'cdd' },
+  { key:'gg',  label:'Gastos Generales',      color:'#0A3D1A', tipo:'cdd' },
+  { key:'ce',  label:'Cimentación',           color:'#1B6B30', tipo:'cdd' },
+  { key:'it',  label:'Inst. Técnicas',        color:'#2E9E50', tipo:'cdd' },
+  { key:'oga', label:'Obra Gris y Acabados',  color:'#52C76A', tipo:'cdd' },
+  { key:'zv',  label:'Zonas Verdes y Vías',   color:'#96E0A0', tipo:'cdd' },
   { key:'imp', label:'Imprevistos',           color:'#1565C0', tipo:'imp' },
   { key:'dsc', label:'Descuentos',            color:'#6A1B9A', tipo:'dsc' },
   { key:'nom', label:'Nómina Adm.',           color:'#BF360C', tipo:'cid' },
