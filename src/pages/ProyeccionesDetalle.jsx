@@ -166,7 +166,7 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
   const baseAngles = rings[0] ? calcAngles(catDefs, rings[0].vals) : {};
 
   return (
-    <div style={{ width: '100%', maxWidth: 160, margin: '0 auto', flex: '1 1 auto', minHeight: 0 }}>
+    <div style={{ width: '100%', maxWidth: 260, margin: '0 auto', flex: '1 1 auto', minHeight: 0 }}>
     <div style={{ position: 'relative', width: '100%', paddingBottom: '100%' }}>
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}>
 
@@ -626,13 +626,19 @@ export default function ProyeccionesDetalle() {
                     totalLabel={fmtM(pptoTotal)}
                     deltaLabels={deltaLabels}
                   />
-                  {/* Leyenda compacta CDD/CID */}
-                  <div style={{display:'flex',gap:8,padding:'2px 4px',flexShrink:0,justifyContent:'center'}}>
+                  {/* Leyenda compacta */}
+                  <div style={{display:'flex',gap:6,padding:'2px 4px',flexShrink:0,justifyContent:'center',flexWrap:'wrap'}}>
                     <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#2E7D32',fontWeight:600}}>
                       <span style={{width:8,height:8,borderRadius:2,background:'#2E7D32',display:'inline-block'}}/> CDD
                     </span>
+                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#1565C0',fontWeight:600}}>
+                      <span style={{width:8,height:8,borderRadius:2,background:'#1565C0',display:'inline-block'}}/> PREV
+                    </span>
                     <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#BF360C',fontWeight:600}}>
                       <span style={{width:8,height:8,borderRadius:2,background:'#BF360C',display:'inline-block'}}/> CID
+                    </span>
+                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#6A1B9A',fontWeight:600}}>
+                      <span style={{width:8,height:8,borderRadius:2,background:'#6A1B9A',display:'inline-block'}}/> DESC
                     </span>
                   </div>
                 </>
