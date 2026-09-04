@@ -73,14 +73,15 @@ const CAT_DEFS = [
   { key:'prov', label:'Provisión Adicional',      color:'#A5D6A7', tipo:'cdd' },
   { key:'pre',  label:'Preinversión',             color:'#C8E6C9', tipo:'cdd' },
   { key:'des',  label:'Descuentos',               color:'#B2DFDB', tipo:'cdd' },
-  { key:'imp',  label:'Imprevistos',              color:'#1565C0', tipo:'cdd' },
+  { key:'imp',  label:'Imprevistos',              color:'#1565C0', tipo:'imp' },
   { key:'nom',  label:'Nómina',                   color:'#BF360C', tipo:'cid' },
   { key:'spu',  label:'Servicios Púb.',           color:'#E64A19', tipo:'cid' },
   { key:'gob',  label:'Gastos Obra',              color:'#FF7043', tipo:'cid' },
   { key:'sst',  label:'SST',                      color:'#FF8A65', tipo:'cid' },
 ];
 // Grados asignados a cada tipo (visual, independiente del valor real)
-const TIPO_DEGS = { cdd: 254, cid: 98 }; // + 4° gap entre tipos + 0.8° entre items
+// 70% verdes CDD / 20% naranjas CID / 10% azules IMP — gaps de 3° entre tipos
+const TIPO_DEGS = { cdd: 243, cid: 69, imp: 34 };
 
 const fmtM = v => {
   if (v === null || v === undefined) return '—';
@@ -118,31 +119,35 @@ function donutSegmentPath(cx, cy, r1, r2, a1, a2) {
 // CDD ocupa TIPO_DEGS.cdd°, CID ocupa TIPO_DEGS.cid°, separados por gaps
 function calcAngles(catDefs, vals) {
   const ITEM_GAP = 0.8;
-  const TYPE_GAP = 4;
+  const TYPE_GAP = 3;
   const angles = {};
-  // Separar CDD y CID
-  const cddCats = catDefs.filter(c => c.tipo === 'cdd');
-  const cidCats = catDefs.filter(c => c.tipo === 'cid');
-  const cddTotal = cddCats.reduce((s, c) => s + Math.abs(vals[c.key] || 0), 0);
-  const cidTotal = cidCats.reduce((s, c) => s + Math.abs(vals[c.key] || 0), 0);
+  const tipos = ['cdd', 'imp', 'cid'];
+
+  function allocate(cats, budget) {
+    if (!cats.length) return [];
+    const total = cats.reduce((s, c) => s + Math.abs(vals[c.key] || 0), 0);
+    const MIN_DEG = Math.min(5, budget / cats.length * 0.4);
+    const n = cats.length;
+    const reserved = n * MIN_DEG;
+    const flexible = Math.max(budget - reserved, 0);
+    return cats.map(cat => {
+      const frac = total > 0 ? Math.abs(vals[cat.key] || 0) / total : 1 / n;
+      return MIN_DEG + frac * flexible;
+    });
+  }
 
   let angle = 0;
-  // CDD
-  const cddBudget = TIPO_DEGS.cdd - (cddCats.length - 1) * ITEM_GAP;
-  cddCats.forEach((cat, i) => {
-    const frac = cddTotal > 0 ? (vals[cat.key] || 0) / cddTotal : 1 / cddCats.length;
-    const sweep = Math.max(frac * cddBudget, 0.5);
-    angles[cat.key] = { a1: angle, a2: angle + sweep, mid: angle + sweep / 2, sweep };
-    angle += sweep + ITEM_GAP;
-  });
-  angle += TYPE_GAP;
-  // CID
-  const cidBudget = TIPO_DEGS.cid - (cidCats.length - 1) * ITEM_GAP;
-  cidCats.forEach((cat, i) => {
-    const frac = cidTotal > 0 ? (vals[cat.key] || 0) / cidTotal : 1 / cidCats.length;
-    const sweep = Math.max(frac * cidBudget, 0.5);
-    angles[cat.key] = { a1: angle, a2: angle + sweep, mid: angle + sweep / 2, sweep };
-    angle += sweep + ITEM_GAP;
+  tipos.forEach((tipo, ti) => {
+    const cats = catDefs.filter(c => c.tipo === tipo);
+    if (!cats.length) return;
+    const budget = TIPO_DEGS[tipo] - Math.max(cats.length - 1, 0) * ITEM_GAP;
+    const sweeps = allocate(cats, budget);
+    cats.forEach((cat, i) => {
+      const sweep = sweeps[i];
+      angles[cat.key] = { a1: angle, a2: angle + sweep, mid: angle + sweep / 2, sweep };
+      angle += sweep + ITEM_GAP;
+    });
+    if (ti < tipos.length - 1) angle += TYPE_GAP;
   });
   return angles;
 }
@@ -161,7 +166,8 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
   const baseAngles = rings[0] ? calcAngles(catDefs, rings[0].vals) : {};
 
   return (
-    <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', maxHeight: 140, flex: '1 1 auto', minHeight: 0 }}>
+    <div style={{ width: '100%', maxWidth: 160, margin: '0 auto', flex: '1 1 auto', minHeight: 0 }}>
+    <div style={{ position: 'relative', width: '100%', paddingBottom: '100%' }}>
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}>
 
       {/* Centro */}
@@ -245,6 +251,7 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
         );
       })()}
     </svg>
+    </div>
     </div>
   );
 }
