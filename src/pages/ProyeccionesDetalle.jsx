@@ -155,14 +155,14 @@ function calcAngles(catDefs, vals) {
 // ── Donut multi-anillo ────────────────────────────────────────────────────────
 function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
   const [hovered, setHovered] = useState(null);
-  const SIZE = 180;
+  const SIZE = 260;
   const cx = SIZE / 2, cy = SIZE / 2;
-  const R_CENTER = 26;
-  const RING_W = 13, GAP = 2;
+  const R_CENTER = 34;
+  const RING_W = 14, GAP = 2;
   const R_OUTER = R_CENTER + GAP + rings.length * (RING_W + GAP);
-  const LABEL_R = R_OUTER + 7;
+  const DOT_R  = R_OUTER + 5;   // cuadrado de color
+  const TEXT_R = R_OUTER + 13;  // texto de label
 
-  // Ángulos base (del primer anillo) para etiquetas externas
   const baseAngles = rings[0] ? calcAngles(catDefs, rings[0].vals) : {};
 
   return (
@@ -171,9 +171,9 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}>
 
       {/* Centro */}
-      <circle cx={cx} cy={cy} r={R_CENTER} fill="var(--c-surface,#fff)" stroke="#ddd" strokeWidth={0.7} />
-      <text x={cx} y={cy - 4} textAnchor="middle" fontSize={5.5} fill="#aaa" fontFamily="Century Gothic,sans-serif">Ppto Base</text>
-      <text x={cx} y={cy + 5} textAnchor="middle" fontSize={7.5} fontWeight={700} fill="#222" fontFamily="Century Gothic,sans-serif">
+      <circle cx={cx} cy={cy} r={R_CENTER} fill="var(--c-surface,#fff)" stroke="#ddd" strokeWidth={0.8} />
+      <text x={cx} y={cy - 5} textAnchor="middle" fontSize={6.5} fill="#aaa" fontFamily="Century Gothic,sans-serif">Ppto Base</text>
+      <text x={cx} y={cy + 7} textAnchor="middle" fontSize={9} fontWeight={700} fill="#222" fontFamily="Century Gothic,sans-serif">
         {totalLabel}
       </text>
 
@@ -192,7 +192,7 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
               return (
                 <path
                   key={cat.key}
-                  d={donutSegmentPath(cx, cy, r1 + (isHov ? -1.5 : 0), r2 + (isHov ? 2 : 0), a1, a2)}
+                  d={donutSegmentPath(cx, cy, r1 + (isHov ? -2 : 0), r2 + (isHov ? 2.5 : 0), a1, a2)}
                   fill={cat.color}
                   fillOpacity={isHov ? 1 : ri === 0 ? 0.92 : 0.78 + ri * 0.04}
                   stroke="var(--c-surface,#fff)"
@@ -203,11 +203,11 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
                 />
               );
             })}
-            {/* Etiqueta año en la parte superior */}
+            {/* Etiqueta año */}
             {ri > 0 && (() => {
               const [lx, ly] = polarToCart(cx, cy, (r1+r2)/2, 270);
               return (
-                <text x={lx} y={ly - 2} textAnchor="middle" fontSize={5} fill="#444"
+                <text x={lx} y={ly - 2} textAnchor="middle" fontSize={5.5} fill="#444"
                   fontFamily="Century Gothic,sans-serif">
                   {ring.label}{deltaLabels?.[ri] ? ` ${deltaLabels[ri]}` : ''}
                 </text>
@@ -217,18 +217,41 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
         );
       })}
 
-      {/* Etiquetas externas del anillo base */}
+      {/* Etiquetas externas: cuadrado de color + texto radial */}
       {catDefs.map(cat => {
         const { mid, sweep } = baseAngles[cat.key] || {};
-        if (!sweep || sweep < 20) return null;
-        const [lx, ly] = polarToCart(cx, cy, LABEL_R, mid);
-        const anchor = lx > cx + 3 ? 'start' : lx < cx - 3 ? 'end' : 'middle';
+        if (!sweep || sweep < 3) return null;
+        const ang = mid;
+        // cuadrado de color en el borde exterior del anillo
+        const [dx, dy] = polarToCart(cx, cy, DOT_R, ang);
+        // texto un poco más afuera
+        const [tx, ty] = polarToCart(cx, cy, TEXT_R, ang);
+        // rotación radial: apuntar hacia afuera
+        const rot = ang > 90 && ang < 270 ? ang + 180 : ang;
+        const anchor = ang > 90 && ang < 270 ? 'end' : 'start';
+        const shortLabel = cat.label.length > 12 ? cat.label.slice(0,11)+'…' : cat.label;
         return (
-          <text key={cat.key} x={lx} y={ly + 2} textAnchor={anchor}
-            fontSize={4.8} fill={cat.color} fontWeight={700}
-            fontFamily="Century Gothic,sans-serif">
-            {cat.label.length > 14 ? cat.label.slice(0,13)+'…' : cat.label}
-          </text>
+          <g key={cat.key}>
+            {/* cuadrado de color */}
+            <rect
+              x={dx - 2.5} y={dy - 2.5} width={5} height={5} rx={1}
+              fill={cat.color}
+              transform={`rotate(${ang - 90}, ${dx}, ${dy})`}
+            />
+            {/* texto */}
+            <text
+              x={tx} y={ty}
+              textAnchor={anchor}
+              dominantBaseline="middle"
+              fontSize={5.2}
+              fill={cat.color}
+              fontWeight={700}
+              fontFamily="Century Gothic,sans-serif"
+              transform={`rotate(${rot - 90}, ${tx}, ${ty})`}
+            >
+              {shortLabel}
+            </text>
+          </g>
         );
       })}
 
@@ -236,15 +259,15 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
       {hovered && (() => {
         const r_mid = R_CENTER + GAP + hovered.ring * (RING_W + GAP) + RING_W / 2;
         const [tx, ty] = polarToCart(cx, cy, r_mid, hovered.mid);
-        const bx = Math.min(Math.max(tx - 28, 1), SIZE - 58);
-        const by = ty < cy ? ty + 4 : ty - 22;
+        const bx = Math.min(Math.max(tx - 30, 1), SIZE - 62);
+        const by = ty < cy ? ty + 4 : ty - 24;
         return (
           <g>
-            <rect x={bx} y={by} width={56} height={20} rx={3} fill="#111" fillOpacity={0.88} />
-            <text x={bx+28} y={by+8} textAnchor="middle" fontSize={5} fill="#fff" fontFamily="Century Gothic,sans-serif">
+            <rect x={bx} y={by} width={60} height={22} rx={3} fill="#111" fillOpacity={0.88} />
+            <text x={bx+30} y={by+9} textAnchor="middle" fontSize={5.5} fill="#fff" fontFamily="Century Gothic,sans-serif">
               {hovered.ringLabel} · {hovered.label}
             </text>
-            <text x={bx+28} y={by+16} textAnchor="middle" fontSize={7} fontWeight={700} fill="#fff" fontFamily="Century Gothic,sans-serif">
+            <text x={bx+30} y={by+18} textAnchor="middle" fontSize={8} fontWeight={700} fill="#fff" fontFamily="Century Gothic,sans-serif">
               {fmtM(hovered.val)}
             </text>
           </g>
