@@ -61,21 +61,24 @@ const NUM_TO_GROUP = {
 };
 
 // Categorías del donut — CDD en verdes, CID en naranjas
+// Arco visual: CDD=72% (259°), CID=28% (101°), gap=2° entre grupos y 1° entre items
 const CAT_DEFS = [
-  { key:'gg',   label:'Gastos Generales',        color:'#1B5E20', tipo:'cdd' },
+  { key:'gg',   label:'Gastos Generales',         color:'#1A5C28', tipo:'cdd' },
   { key:'ce',   label:'Cimentación y Estructura', color:'#2E7D32', tipo:'cdd' },
   { key:'it',   label:'Instalaciones Técnicas',   color:'#388E3C', tipo:'cdd' },
-  { key:'oga',  label:'Obra Gris y Acabados',     color:'#43A047', tipo:'cdd' },
+  { key:'oga',  label:'Obra Gris y Acabados',     color:'#4CAF50', tipo:'cdd' },
   { key:'zv',   label:'Zonas Verdes y Vías',      color:'#66BB6A', tipo:'cdd' },
   { key:'ref',  label:'Reformas',                 color:'#81C784', tipo:'cdd' },
   { key:'prov', label:'Provisión Adicional',      color:'#A5D6A7', tipo:'cdd' },
   { key:'pre',  label:'Preinversión',             color:'#C8E6C9', tipo:'cdd' },
-  { key:'des',  label:'Descuentos',               color:'#80CBC4', tipo:'cdd' },
-  { key:'nom',  label:'Nómina Administrativa',    color:'#BF360C', tipo:'cid' },
-  { key:'spu',  label:'Servicios Públicos',       color:'#E64A19', tipo:'cid' },
-  { key:'gob',  label:'Gastos de Obra',           color:'#FF7043', tipo:'cid' },
-  { key:'sst',  label:'Seguridad Industrial',     color:'#FFAB91', tipo:'cid' },
+  { key:'des',  label:'Descuentos',               color:'#B2DFDB', tipo:'cdd' },
+  { key:'nom',  label:'Nómina',                   color:'#BF360C', tipo:'cid' },
+  { key:'spu',  label:'Servicios Púb.',           color:'#E64A19', tipo:'cid' },
+  { key:'gob',  label:'Gastos Obra',              color:'#FF7043', tipo:'cid' },
+  { key:'sst',  label:'SST',                      color:'#FF8A65', tipo:'cid' },
 ];
+// Grados asignados a cada tipo (visual, independiente del valor real)
+const TIPO_DEGS = { cdd: 252, cid: 100 }; // + 4° gap entre tipos + 1° entre items
 
 const fmtM = v => {
   if (v === null || v === undefined) return '—';
@@ -109,39 +112,60 @@ function donutSegmentPath(cx, cy, r1, r2, a1, a2) {
   return `M ${ox1} ${oy1} A ${r2} ${r2} 0 ${large} 1 ${ox2} ${oy2} L ${ix1} ${iy1} A ${r1} ${r1} 0 ${large} 0 ${ix2} ${iy2} Z`;
 }
 
+// ── Calcular ángulos de arco con espacio fijo por tipo ────────────────────────
+// CDD ocupa TIPO_DEGS.cdd°, CID ocupa TIPO_DEGS.cid°, separados por gaps
+function calcAngles(catDefs, vals) {
+  const ITEM_GAP = 0.8;
+  const TYPE_GAP = 4;
+  const angles = {};
+  // Separar CDD y CID
+  const cddCats = catDefs.filter(c => c.tipo === 'cdd');
+  const cidCats = catDefs.filter(c => c.tipo === 'cid');
+  const cddTotal = cddCats.reduce((s, c) => s + Math.abs(vals[c.key] || 0), 0);
+  const cidTotal = cidCats.reduce((s, c) => s + Math.abs(vals[c.key] || 0), 0);
+
+  let angle = 0;
+  // CDD
+  const cddBudget = TIPO_DEGS.cdd - (cddCats.length - 1) * ITEM_GAP;
+  cddCats.forEach((cat, i) => {
+    const frac = cddTotal > 0 ? (vals[cat.key] || 0) / cddTotal : 1 / cddCats.length;
+    const sweep = Math.max(frac * cddBudget, 0.5);
+    angles[cat.key] = { a1: angle, a2: angle + sweep, mid: angle + sweep / 2, sweep };
+    angle += sweep + ITEM_GAP;
+  });
+  angle += TYPE_GAP;
+  // CID
+  const cidBudget = TIPO_DEGS.cid - (cidCats.length - 1) * ITEM_GAP;
+  cidCats.forEach((cat, i) => {
+    const frac = cidTotal > 0 ? (vals[cat.key] || 0) / cidTotal : 1 / cidCats.length;
+    const sweep = Math.max(frac * cidBudget, 0.5);
+    angles[cat.key] = { a1: angle, a2: angle + sweep, mid: angle + sweep / 2, sweep };
+    angle += sweep + ITEM_GAP;
+  });
+  return angles;
+}
+
 // ── Donut multi-anillo ────────────────────────────────────────────────────────
 function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
   const [hovered, setHovered] = useState(null);
-  const SIZE = 200;
+  const SIZE = 180;
   const cx = SIZE / 2, cy = SIZE / 2;
-  const R_CENTER = 30;
-  const RING_W = 14, GAP = 3;
-  // Radio exterior del último anillo
+  const R_CENTER = 26;
+  const RING_W = 13, GAP = 2;
   const R_OUTER = R_CENTER + GAP + rings.length * (RING_W + GAP);
-  const LABEL_R = R_OUTER + 8;
+  const LABEL_R = R_OUTER + 7;
 
-  // Calcular ángulos del primer anillo (base) para etiquetas externas
-  const baseRing = rings[0];
-  const baseTotal = catDefs.reduce((s, c) => s + (baseRing?.vals[c.key] || 0), 0);
-  let labelAngles = {};
-  {
-    let a = 0;
-    catDefs.forEach(cat => {
-      const val = baseRing?.vals[cat.key] || 0;
-      const sweep = baseTotal > 0 ? (val / baseTotal) * 356 : 0;
-      labelAngles[cat.key] = { mid: a + sweep / 2, sweep };
-      a += sweep;
-    });
-  }
+  // Ángulos base (del primer anillo) para etiquetas externas
+  const baseAngles = rings[0] ? calcAngles(catDefs, rings[0].vals) : {};
 
   return (
-    <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', maxHeight: 160, flex: '1 1 auto', minHeight: 0 }}>
+    <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', maxHeight: 140, flex: '1 1 auto', minHeight: 0 }}>
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}>
 
       {/* Centro */}
-      <circle cx={cx} cy={cy} r={R_CENTER} fill="var(--c-surface,#fff)" stroke="#ddd" strokeWidth={0.8} />
-      <text x={cx} y={cy - 5} textAnchor="middle" fontSize={6} fill="#999" fontFamily="Century Gothic,sans-serif">Ppto Base</text>
-      <text x={cx} y={cy + 5} textAnchor="middle" fontSize={8} fontWeight={700} fill="#222" fontFamily="Century Gothic,sans-serif">
+      <circle cx={cx} cy={cy} r={R_CENTER} fill="var(--c-surface,#fff)" stroke="#ddd" strokeWidth={0.7} />
+      <text x={cx} y={cy - 4} textAnchor="middle" fontSize={5.5} fill="#aaa" fontFamily="Century Gothic,sans-serif">Ppto Base</text>
+      <text x={cx} y={cy + 5} textAnchor="middle" fontSize={7.5} fontWeight={700} fill="#222" fontFamily="Century Gothic,sans-serif">
         {totalLabel}
       </text>
 
@@ -149,39 +173,33 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
       {rings.map((ring, ri) => {
         const r1 = R_CENTER + GAP + ri * (RING_W + GAP);
         const r2 = r1 + RING_W;
-        const total = catDefs.reduce((s, c) => s + Math.abs(ring.vals[c.key] || 0), 0);
-        let angle = 0;
+        const angles = calcAngles(catDefs, ring.vals);
         return (
           <g key={ring.label}>
-            {catDefs.map((cat, ci) => {
+            {catDefs.map(cat => {
+              const { a1, a2, mid } = angles[cat.key] || {};
+              if (a2 === undefined || a2 - a1 < 0.3) return null;
               const val = ring.vals[cat.key] || 0;
-              const absVal = Math.abs(val);
-              // pequeño gap entre CDD y CID (índice 8→9)
-              const sweep = total > 0 ? (absVal / total) * (ci === 8 ? 354 : 356) : 0;
-              const a1 = angle, a2 = angle + sweep;
-              angle = a2 + (ci === 8 ? 2 : 0);
-              const mid = (a1 + a2) / 2;
               const isHov = hovered?.ring === ri && hovered?.cat === cat.key;
-              const opacity = ri === 0 ? 0.9 : 0.75 + ri * 0.05;
               return (
                 <path
                   key={cat.key}
-                  d={donutSegmentPath(cx, cy, r1 + (isHov ? -1 : 0), r2 + (isHov ? 2 : 0), a1, a2)}
+                  d={donutSegmentPath(cx, cy, r1 + (isHov ? -1.5 : 0), r2 + (isHov ? 2 : 0), a1, a2)}
                   fill={cat.color}
-                  fillOpacity={isHov ? 1 : opacity}
+                  fillOpacity={isHov ? 1 : ri === 0 ? 0.92 : 0.78 + ri * 0.04}
                   stroke="var(--c-surface,#fff)"
-                  strokeWidth={0.8}
+                  strokeWidth={0.7}
                   style={{ cursor: 'pointer', transition: 'all 0.12s' }}
                   onMouseEnter={() => setHovered({ ring: ri, cat: cat.key, val, label: cat.label, ringLabel: ring.label, mid })}
                   onMouseLeave={() => setHovered(null)}
                 />
               );
             })}
-            {/* Año + delta en la parte superior del anillo */}
+            {/* Etiqueta año en la parte superior */}
             {ri > 0 && (() => {
               const [lx, ly] = polarToCart(cx, cy, (r1+r2)/2, 270);
               return (
-                <text x={lx} y={ly - 3} textAnchor="middle" fontSize={5.5} fill="#555"
+                <text x={lx} y={ly - 2} textAnchor="middle" fontSize={5} fill="#444"
                   fontFamily="Century Gothic,sans-serif">
                   {ring.label}{deltaLabels?.[ri] ? ` ${deltaLabels[ri]}` : ''}
                 </text>
@@ -191,18 +209,17 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
         );
       })}
 
-      {/* Etiquetas externas — solo las que tengan sweep > 15° */}
+      {/* Etiquetas externas del anillo base */}
       {catDefs.map(cat => {
-        const { mid, sweep } = labelAngles[cat.key] || {};
-        if (!sweep || sweep < 18) return null;
+        const { mid, sweep } = baseAngles[cat.key] || {};
+        if (!sweep || sweep < 20) return null;
         const [lx, ly] = polarToCart(cx, cy, LABEL_R, mid);
-        const anchor = lx > cx + 2 ? 'start' : lx < cx - 2 ? 'end' : 'middle';
-        const shortLabel = cat.label.length > 12 ? cat.label.slice(0, 11) + '…' : cat.label;
+        const anchor = lx > cx + 3 ? 'start' : lx < cx - 3 ? 'end' : 'middle';
         return (
           <text key={cat.key} x={lx} y={ly + 2} textAnchor={anchor}
-            fontSize={5} fill={cat.color} fontWeight={600}
+            fontSize={4.8} fill={cat.color} fontWeight={700}
             fontFamily="Century Gothic,sans-serif">
-            {shortLabel}
+            {cat.label.length > 14 ? cat.label.slice(0,13)+'…' : cat.label}
           </text>
         );
       })}
@@ -212,11 +229,11 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
         const r_mid = R_CENTER + GAP + hovered.ring * (RING_W + GAP) + RING_W / 2;
         const [tx, ty] = polarToCart(cx, cy, r_mid, hovered.mid);
         const bx = Math.min(Math.max(tx - 28, 1), SIZE - 58);
-        const by = ty < cy ? ty + 5 : ty - 24;
+        const by = ty < cy ? ty + 4 : ty - 22;
         return (
           <g>
-            <rect x={bx} y={by} width={56} height={20} rx={3} fill="#111" fillOpacity={0.85} />
-            <text x={bx+28} y={by+8} textAnchor="middle" fontSize={5.5} fill="#fff" fontFamily="Century Gothic,sans-serif">
+            <rect x={bx} y={by} width={56} height={20} rx={3} fill="#111" fillOpacity={0.88} />
+            <text x={bx+28} y={by+8} textAnchor="middle" fontSize={5} fill="#fff" fontFamily="Century Gothic,sans-serif">
               {hovered.ringLabel} · {hovered.label}
             </text>
             <text x={bx+28} y={by+16} textAnchor="middle" fontSize={7} fontWeight={700} fill="#fff" fontFamily="Century Gothic,sans-serif">
