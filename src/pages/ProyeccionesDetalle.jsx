@@ -199,6 +199,19 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
                 />
               );
             })}
+            {/* Año dentro del anillo */}
+            {ri > 0 && (() => {
+              const r_mid = R_CENTER + GAP + ri * (RING_W + GAP) + RING_W / 2;
+              const [lx, ly] = polarToCart(cx, cy, r_mid, 355);
+              return (
+                <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
+                  fontSize={4.5} fontWeight={700} fill="#fff"
+                  fontFamily="Century Gothic,sans-serif"
+                  transform={`rotate(${355 - 90}, ${lx}, ${ly})`}>
+                  {ring.label}
+                </text>
+              );
+            })()}
           </g>
         );
       })}
