@@ -464,6 +464,12 @@ export default function ProyeccionesDetalle() {
     return Object.values(pptoCats).reduce((s, v) => s + v, 0);
   }, [pptoCats, detalle, macroKey]);
 
+  const proyTotal = useMemo(() => {
+    const tot = detalle?.[macroKey]?.totales;
+    if (!tot) return null;
+    return (tot.cdd?.proy || 0) + (tot.cid?.proy || 0);
+  }, [detalle, macroKey]);
+
   // ── Anillos donut (base + un anillo por año) ────────────────────────────────
   const donutRings = useMemo(() => {
     if (!pptoCats || !proyData) return [];
@@ -637,10 +643,14 @@ export default function ProyeccionesDetalle() {
             <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P1 · Proyecciones</span>
             <span style={{fontSize:'0.65rem',color:'#888'}}>
               Base {fmtM(pptoTotal)}
-              {' → '}
-              <span style={{color: totalVariacion >= 0 ? '#B85520' : '#2E7D32', fontWeight:600}}>
-                Proy. {fmtM(pptoTotal + totalVariacion)}
-              </span>
+              {proyTotal != null && (
+                <>
+                  {' → '}
+                  <span style={{color: proyTotal > pptoTotal ? '#B85520' : '#2E7D32', fontWeight:600}}>
+                    Proy. {fmtM(proyTotal)}
+                  </span>
+                </>
+              )}
               {numMesesEjecucion > 0 && (
                 <span style={{marginLeft:6, color:'#999'}}>· {numMesesEjecucion} meses</span>
               )}
