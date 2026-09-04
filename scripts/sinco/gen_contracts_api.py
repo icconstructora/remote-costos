@@ -398,7 +398,7 @@ def main():
         print('\nERROR — Sin datos. No se sobreescribe el archivo existente.')
         return
 
-    ts = datetime.datetime.now().strftime('%d %b %Y %H:%M')
+    ts = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).strftime('%d %b %Y %H:%M')
     dest_path = os.path.normpath(DEST)
     output = {'corte': corte, 'generated_at': ts, 'data': records}
     with open(dest_path, 'w', encoding='utf-8') as f:

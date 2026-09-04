@@ -434,7 +434,7 @@ for key in ALL_KEYS:
 
 output = {
     'corte':        corte_str,
-    'generated_at': datetime.datetime.now().strftime('%d %b %Y %H:%M'),
+    'generated_at': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).strftime('%d %b %Y %H:%M'),
     'data':         out_data,
     'detalle':      out_detalle,
 }
