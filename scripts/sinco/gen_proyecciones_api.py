@@ -64,6 +64,7 @@ def api_get_paginado(token, tabla, page_size=2000):
     headers = {'Authorization': f'Bearer {token}'}
     url = f'{API_BASE}/{tabla}'
     all_rows, skip = [], 0
+    first_page_len = None
     while True:
         print(f'  Página skip={skip}...', flush=True)
         for intento in range(3):
@@ -85,6 +86,12 @@ def api_get_paginado(token, tabla, page_size=2000):
                     print('  Abortando paginación.')
                     return all_rows
         if not rows:
+            break
+        # Si la API ignora $skip y devuelve siempre los mismos datos, parar después de la primera página
+        if first_page_len is None:
+            first_page_len = len(rows)
+        elif skip > 0 and len(rows) == first_page_len:
+            print(f'  API ignora paginación (página {skip} = {len(rows)} filas = primera). Usando solo primera página.')
             break
         all_rows.extend(rows)
         if len(rows) < page_size:
@@ -134,7 +141,7 @@ def main():
             continue
 
         causa_desc = row.get('Descripcion Causa') or 'Otra'
-        valor = float(row.get('Valor Total') or 0)
+        valor = float(row.get('Valor_Total') or row.get('Valor Total') or 0)
         folio = row.get('skidreforma')
         capitulo = row.get('skidcapitulo') or ''
         comentario = row.get('comentario') or ''
