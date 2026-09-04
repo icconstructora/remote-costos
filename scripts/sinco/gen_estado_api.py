@@ -278,6 +278,8 @@ def agregar_control(rows, clase_map, cap_map, macro_key, sub_keys_for_skid, item
         'ppto': 0.0, 'proy': 0.0, 'aseg': 0.0, 'cons': 0.0, 'tipo': 'cdd', 'num': '',
         'subs': defaultdict(lambda: {'proy': 0.0, 'aseg': 0.0, 'desc': ''}),
     }))
+    # Duración programada: máx Cantidad en CID52 clase presupuesto
+    meses_prog = defaultdict(float)  # sub_key → max cantidad
 
     for r in rows:
         tipo_clase = clase_map.get(r.get('skidclaseorigen'))

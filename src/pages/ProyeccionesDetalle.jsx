@@ -61,17 +61,21 @@ const NUM_TO_GROUP = {
 // Categorías del donut — CDD en verdes, CID en naranjas
 // Arco visual: CDD=72% (259°), CID=28% (101°), gap=2° entre grupos y 1° entre items
 const CAT_DEFS = [
+  // Verdes — CDD (oscuro → claro)
   { key:'gg',  label:'Gastos Generales',      color:'#0A3D1A', tipo:'cdd' },
   { key:'ce',  label:'Cimentación',           color:'#1B6B30', tipo:'cdd' },
   { key:'it',  label:'Inst. Técnicas',        color:'#2E9E50', tipo:'cdd' },
   { key:'oga', label:'Obra Gris y Acabados',  color:'#52C76A', tipo:'cdd' },
   { key:'zv',  label:'Zonas Verdes y Vías',   color:'#96E0A0', tipo:'cdd' },
-  { key:'imp', label:'Imprevistos',           color:'#1565C0', tipo:'imp' },
-  { key:'dsc', label:'Descuentos',            color:'#6A1B9A', tipo:'dsc' },
+  // Naranjas — CID (oscuro → claro)
   { key:'nom', label:'Nómina Adm.',           color:'#BF360C', tipo:'cid' },
   { key:'spu', label:'Servicios Públicos',    color:'#E64A19', tipo:'cid' },
   { key:'gob', label:'Gastos de Obra',        color:'#FF7043', tipo:'cid' },
   { key:'sst', label:'Seg. Industrial',       color:'#FF8A65', tipo:'cid' },
+  // Azul — IMP
+  { key:'imp', label:'Imprevistos',           color:'#1565C0', tipo:'imp' },
+  // Morado — DSC
+  { key:'dsc', label:'Descuentos',            color:'#6A1B9A', tipo:'dsc' },
 ];
 // Grados asignados a cada tipo (visual, independiente del valor real)
 // 70% verdes CDD / 8% azules IMP / 20% naranjas CID / 2% morado DSC — gaps 3° x3
@@ -154,8 +158,6 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
   const R_CENTER = 34;
   const RING_W = 14, GAP = 2;
   const R_OUTER = R_CENTER + GAP + rings.length * (RING_W + GAP);
-  const DOT_R  = R_OUTER + 5;   // cuadrado de color
-  const TEXT_R = R_OUTER + 13;  // texto de label
 
   const baseAngles = rings[0] ? calcAngles(catDefs, rings[0].vals) : {};
 
@@ -211,43 +213,6 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
         );
       })}
 
-      {/* Etiquetas externas: cuadrado de color + texto radial */}
-      {catDefs.map(cat => {
-        const { mid, sweep } = baseAngles[cat.key] || {};
-        if (!sweep || sweep < 3) return null;
-        const ang = mid;
-        // cuadrado de color en el borde exterior del anillo
-        const [dx, dy] = polarToCart(cx, cy, DOT_R, ang);
-        // texto un poco más afuera
-        const [tx, ty] = polarToCart(cx, cy, TEXT_R, ang);
-        // rotación radial: apuntar hacia afuera
-        const rot = ang > 90 && ang < 270 ? ang + 180 : ang;
-        const anchor = ang > 90 && ang < 270 ? 'end' : 'start';
-        const shortLabel = cat.label.length > 12 ? cat.label.slice(0,11)+'…' : cat.label;
-        return (
-          <g key={cat.key}>
-            {/* cuadrado de color */}
-            <rect
-              x={dx - 2.5} y={dy - 2.5} width={5} height={5} rx={1}
-              fill={cat.color}
-              transform={`rotate(${ang - 90}, ${dx}, ${dy})`}
-            />
-            {/* texto */}
-            <text
-              x={tx} y={ty}
-              textAnchor={anchor}
-              dominantBaseline="middle"
-              fontSize={5.2}
-              fill={cat.color}
-              fontWeight={700}
-              fontFamily="Century Gothic,sans-serif"
-              transform={`rotate(${rot - 90}, ${tx}, ${ty})`}
-            >
-              {shortLabel}
-            </text>
-          </g>
-        );
-      })}
 
       {/* Tooltip */}
       {hovered && (() => {
@@ -484,6 +449,12 @@ export default function ProyeccionesDetalle() {
     proyData ? Object.keys(proyData.meses).length : 0
   , [proyData]);
 
+  const fechaInicioProyeccion = useMemo(() => {
+    if (!proyData) return null;
+    const primero = Object.keys(proyData.meses).sort()[0];
+    return primero ? ymLabel(primero) : null;
+  }, [proyData]);
+
   const proyTotal = useMemo(() =>
     pptoTotal + Object.values(causaAcumTotal).reduce((s, v) => s + v, 0)
   , [pptoTotal, causaAcumTotal]);
@@ -649,39 +620,36 @@ export default function ProyeccionesDetalle() {
                   </span>
                 </>
               )}
-              {numMesesEjecucion > 0 && (
-                <span style={{marginLeft:6, color:'#999'}}>· {numMesesEjecucion} meses</span>
+              {fechaInicioProyeccion && numMesesEjecucion > 0 && (
+                <span style={{marginLeft:6, color:'#999'}}>· desde {fechaInicioProyeccion} · {numMesesEjecucion} meses</span>
               )}
             </span>
           </div>
           <div style={{flex:1,display:'flex',minHeight:0,overflow:'hidden'}}>
 
-            {/* Izquierda: Donut */}
-            <div style={{flex:'0 0 52%',padding:'4px',display:'flex',flexDirection:'column',minHeight:0,minWidth:0}}>
+            {/* Izquierda: Labels de categorías (verdes→naranjas→azules→morados) */}
+            <div style={{flex:'0 0 22%',padding:'6px 4px 4px 8px',display:'flex',flexDirection:'column',
+              justifyContent:'center',gap:2,minHeight:0,overflowY:'auto'}}>
+              {CAT_DEFS.map(cat => (
+                <div key={cat.key} style={{display:'flex',alignItems:'center',gap:4,minHeight:14}}>
+                  <span style={{width:8,height:8,borderRadius:2,background:cat.color,flexShrink:0,display:'inline-block'}}/>
+                  <span style={{fontSize:'0.58rem',color:cat.color,fontWeight:700,lineHeight:1.1,
+                    whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                    {cat.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Centro: Donut */}
+            <div style={{flex:'0 0 38%',padding:'4px',display:'flex',flexDirection:'column',minHeight:0,minWidth:0}}>
               {donutRings.length > 0 ? (
-                <>
-                  <DonutMultiRing
-                    rings={donutRings}
-                    catDefs={CAT_DEFS}
-                    totalLabel={fmtM(pptoTotal)}
-                    deltaLabels={deltaLabels}
-                  />
-                  {/* Leyenda compacta */}
-                  <div style={{display:'flex',gap:6,padding:'2px 4px',flexShrink:0,justifyContent:'center',flexWrap:'wrap'}}>
-                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#2E7D32',fontWeight:600}}>
-                      <span style={{width:8,height:8,borderRadius:2,background:'#2E7D32',display:'inline-block'}}/> CDD
-                    </span>
-                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#1565C0',fontWeight:600}}>
-                      <span style={{width:8,height:8,borderRadius:2,background:'#1565C0',display:'inline-block'}}/> IMP
-                    </span>
-                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#BF360C',fontWeight:600}}>
-                      <span style={{width:8,height:8,borderRadius:2,background:'#BF360C',display:'inline-block'}}/> CID
-                    </span>
-                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#6A1B9A',fontWeight:600}}>
-                      <span style={{width:8,height:8,borderRadius:2,background:'#6A1B9A',display:'inline-block'}}/> DESC
-                    </span>
-                  </div>
-                </>
+                <DonutMultiRing
+                  rings={donutRings}
+                  catDefs={CAT_DEFS}
+                  totalLabel={fmtM(pptoTotal)}
+                  deltaLabels={deltaLabels}
+                />
               ) : (
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',color:'#999',fontSize:'0.75rem'}}>
                   Sin datos base
