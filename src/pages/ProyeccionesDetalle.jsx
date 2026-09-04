@@ -629,7 +629,7 @@ export default function ProyeccionesDetalle() {
 
             {/* Izquierda: Labels de categorías (verdes→naranjas→azules→morados) */}
             <div style={{flex:'0 0 22%',padding:'6px 4px 4px 8px',display:'flex',flexDirection:'column',
-              justifyContent:'center',gap:2,minHeight:0,overflowY:'auto'}}>
+              justifyContent:'flex-start',gap:2,minHeight:0,overflowY:'auto'}}>
               {CAT_DEFS.map(cat => (
                 <div key={cat.key} style={{display:'flex',alignItems:'center',gap:4,minHeight:14}}>
                   <span style={{width:8,height:8,borderRadius:2,background:cat.color,flexShrink:0,display:'inline-block'}}/>
