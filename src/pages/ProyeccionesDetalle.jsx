@@ -504,6 +504,14 @@ export default function ProyeccionesDetalle() {
     return acum;
   }, [proyData]);
 
+  const totalVariacion = useMemo(() =>
+    Object.values(causaAcumTotal).reduce((s, v) => s + v, 0)
+  , [causaAcumTotal]);
+
+  const numMesesEjecucion = useMemo(() =>
+    proyData ? Object.keys(proyData.meses).length : 0
+  , [proyData]);
+
   // ── P1/P2: meses del año seleccionado ──────────────────────────────────────
   const { p1Meses, p1CausaColors, p1Max } = useMemo(() => {
     if (!proyData || !anioP1) return { p1Meses:[], p1CausaColors:{}, p1Max:0 };
@@ -628,7 +636,14 @@ export default function ProyeccionesDetalle() {
             display:'flex',alignItems:'center',gap:8}}>
             <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P1 · Proyecciones</span>
             <span style={{fontSize:'0.65rem',color:'#888'}}>
-              Base {fmtM(pptoTotal)} · {donutRings.length - 1} años
+              Base {fmtM(pptoTotal)}
+              {' → '}
+              <span style={{color: totalVariacion >= 0 ? '#B85520' : '#2E7D32', fontWeight:600}}>
+                Proy. {fmtM(pptoTotal + totalVariacion)}
+              </span>
+              {numMesesEjecucion > 0 && (
+                <span style={{marginLeft:6, color:'#999'}}>· {numMesesEjecucion} meses</span>
+              )}
             </span>
           </div>
           <div style={{flex:1,display:'flex',minHeight:0,overflow:'hidden'}}>
