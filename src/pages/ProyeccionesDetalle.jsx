@@ -306,20 +306,35 @@ export default function ProyeccionesDetalle() {
     return map;
   }, [data]);
 
-  // ── Datos donut desde estado_detalle ───────────────────────────────────────
+  // ── Datos donut desde totales de estado_detalle (calculados por API) ─────────
   const detalleItems = useMemo(() => {
     if (!detalle || !macroKey) return [];
     return detalle[macroKey]?.items || [];
   }, [detalle, macroKey]);
 
   const pptoCats = useMemo(() => {
-    if (!detalleItems.length) return null;
-    const vals = {};
-    CAT_DEFS.forEach(cat => {
-      vals[cat.key] = detalleItems.filter(cat.match).reduce((s, it) => s + (it.ppto || 0), 0);
+    const tot = detalle?.[macroKey]?.totales;
+    if (!tot) return null;
+    // CDD total desde totales API; CID por ítem (cada CID5x sumado individualmente)
+    const cddTotal = tot.cdd?.ppto || 0;
+    const cidItems = detalleItems.filter(it => it.tipo === 'cid');
+    const vals = { cdd: cddTotal };
+    ['nom','spu','gob','sst'].forEach(k => { vals[k] = 0; });
+    cidItems.forEach(it => {
+      if (it.num === 'CID51') vals.nom += it.ppto || 0;
+      else if (it.num === 'CID52') vals.spu += it.ppto || 0;
+      else if (it.num === 'CID53') vals.gob += it.ppto || 0;
+      else if (it.num === 'CID54') vals.sst += it.ppto || 0;
     });
+    // Si no hay ítems CID individuales, repartir cid total equitativamente
+    const cidTotal = tot.cid?.ppto || 0;
+    const cidFromItems = vals.nom + vals.spu + vals.gob + vals.sst;
+    if (cidFromItems === 0 && cidTotal > 0) {
+      vals.nom = cidTotal * 0.655; vals.spu = cidTotal * 0.062;
+      vals.gob = cidTotal * 0.201; vals.sst = cidTotal * 0.082;
+    }
     return vals;
-  }, [detalleItems]);
+  }, [detalle, macroKey, detalleItems]);
 
   const pptoTotal = useMemo(() => {
     if (!pptoCats) return 0;
