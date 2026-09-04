@@ -189,10 +189,10 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
                 <path
                   key={cat.key}
                   d={donutSegmentPath(cx, cy, r1 + (isHov ? -2 : 0), r2 + (isHov ? 2.5 : 0), a1, a2)}
-                  fill={cat.color}
-                  fillOpacity={isHov ? 1 : ri === 0 ? 0.92 : 0.78 + ri * 0.04}
-                  stroke="var(--c-surface,#fff)"
-                  strokeWidth={0.7}
+                  fill={ri === 0 ? '#fff' : cat.color}
+                  fillOpacity={ri === 0 ? 1 : (isHov ? 1 : 0.78 + ri * 0.04)}
+                  stroke={ri === 0 ? cat.color : 'var(--c-surface,#fff)'}
+                  strokeWidth={ri === 0 ? 1.5 : 0.7}
                   style={{ cursor: 'pointer', transition: 'all 0.12s' }}
                   onMouseEnter={() => setHovered({ ring: ri, cat: cat.key, val, label: cat.label, ringLabel: ring.label, mid })}
                   onMouseLeave={() => setHovered(null)}
