@@ -42,13 +42,39 @@ const CAUSA_COLORS = {
 };
 const CAUSA_COLOR_DEFAULT = '#999999';
 
-// Categorías del donut
+// Mapeo num → grupo (desde Excel del usuario)
+const NUM_TO_GROUP = {
+  CDD01:'gg', CDD02:'gg', CDD03:'gg', CDD37:'gg', CDD38:'gg', CDD39:'gg', CDD40:'gg',
+  CDD04:'ce', CDD05:'ce', CDD06:'ce', CDD07:'ce', CDD08:'ce', CDD36:'ce', CDD45:'ce',
+  CDD09:'it', CDD10:'it', CDD11:'it', CDD12:'it', CDD13:'it', CDD14:'it', CDD43:'it',
+  CDD15:'oga',CDD16:'oga',CDD17:'oga',CDD18:'oga',CDD19:'oga',CDD20:'oga',CDD21:'oga',
+  CDD22:'oga',CDD23:'oga',CDD24:'oga',CDD26:'oga',CDD27:'oga',CDD28:'oga',CDD29:'oga',CDD30:'oga',
+  CDD31:'zv', CDD32:'zv', CDD33:'zv', CDD34:'zv',
+  CDD35:'ref',
+  CDD42:'prov',
+  CDD44:'pre',
+  CDD99:'des',
+  CID:'nom',  CID51:'nom',
+  CID52:'spu',
+  CID53:'gob',CID56:'gob',
+  CID54:'sst',
+};
+
+// Categorías del donut — CDD en verdes, CID en naranjas
 const CAT_DEFS = [
-  { key: 'cdd',  label: 'CDD',              color: '#4A6A9A', match: item => item.tipo === 'cdd' },
-  { key: 'nom',  label: 'Nómina',           color: '#3A7228', match: item => item.num === 'CID51' },
-  { key: 'spu',  label: 'Servicios Púb.',   color: '#B85520', match: item => item.num === 'CID52' },
-  { key: 'gob',  label: 'Gastos Obra',      color: '#7A1070', match: item => item.num === 'CID53' },
-  { key: 'sst',  label: 'SST',              color: '#A01010', match: item => item.num === 'CID54' },
+  { key:'gg',   label:'Gastos Generales',        color:'#1B5E20', tipo:'cdd' },
+  { key:'ce',   label:'Cimentación y Estructura', color:'#2E7D32', tipo:'cdd' },
+  { key:'it',   label:'Instalaciones Técnicas',   color:'#388E3C', tipo:'cdd' },
+  { key:'oga',  label:'Obra Gris y Acabados',     color:'#43A047', tipo:'cdd' },
+  { key:'zv',   label:'Zonas Verdes y Vías',      color:'#66BB6A', tipo:'cdd' },
+  { key:'ref',  label:'Reformas',                 color:'#81C784', tipo:'cdd' },
+  { key:'prov', label:'Provisión Adicional',      color:'#A5D6A7', tipo:'cdd' },
+  { key:'pre',  label:'Preinversión',             color:'#C8E6C9', tipo:'cdd' },
+  { key:'des',  label:'Descuentos',               color:'#80CBC4', tipo:'cdd' },
+  { key:'nom',  label:'Nómina Administrativa',    color:'#BF360C', tipo:'cid' },
+  { key:'spu',  label:'Servicios Públicos',       color:'#E64A19', tipo:'cid' },
+  { key:'gob',  label:'Gastos de Obra',           color:'#FF7043', tipo:'cid' },
+  { key:'sst',  label:'Seguridad Industrial',     color:'#FFAB91', tipo:'cid' },
 ];
 
 const fmtM = v => {
@@ -84,19 +110,38 @@ function donutSegmentPath(cx, cy, r1, r2, a1, a2) {
 }
 
 // ── Donut multi-anillo ────────────────────────────────────────────────────────
-function DonutMultiRing({ rings, catDefs, center, totalLabel }) {
+function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
   const [hovered, setHovered] = useState(null);
-  const cx = 110, cy = 110, SIZE = 220;
-  const R_CENTER = 38;
-  const RING_W = 18, GAP = 4;
+  const SIZE = 200;
+  const cx = SIZE / 2, cy = SIZE / 2;
+  const R_CENTER = 30;
+  const RING_W = 14, GAP = 3;
+  // Radio exterior del último anillo
+  const R_OUTER = R_CENTER + GAP + rings.length * (RING_W + GAP);
+  const LABEL_R = R_OUTER + 8;
+
+  // Calcular ángulos del primer anillo (base) para etiquetas externas
+  const baseRing = rings[0];
+  const baseTotal = catDefs.reduce((s, c) => s + (baseRing?.vals[c.key] || 0), 0);
+  let labelAngles = {};
+  {
+    let a = 0;
+    catDefs.forEach(cat => {
+      const val = baseRing?.vals[cat.key] || 0;
+      const sweep = baseTotal > 0 ? (val / baseTotal) * 356 : 0;
+      labelAngles[cat.key] = { mid: a + sweep / 2, sweep };
+      a += sweep;
+    });
+  }
 
   return (
-    <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', maxHeight: 180, flex: '1 1 auto', minHeight: 0 }}>
+    <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', maxHeight: 160, flex: '1 1 auto', minHeight: 0 }}>
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}>
+
       {/* Centro */}
-      <circle cx={cx} cy={cy} r={R_CENTER} fill="var(--c-surface,#fff)" stroke="#e0e0e0" strokeWidth={1} />
-      <text x={cx} y={cy - 6} textAnchor="middle" fontSize={7} fill="#888" fontFamily="Century Gothic,sans-serif">Presupuesto</text>
-      <text x={cx} y={cy + 5} textAnchor="middle" fontSize={9} fontWeight={700} fill="#333" fontFamily="Century Gothic,sans-serif">
+      <circle cx={cx} cy={cy} r={R_CENTER} fill="var(--c-surface,#fff)" stroke="#ddd" strokeWidth={0.8} />
+      <text x={cx} y={cy - 5} textAnchor="middle" fontSize={6} fill="#999" fontFamily="Century Gothic,sans-serif">Ppto Base</text>
+      <text x={cx} y={cy + 5} textAnchor="middle" fontSize={8} fontWeight={700} fill="#222" fontFamily="Century Gothic,sans-serif">
         {totalLabel}
       </text>
 
@@ -104,55 +149,77 @@ function DonutMultiRing({ rings, catDefs, center, totalLabel }) {
       {rings.map((ring, ri) => {
         const r1 = R_CENTER + GAP + ri * (RING_W + GAP);
         const r2 = r1 + RING_W;
-        const total = catDefs.reduce((s, c) => s + (ring.vals[c.key] || 0), 0);
+        const total = catDefs.reduce((s, c) => s + Math.abs(ring.vals[c.key] || 0), 0);
         let angle = 0;
         return (
           <g key={ring.label}>
-            {catDefs.map(cat => {
+            {catDefs.map((cat, ci) => {
               const val = ring.vals[cat.key] || 0;
-              const sweep = total > 0 ? (val / total) * 358 : 0;
+              const absVal = Math.abs(val);
+              // pequeño gap entre CDD y CID (índice 8→9)
+              const sweep = total > 0 ? (absVal / total) * (ci === 8 ? 354 : 356) : 0;
               const a1 = angle, a2 = angle + sweep;
-              angle = a2;
+              angle = a2 + (ci === 8 ? 2 : 0);
               const mid = (a1 + a2) / 2;
               const isHov = hovered?.ring === ri && hovered?.cat === cat.key;
+              const opacity = ri === 0 ? 0.9 : 0.75 + ri * 0.05;
               return (
                 <path
                   key={cat.key}
                   d={donutSegmentPath(cx, cy, r1 + (isHov ? -1 : 0), r2 + (isHov ? 2 : 0), a1, a2)}
                   fill={cat.color}
-                  fillOpacity={isHov ? 1 : 0.82}
+                  fillOpacity={isHov ? 1 : opacity}
                   stroke="var(--c-surface,#fff)"
-                  strokeWidth={1}
-                  style={{ cursor: 'pointer', transition: 'all 0.15s' }}
+                  strokeWidth={0.8}
+                  style={{ cursor: 'pointer', transition: 'all 0.12s' }}
                   onMouseEnter={() => setHovered({ ring: ri, cat: cat.key, val, label: cat.label, ringLabel: ring.label, mid })}
                   onMouseLeave={() => setHovered(null)}
                 />
               );
             })}
-            {/* Etiqueta del anillo (año) */}
-            <text
-              x={cx + (r2 + 3) * Math.cos((-90) * Math.PI / 180)}
-              y={cy + (r2 + 3) * Math.sin((-90) * Math.PI / 180) - 2}
-              textAnchor="middle" fontSize={6} fill="#888"
-              fontFamily="Century Gothic,sans-serif">
-              {ring.label}
-            </text>
+            {/* Año + delta en la parte superior del anillo */}
+            {ri > 0 && (() => {
+              const [lx, ly] = polarToCart(cx, cy, (r1+r2)/2, 270);
+              return (
+                <text x={lx} y={ly - 3} textAnchor="middle" fontSize={5.5} fill="#555"
+                  fontFamily="Century Gothic,sans-serif">
+                  {ring.label}{deltaLabels?.[ri] ? ` ${deltaLabels[ri]}` : ''}
+                </text>
+              );
+            })()}
           </g>
+        );
+      })}
+
+      {/* Etiquetas externas — solo las que tengan sweep > 15° */}
+      {catDefs.map(cat => {
+        const { mid, sweep } = labelAngles[cat.key] || {};
+        if (!sweep || sweep < 18) return null;
+        const [lx, ly] = polarToCart(cx, cy, LABEL_R, mid);
+        const anchor = lx > cx + 2 ? 'start' : lx < cx - 2 ? 'end' : 'middle';
+        const shortLabel = cat.label.length > 12 ? cat.label.slice(0, 11) + '…' : cat.label;
+        return (
+          <text key={cat.key} x={lx} y={ly + 2} textAnchor={anchor}
+            fontSize={5} fill={cat.color} fontWeight={600}
+            fontFamily="Century Gothic,sans-serif">
+            {shortLabel}
+          </text>
         );
       })}
 
       {/* Tooltip */}
       {hovered && (() => {
-        const [tx, ty] = polarToCart(cx, cy, R_CENTER + GAP + hovered.ring * (RING_W + GAP) + RING_W / 2, hovered.mid);
-        const bx = Math.min(Math.max(tx - 30, 2), SIZE - 62);
-        const by = ty < cy ? ty + 6 : ty - 26;
+        const r_mid = R_CENTER + GAP + hovered.ring * (RING_W + GAP) + RING_W / 2;
+        const [tx, ty] = polarToCart(cx, cy, r_mid, hovered.mid);
+        const bx = Math.min(Math.max(tx - 28, 1), SIZE - 58);
+        const by = ty < cy ? ty + 5 : ty - 24;
         return (
           <g>
-            <rect x={bx} y={by} width={60} height={22} rx={3} fill="#222" fillOpacity={0.88} />
-            <text x={bx + 30} y={by + 9} textAnchor="middle" fontSize={6} fill="#fff" fontFamily="Century Gothic,sans-serif">
+            <rect x={bx} y={by} width={56} height={20} rx={3} fill="#111" fillOpacity={0.85} />
+            <text x={bx+28} y={by+8} textAnchor="middle" fontSize={5.5} fill="#fff" fontFamily="Century Gothic,sans-serif">
               {hovered.ringLabel} · {hovered.label}
             </text>
-            <text x={bx + 30} y={by + 18} textAnchor="middle" fontSize={7} fontWeight={700} fill="#fff" fontFamily="Century Gothic,sans-serif">
+            <text x={bx+28} y={by+16} textAnchor="middle" fontSize={7} fontWeight={700} fill="#fff" fontFamily="Century Gothic,sans-serif">
               {fmtM(hovered.val)}
             </text>
           </g>
@@ -315,31 +382,44 @@ export default function ProyeccionesDetalle() {
   const pptoCats = useMemo(() => {
     const tot = detalle?.[macroKey]?.totales;
     if (!tot) return null;
-    // CDD total desde totales API; CID por ítem (cada CID5x sumado individualmente)
-    const cddTotal = tot.cdd?.ppto || 0;
-    const cidItems = detalleItems.filter(it => it.tipo === 'cid');
-    const vals = { cdd: cddTotal };
-    ['nom','spu','gob','sst'].forEach(k => { vals[k] = 0; });
-    cidItems.forEach(it => {
-      if (it.num === 'CID51') vals.nom += it.ppto || 0;
-      else if (it.num === 'CID52') vals.spu += it.ppto || 0;
-      else if (it.num === 'CID53') vals.gob += it.ppto || 0;
-      else if (it.num === 'CID54') vals.sst += it.ppto || 0;
+    // Sumar ítems por grupo para obtener proporciones
+    const raw = {};
+    CAT_DEFS.forEach(c => { raw[c.key] = 0; });
+    detalleItems.forEach(it => {
+      const grp = NUM_TO_GROUP[it.num];
+      if (grp && raw[grp] !== undefined) raw[grp] += it.ppto || 0;
     });
-    // Si no hay ítems CID individuales, repartir cid total equitativamente
-    const cidTotal = tot.cid?.ppto || 0;
-    const cidFromItems = vals.nom + vals.spu + vals.gob + vals.sst;
-    if (cidFromItems === 0 && cidTotal > 0) {
-      vals.nom = cidTotal * 0.655; vals.spu = cidTotal * 0.062;
-      vals.gob = cidTotal * 0.201; vals.sst = cidTotal * 0.082;
+    // Escalar CDD al total real de la API
+    const cddRaw = CAT_DEFS.filter(c => c.tipo === 'cdd').reduce((s,c) => s + raw[c.key], 0);
+    const cddReal = tot.cdd?.ppto || 0;
+    const cddFactor = cddRaw > 0 ? cddReal / cddRaw : 1;
+    // Escalar CID al total real de la API
+    const cidRaw = CAT_DEFS.filter(c => c.tipo === 'cid').reduce((s,c) => s + raw[c.key], 0);
+    const cidReal = tot.cid?.ppto || 0;
+    const cidFactor = cidRaw > 0 ? cidReal / cidRaw : 1;
+    const vals = {};
+    CAT_DEFS.forEach(c => {
+      const factor = c.tipo === 'cdd' ? cddFactor : cidFactor;
+      vals[c.key] = raw[c.key] * factor;
+    });
+    // Fallback si no hay ítems: distribuir uniformemente
+    if (cddRaw === 0 && cddReal > 0) {
+      const cddCats = CAT_DEFS.filter(c => c.tipo === 'cdd');
+      cddCats.forEach(c => { vals[c.key] = cddReal / cddCats.length; });
+    }
+    if (cidRaw === 0 && cidReal > 0) {
+      const cidCats = CAT_DEFS.filter(c => c.tipo === 'cid');
+      cidCats.forEach(c => { vals[c.key] = cidReal / cidCats.length; });
     }
     return vals;
-  }, [detalle, macroKey, detalleItems]);
+  }, [detalleItems, detalle, macroKey]);
 
   const pptoTotal = useMemo(() => {
+    const tot = detalle?.[macroKey]?.totales;
+    if (tot) return (tot.cdd?.ppto || 0) + (tot.cid?.ppto || 0);
     if (!pptoCats) return 0;
     return Object.values(pptoCats).reduce((s, v) => s + v, 0);
-  }, [pptoCats]);
+  }, [pptoCats, detalle, macroKey]);
 
   // ── Anillos donut (base + un anillo por año) ────────────────────────────────
   const donutRings = useMemo(() => {
@@ -360,10 +440,14 @@ export default function ProyeccionesDetalle() {
       const factor = pptoTotal > 0 ? (pptoTotal + acumTotal) / pptoTotal : 1;
       const vals = {};
       CAT_DEFS.forEach(cat => { vals[cat.key] = (pptoCats[cat.key] || 0) * factor; });
-      rings.push({ label: year, vals });
+      rings.push({ label: year, vals, delta: varYear });
     });
     return rings;
   }, [pptoCats, proyData, pptoTotal]);
+
+  const deltaLabels = useMemo(() =>
+    donutRings.map((r, i) => i === 0 ? null : (r.delta >= 0 ? '+' : '') + fmtM(r.delta))
+  , [donutRings]);
 
   // ── P1: causas acumuladas (todas) ───────────────────────────────────────────
   const causaAcumTotal = useMemo(() => {
@@ -514,15 +598,16 @@ export default function ProyeccionesDetalle() {
                     rings={donutRings}
                     catDefs={CAT_DEFS}
                     totalLabel={fmtM(pptoTotal)}
+                    deltaLabels={deltaLabels}
                   />
-                  {/* Leyenda categorías */}
-                  <div style={{display:'flex',flexWrap:'wrap',gap:'2px 8px',padding:'0 4px 4px',flexShrink:0}}>
-                    {CAT_DEFS.map(c => (
-                      <span key={c.key} style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.58rem',color:'#555'}}>
-                        <span style={{width:8,height:8,borderRadius:2,background:c.color,display:'inline-block'}}/>
-                        {c.label}
-                      </span>
-                    ))}
+                  {/* Leyenda compacta CDD/CID */}
+                  <div style={{display:'flex',gap:8,padding:'2px 4px',flexShrink:0,justifyContent:'center'}}>
+                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#2E7D32',fontWeight:600}}>
+                      <span style={{width:8,height:8,borderRadius:2,background:'#2E7D32',display:'inline-block'}}/> CDD
+                    </span>
+                    <span style={{display:'flex',alignItems:'center',gap:3,fontSize:'0.6rem',color:'#BF360C',fontWeight:600}}>
+                      <span style={{width:8,height:8,borderRadius:2,background:'#BF360C',display:'inline-block'}}/> CID
+                    </span>
                   </div>
                 </>
               ) : (
