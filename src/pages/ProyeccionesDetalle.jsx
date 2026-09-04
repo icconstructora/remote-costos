@@ -630,6 +630,26 @@ export default function ProyeccionesDetalle() {
                   </span>
                 </div>
               ))}
+              {pptoCats && (
+                <>
+                  <div style={{marginTop:6,marginBottom:2,fontSize:'0.55rem',color:'#999',fontWeight:700,
+                    textTransform:'uppercase',letterSpacing:'0.03em'}}>
+                    Ppto Base
+                  </div>
+                  {CAT_DEFS.map(cat => {
+                    const v = pptoCats[cat.key] || 0;
+                    if (!v) return null;
+                    return (
+                      <div key={`v-${cat.key}`} style={{display:'flex',alignItems:'center',gap:3,minHeight:13}}>
+                        <span style={{width:6,height:6,borderRadius:1,background:cat.color,flexShrink:0,display:'inline-block'}}/>
+                        <span style={{fontSize:'0.57rem',color:'#444',fontWeight:600,whiteSpace:'nowrap'}}>
+                          {fmtM(v)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
             </div>
 
             {/* Centro: Donut */}
