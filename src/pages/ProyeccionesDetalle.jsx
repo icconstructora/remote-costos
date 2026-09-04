@@ -54,7 +54,7 @@ const NUM_TO_GROUP = {
   CDD35:'ref',
   CDD42:'prov',
   CDD44:'pre',
-  CDD99:'des',
+  CDD99:'dsc',
   CID:'nom',  CID51:'nom',
   CID52:'spu',
   CID53:'gob',CID56:'gob',
@@ -72,16 +72,16 @@ const CAT_DEFS = [
   { key:'ref',  label:'Reformas',                 color:'#81C784', tipo:'cdd' },
   { key:'prov', label:'Provisión Adicional',      color:'#A5D6A7', tipo:'cdd' },
   { key:'pre',  label:'Preinversión',             color:'#C8E6C9', tipo:'cdd' },
-  { key:'des',  label:'Descuentos',               color:'#B2DFDB', tipo:'cdd' },
   { key:'imp',  label:'Imprevistos',              color:'#1565C0', tipo:'imp' },
+  { key:'dsc',  label:'Descuentos',               color:'#6A1B9A', tipo:'dsc' },
   { key:'nom',  label:'Nómina',                   color:'#BF360C', tipo:'cid' },
   { key:'spu',  label:'Servicios Púb.',           color:'#E64A19', tipo:'cid' },
   { key:'gob',  label:'Gastos Obra',              color:'#FF7043', tipo:'cid' },
   { key:'sst',  label:'SST',                      color:'#FF8A65', tipo:'cid' },
 ];
 // Grados asignados a cada tipo (visual, independiente del valor real)
-// 70% verdes CDD / 20% naranjas CID / 10% azules IMP — gaps de 3° entre tipos
-const TIPO_DEGS = { cdd: 243, cid: 69, imp: 34 };
+// 70% verdes CDD / 8% azules IMP / 20% naranjas CID / 2% morado DSC — gaps 3° x3
+const TIPO_DEGS = { cdd: 246, imp: 28, cid: 70, dsc: 7 };
 
 const fmtM = v => {
   if (v === null || v === undefined) return '—';
@@ -121,7 +121,7 @@ function calcAngles(catDefs, vals) {
   const ITEM_GAP = 0.8;
   const TYPE_GAP = 3;
   const angles = {};
-  const tipos = ['cdd', 'imp', 'cid'];
+  const tipos = ['cdd', 'imp', 'cid', 'dsc'];
 
   function allocate(cats, budget) {
     if (!cats.length) return [];
