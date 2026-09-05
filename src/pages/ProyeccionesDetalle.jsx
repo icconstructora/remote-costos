@@ -1,3 +1,4 @@
+// v-ok
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { remoteUrl } from '../assetBase.js';
@@ -23,10 +24,9 @@ const CAUSA_COLORS = {
   'Diseño':                             '#3A7228',
   'C. Cantidades':                      '#A01010',
   'Imprevistos':                        '#B85520',
-  'Gestión de obra ':                   '#7A1070',
-  'Incrementos precio':                 '#8A6010',
-  'Incrementos ':                       '#9A7020',
-  'Descuentos ':                        '#1A6070',
+  'Gestión de obra':                    '#7A1070',
+  'Incrementos':                        '#8A6010',
+  'Descuentos':                         '#1A6070',
   'Re Contratacion':                    '#4A3F8A',
   'No calidad de obra ':                '#C04040',
   'GCC Compras y contratos':            '#2A5A3A',
@@ -42,21 +42,21 @@ const CAUSA_COLORS = {
 };
 const CAUSA_COLOR_DEFAULT = '#999999';
 
-// Mapeo num → grupo (desde Excel capitulos_control_proyecto.xlsx)
-const NUM_TO_GROUP = {
-  CDD01:'gg', CDD02:'gg', CDD03:'gg', CDD37:'gg', CDD38:'gg', CDD39:'gg', CDD40:'gg',
-  CDD04:'ce', CDD05:'ce', CDD06:'ce', CDD07:'ce', CDD08:'ce', CDD45:'ce',
-  CDD09:'it', CDD10:'it', CDD11:'it', CDD12:'it', CDD13:'it', CDD14:'it', CDD43:'it',
-  CDD15:'oga',CDD16:'oga',CDD17:'oga',CDD18:'oga',CDD19:'oga',CDD20:'oga',CDD21:'oga',
-  CDD22:'oga',CDD23:'oga',CDD24:'oga',CDD26:'oga',CDD27:'oga',CDD28:'oga',CDD29:'oga',CDD30:'oga',
-  CDD31:'zv', CDD32:'zv', CDD33:'zv', CDD34:'zv',
-  CDD35:'imp', CDD36:'imp', CDD42:'imp', CDD44:'imp',
-  CDD99:'dsc',
-  CID:'nom',  CID51:'nom',
-  CID52:'spu',
-  CID53:'gob',CID56:'gob',
-  CID54:'sst',
+// Normaliza variantes de causa al nombre canónico
+const normCausa = c => {
+  if (!c) return 'Otra';
+  const t = c.trim();
+  if (/^incrementos/i.test(t)) return 'Incrementos';
+  return t;
 };
+
+const CDD_LABEL = {
+  gg:'Gastos Generales', ce:'Cimentación', it:'Inst. Técnicas',
+  oga:'Obra Gris y Acabados', zv:'Zonas Verdes y Vías',
+  nom:'Nómina Adm.', spu:'Servicios Públicos', gob:'Gastos de Obra',
+  sst:'Seg. Industrial', imp:'Imprevistos', dsc:'Descuentos',
+};
+
 
 // Categorías del donut — CDD en verdes, CID en naranjas
 // Arco visual: CDD=72% (259°), CID=28% (101°), gap=2° entre grupos y 1° entre items
@@ -73,7 +73,7 @@ const CAT_DEFS = [
   { key:'gob', label:'Gastos de Obra',        color:'#FF7043', tipo:'cid' },
   { key:'sst', label:'Seg. Industrial',       color:'#FF8A65', tipo:'cid' },
   // Azul — IMP
-  { key:'imp', label:'Imprevistos',           color:'#1565C0', tipo:'imp' },
+  { key:'imp', label:'Imprevistos',           color:'#7B1041', tipo:'imp' },
   // Morado — DSC
   { key:'dsc', label:'Descuentos',            color:'#6A1B9A', tipo:'dsc' },
 ];
@@ -199,15 +199,17 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
                 />
               );
             })}
-            {/* Año dentro del anillo */}
+            {/* Año dentro del anillo — sobre segmento Cimentación (ce) */}
             {ri > 0 && (() => {
+              const ceSeg = angles['ce'];
+              if (!ceSeg || ceSeg.a2 - ceSeg.a1 < 1) return null;
               const r_mid = R_CENTER + GAP + ri * (RING_W + GAP) + RING_W / 2;
-              const [lx, ly] = polarToCart(cx, cy, r_mid, 355);
+              const [lx, ly] = polarToCart(cx, cy, r_mid, ceSeg.a1 + 2);
               return (
-                <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={4.5} fontWeight={700} fill="#fff"
+                <text x={lx} y={ly} textAnchor="start" dominantBaseline="middle"
+                  fontSize={6} fontWeight={700} fill="#fff"
                   fontFamily="Century Gothic,sans-serif"
-                  transform={`rotate(${355 - 90}, ${lx}, ${ly})`}>
+                  transform={`rotate(${ceSeg.a1}, ${lx}, ${ly})`}>
                   {ring.label}
                 </text>
               );
@@ -242,7 +244,10 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
 }
 
 // ── Barras horizontales por causa ─────────────────────────────────────────────
-function CausaBars({ causaAcum, causas }) {
+const COLOR_POS = '#2D4170';
+const COLOR_NEG = '#7A92C0';
+
+function CausaBars({ causaAcum, causas, selectedCausa, onSelectCausa }) {
   const sorted = [...causas]
     .map(c => ({ causa: c, val: causaAcum[c] || 0 }))
     .filter(x => x.val !== 0)
@@ -251,27 +256,31 @@ function CausaBars({ causaAcum, causas }) {
   const maxAbs = Math.max(...sorted.map(x => Math.abs(x.val)), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '4px 8px', overflowY: 'auto', flex: 1 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, padding: '2px 8px 4px', overflow: 'hidden', flex: 1, justifyContent: 'space-between' }}>
       {sorted.map(({ causa, val }) => {
         const pct = Math.abs(val) / maxAbs * 100;
-        const color = CAUSA_COLORS[causa] || CAUSA_COLOR_DEFAULT;
         const isPos = val >= 0;
+        const color = isPos ? COLOR_POS : COLOR_NEG;
+        const isSelected = causa === selectedCausa;
         return (
-          <div key={causa} style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 18 }}>
+          <div key={causa}
+            onClick={() => onSelectCausa(isSelected ? null : causa)}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
+              borderRadius: 3, padding: '1px 2px',
+              background: isSelected ? '#EEF2FF' : 'transparent' }}>
             <div style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
-            <div style={{ flex: 1, fontSize: '0.62rem', color: '#555', whiteSpace: 'nowrap',
-              overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, width: 80 }}
+            <div style={{ flex: 1, fontSize: '0.62rem', color: isSelected ? '#1a237e' : '#555',
+              fontWeight: isSelected ? 700 : 400,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, width: 80 }}
               title={causa}>{causa.trim()}</div>
             <div style={{ flex: 2, position: 'relative', height: 10, background: '#f0f0f0', borderRadius: 3 }}>
               <div style={{
                 position: 'absolute', top: 0, height: '100%', borderRadius: 3,
-                width: `${pct}%`,
-                background: isPos ? color : '#3A7228',
-                opacity: 0.8,
+                width: `${pct}%`, background: color, opacity: 0.85,
               }} />
             </div>
             <div style={{ width: 52, textAlign: 'right', fontSize: '0.62rem', fontWeight: 600,
-              color: isPos ? '#A01010' : '#3A7228', flexShrink: 0 }}>
+              color, flexShrink: 0 }}>
               {fmtM(val)}
             </div>
           </div>
@@ -355,6 +364,7 @@ export default function ProyeccionesDetalle() {
   const [anioP1, setAnioP1] = useState(null);
   const [selectedP1, setSelectedP1] = useState(null);
   const [selectedP2, setSelectedP2] = useState(null);
+  const [selectedCausa, setSelectedCausa] = useState(null);
   const [sortP3, setSortP3] = useState('valor');
   const [sortP4, setSortP4] = useState('valor');
 
@@ -380,7 +390,10 @@ export default function ProyeccionesDetalle() {
   const causaColors = useMemo(() => {
     if (!data?.causas) return {};
     const map = {};
-    data.causas.forEach(c => { map[c] = { color: CAUSA_COLORS[c] || CAUSA_COLOR_DEFAULT, data: {} }; });
+    data.causas.forEach(c => {
+      const nc = normCausa(c);
+      map[nc] = { color: CAUSA_COLORS[nc] || CAUSA_COLOR_DEFAULT, data: {} };
+    });
     return map;
   }, [data]);
 
@@ -396,8 +409,19 @@ export default function ProyeccionesDetalle() {
     // Sumar ítems por grupo para obtener proporciones
     const raw = {};
     CAT_DEFS.forEach(c => { raw[c.key] = 0; });
+    // Mapeo CDD# → grupo para el donut de presupuesto (estado_detalle)
+    const CDDtoGrp = {
+      CDD01:'gg',CDD02:'gg',CDD03:'gg',CDD37:'gg',CDD38:'gg',CDD39:'gg',CDD40:'gg',
+      CDD04:'ce',CDD05:'ce',CDD06:'ce',CDD07:'ce',CDD08:'ce',CDD45:'ce',
+      CDD09:'it',CDD10:'it',CDD11:'it',CDD12:'it',CDD13:'it',CDD14:'it',CDD43:'it',
+      CDD15:'oga',CDD16:'oga',CDD17:'oga',CDD18:'oga',CDD19:'oga',CDD20:'oga',CDD21:'oga',
+      CDD22:'oga',CDD23:'oga',CDD24:'oga',CDD26:'oga',CDD27:'oga',CDD28:'oga',CDD29:'oga',CDD30:'oga',
+      CDD31:'zv',CDD32:'zv',CDD33:'zv',CDD34:'zv',
+      CDD35:'imp',CDD36:'imp',CDD42:'imp',CDD44:'imp',
+      CDD99:'dsc',
+    };
     detalleItems.forEach(it => {
-      const grp = NUM_TO_GROUP[it.num];
+      const grp = CDDtoGrp[it.num];
       if (grp && raw[grp] !== undefined) raw[grp] += it.ppto || 0;
     });
     // Escalar CDD al total real de la API
@@ -438,7 +462,8 @@ export default function ProyeccionesDetalle() {
     const acum = {};
     Object.values(proyData.meses).forEach(md => {
       Object.entries(md.causas || {}).forEach(([c, v]) => {
-        acum[c] = (acum[c] || 0) + v;
+        const nc = normCausa(c);
+        acum[nc] = (acum[nc] || 0) + v;
       });
     });
     return acum;
@@ -447,6 +472,7 @@ export default function ProyeccionesDetalle() {
   const totalVariacion = useMemo(() =>
     Object.values(causaAcumTotal).reduce((s, v) => s + v, 0)
   , [causaAcumTotal]);
+
 
   const numMesesEjecucion = useMemo(() =>
     proyData ? Object.keys(proyData.meses).length : 0
@@ -499,8 +525,9 @@ export default function ProyeccionesDetalle() {
     const acum = {};
     meses.forEach(ym => {
       Object.entries(proyData.meses[ym]?.causas || {}).forEach(([c, v]) => {
-        acum[c] = (acum[c] || 0) + v;
-        if (cc[c]) cc[c].data[ym] = acum[c];
+        const nc = normCausa(c);
+        acum[nc] = (acum[nc] || 0) + v;
+        if (cc[nc]) cc[nc].data[ym] = acum[nc];
       });
     });
     const max = Math.max(0, ...meses.map(ym =>
@@ -516,7 +543,8 @@ export default function ProyeccionesDetalle() {
     Object.keys(causaColors).forEach(c => { cc[c] = { ...causaColors[c], data: {} }; });
     meses.forEach(ym => {
       Object.entries(proyData.meses[ym]?.causas || {}).forEach(([c, v]) => {
-        if (cc[c]) cc[c].data[ym] = (cc[c].data[ym] || 0) + v;
+        const nc = normCausa(c);
+        if (cc[nc]) cc[nc].data[ym] = (cc[nc].data[ym] || 0) + v;
       });
     });
     const max = Math.max(0, ...meses.map(ym =>
@@ -550,10 +578,68 @@ export default function ProyeccionesDetalle() {
     return proyData.meses[selectedP2]?.folios || [];
   }, [proyData, selectedP2]);
 
+  // P3: folios agrupados por folio-key, filtrados por causa seleccionada
+  const foliosP3Data = useMemo(() => {
+    if (!proyData) return [];
+    const map = {};
+    Object.entries(proyData.meses).forEach(([ym, md]) => {
+      (md.folios || []).forEach(f => {
+        if (selectedCausa && normCausa(f.causa) !== selectedCausa) return;
+        const k = f._key ?? String(f.folio ?? f.reforma ?? f.id ?? `${ym}-anon`);
+        if (!map[k]) map[k] = {
+          folio: f.folio ?? f.reforma ?? k,
+          ym,
+          descripcion: f.comentario || f.descripcion || '',
+          causa: normCausa(f.causa),
+          caps: f.caps || [],
+          capKeys: f.capKeys || [],
+          valor: 0,
+        };
+        map[k].valor += f.valor || 0;
+        (f.caps || []).forEach(c => { if (!map[k].caps.includes(c)) map[k].caps.push(c); });
+        (f.capKeys || []).forEach(c => { if (!map[k].capKeys.includes(c)) map[k].capKeys.push(c); });
+      });
+    });
+    return Object.values(map).sort((a, b) => b.valor - a.valor);
+  }, [proyData, selectedCausa]);
+
+  // Fallback: meses agrupados por año cuando no hay folios
+  const causaMesesData = useMemo(() => {
+    if (!proyData) return [];
+    const rows = [];
+    Object.entries(proyData.meses).sort().forEach(([ym, md]) => {
+      const val = selectedCausa
+        ? Object.entries(md.causas || {}).reduce((s, [c, v]) => normCausa(c) === selectedCausa ? s + v : s, 0)
+        : Object.values(md.causas || {}).reduce((s, v) => s + v, 0);
+      if (val !== 0) rows.push({ ym, valor: val, year: ym.slice(0, 4) });
+    });
+    return rows.reverse();
+  }, [proyData, selectedCausa]);
+
+  const causaMesesPorAnio = useMemo(() => {
+    const byYear = {};
+    causaMesesData.forEach(r => {
+      if (!byYear[r.year]) byYear[r.year] = [];
+      byYear[r.year].push(r);
+    });
+    return Object.entries(byYear).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [causaMesesData]);
+
+  const hasRealFolios = foliosP3Data.length > 0;
+
   const titulo = LABELS[macroKey] || macroKey?.toUpperCase();
-  const causasActivas = useMemo(() => (data?.causas || []).filter(c =>
-    p1Meses.some(ym => (proyData?.meses[ym]?.causas?.[c] || 0) !== 0)
-  ), [data, p1Meses, proyData]);
+  const causasActivas = useMemo(() => {
+    const seen = new Set();
+    return (data?.causas || [])
+      .map(normCausa)
+      .filter(nc => {
+        if (seen.has(nc)) return false;
+        seen.add(nc);
+        return p1Meses.some(ym =>
+          Object.entries(proyData?.meses[ym]?.causas || {}).some(([c, v]) => normCausa(c) === nc && v !== 0)
+        );
+      });
+  }, [data, p1Meses, proyData]);
 
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>
@@ -609,7 +695,7 @@ export default function ProyeccionesDetalle() {
 
         {/* P1 — Donut + Causas acumuladas */}
         <div style={{background:'var(--c-surface,#fff)',borderRadius:6,border:'1px solid #ddd',
-          display:'flex',flexDirection:'column',overflow:'hidden'}}>
+          display:'flex',flexDirection:'column',overflow:'hidden',minHeight:0}}>
           <div style={{padding:'6px 12px',borderBottom:'1px solid #eee',flexShrink:0,
             display:'flex',alignItems:'center',gap:8}}>
             <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P1 · Proyecciones</span>
@@ -623,10 +709,24 @@ export default function ProyeccionesDetalle() {
                   </span>
                 </>
               )}
-              {fechaInicioProyeccion && numMesesEjecucion > 0 && (
-                <span style={{marginLeft:6, color:'#999'}}>· desde {fechaInicioProyeccion} · {numMesesEjecucion} meses</span>
-              )}
+              {fechaInicioProyeccion && numMesesEjecucion > 0 && (() => {
+                const mp = detalle?.[macroKey]?.mesesProgramados;
+                return (
+                  <span style={{marginLeft:6, color:'#999'}}>
+                    · desde {fechaInicioProyeccion}
+                    {mp ? <> · <span style={{color:'#aaa'}}>{mp} prog</span></> : null}
+                    {' · '}<span style={{color:'#666',fontWeight:600}}>{numMesesEjecucion} ejec</span>
+                  </span>
+                );
+              })()}
             </span>
+            <button
+              onClick={() => setSelectedCausa(null)}
+              style={{marginLeft:'auto',padding:'2px 8px',fontSize:'0.62rem',fontWeight:400,
+                border:'1px solid #2D4170',borderRadius:4,cursor:'pointer',
+                background:'transparent',color:'#222',whiteSpace:'nowrap',flexShrink:0}}>
+              Proy. acum »
+            </button>
           </div>
           <div style={{flex:1,display:'flex',minHeight:0,overflow:'hidden'}}>
 
@@ -643,26 +743,29 @@ export default function ProyeccionesDetalle() {
                   </span>
                 </div>
               ))}
-              {pptoCats && (
-                <>
-                  <div style={{marginTop:6,marginBottom:2,fontSize:'0.55rem',color:'#999',fontWeight:700,
-                    textTransform:'uppercase',letterSpacing:'0.03em'}}>
-                    Ppto Base
-                  </div>
-                  {CAT_DEFS.map(cat => {
-                    const v = pptoCats[cat.key] || 0;
-                    if (!v) return null;
-                    return (
-                      <div key={`v-${cat.key}`} style={{display:'flex',alignItems:'center',gap:3,minHeight:13}}>
-                        <span style={{width:6,height:6,borderRadius:1,background:cat.color,flexShrink:0,display:'inline-block'}}/>
-                        <span style={{fontSize:'0.57rem',color:'#444',fontWeight:600,whiteSpace:'nowrap'}}>
-                          {fmtM(v)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </>
-              )}
+              {pptoCats && (() => {
+                const lastRing = donutRings[donutRings.length - 1];
+                return (
+                  <>
+                    <div style={{marginTop:10,marginBottom:2,display:'flex',gap:2,borderTop:'1px solid #eee',paddingTop:4}}>
+                      <span style={{flex:1,fontSize:'0.5rem',color:'#333',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.03em'}}>Base</span>
+                      <span style={{flex:1,fontSize:'0.5rem',color:'#333',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.03em'}}>Proy Act</span>
+                    </div>
+                    {CAT_DEFS.map(cat => {
+                      const base = pptoCats[cat.key] || 0;
+                      const proy = lastRing?.vals?.[cat.key] || 0;
+                      if (!base && !proy) return null;
+                      return (
+                        <div key={`v-${cat.key}`} style={{display:'flex',alignItems:'center',gap:2,minHeight:13}}>
+                          <span style={{width:6,height:6,borderRadius:1,background:cat.color,flexShrink:0,display:'inline-block'}}/>
+                          <span style={{flex:1,fontSize:'0.55rem',color:'#444',fontWeight:600,whiteSpace:'nowrap'}}>{fmtM(base)}</span>
+                          <span style={{flex:1,fontSize:'0.55rem',color:'#1565C0',fontWeight:600,whiteSpace:'nowrap'}}>{fmtM(proy)}</span>
+                        </div>
+                      );
+                    })}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Centro: Donut */}
@@ -682,12 +785,24 @@ export default function ProyeccionesDetalle() {
             </div>
 
             {/* Derecha: Barras por causa acumulada (todos los años) */}
-            <div style={{flex:1,display:'flex',flexDirection:'column',borderLeft:'1px solid #f0f0f0',minHeight:0}}>
-              <div style={{padding:'4px 8px',fontSize:'0.65rem',fontWeight:600,color:'#666',flexShrink:0}}>
-                Variación acumulada por causa
-              </div>
-              <CausaBars causaAcum={causaAcumTotal} causas={data?.causas || []} />
-            </div>
+            {(() => {
+              const totalVar = Object.values(causaAcumTotal).reduce((s,v)=>s+v,0);
+              return (
+                <div style={{flex:1,display:'flex',flexDirection:'column',borderLeft:'1px solid #f0f0f0',minHeight:0,overflow:'hidden'}}>
+                  <div style={{padding:'6px 8px 2px',fontSize:'0.65rem',fontWeight:600,color:'#666',flexShrink:0}}>
+                    Variación acumulada por causa
+                  </div>
+                  <CausaBars causaAcum={causaAcumTotal} causas={data?.causas || []}
+                    selectedCausa={selectedCausa} onSelectCausa={setSelectedCausa} />
+                  <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px 6px',display:'flex',alignItems:'center',gap:4,flexShrink:0,marginBottom:10}}>
+                    <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color:'#333'}}>Total</div>
+                    <div style={{fontSize:'0.65rem',fontWeight:700,color:'#222'}}>
+                      {(totalVar>=0?'+':'')+fmtM(totalVar)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -720,30 +835,102 @@ export default function ProyeccionesDetalle() {
           )}
         </div>
 
-        {/* P3 — Detalle Variación Acumulada */}
+        {/* P3 — Folios por causa */}
         <div style={{background:'var(--c-surface,#fff)',borderRadius:6,border:'1px solid #ddd',
-          display:'flex',flexDirection:'column',overflow:'hidden'}}>
-          <div style={{padding:'6px 12px',borderBottom:'1px solid #eee',display:'flex',
-            alignItems:'center',gap:8,flexShrink:0}}>
-            <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P3 Detalle Acumulado</span>
-            <span style={{fontSize:'0.65rem',color:'#999'}}>Ordenar:</span>
-            {['valor','causa','capitulo'].map(s => (
-              <button key={s}
-                style={{padding:'1px 6px',border:'1px solid #ccc',borderRadius:3,cursor:'pointer',
-                  fontSize:'0.65rem',background:sortP3===s?'#5A5A8A':'transparent',
-                  color:sortP3===s?'#fff':'#555'}}
-                onClick={() => setSortP3(s)}>
-                {s.charAt(0).toUpperCase()+s.slice(1)}
-              </button>
-            ))}
+          display:'flex',flexDirection:'column',overflow:'hidden',minHeight:0}}>
+          <div style={{padding:'6px 12px',borderBottom:'1px solid #eee',flexShrink:0,
+            display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P3</span>
+            {selectedCausa
+              ? <span style={{fontSize:'0.75rem',fontWeight:600,color:'#2D4170'}}>· {selectedCausa}</span>
+              : <span style={{fontSize:'0.7rem',color:'#888'}}>· Total variación</span>}
+            <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#888'}}>
+              {hasRealFolios
+                ? `${foliosP3Data.length} folios · Total ${fmtM(foliosP3Data.reduce((s,f)=>s+f.valor,0))}`
+                : `${causaMesesData.length} meses · Total ${fmtM(causaMesesData.reduce((s,r)=>s+r.valor,0))}`}
+            </span>
           </div>
           <div style={{flex:1,overflowY:'auto',minHeight:0}}>
-            {!selectedP1
-              ? <div style={{padding:16,color:'#999',fontSize:'0.75rem',textAlign:'center'}}>
-                  Selecciona un mes en P2
-                </div>
-              : <TablaFolios folios={foliosP3} sortBy={sortP3} onSortBy={setSortP3} />
-            }
+            {hasRealFolios ? (
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.67rem'}}>
+                <thead>
+                  <tr style={{background:'#f5f7fa',position:'sticky',top:0}}>
+                    <th style={{padding:'4px 8px',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'8%'}}>Folio · Mes</th>
+                    <th style={{padding:'4px 6px 4px 0',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'8%'}}>Causa</th>
+                    <th style={{padding:'4px 4px 4px 0',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'9%'}}>Capítulos</th>
+                    <th style={{padding:'4px 8px',textAlign:'left',fontWeight:600,color:'#666'}}>Descripción</th>
+                    <th style={{padding:'4px 8px',textAlign:'right',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'7%'}}>Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {foliosP3Data.map((f, i) => (
+                    <tr key={i} style={{background: i%2===0?'transparent':'#fafafa', verticalAlign:'top'}}>
+                      <td style={{padding:'4px 8px',color:'#2D4170',fontWeight:700,whiteSpace:'nowrap',fontSize:'0.65rem'}}>
+                        {f.folio}<br/>
+                        <span style={{fontWeight:400,color:'#aaa',fontSize:'0.6rem'}}>{ymLabel(f.ym)}</span>
+                      </td>
+                      <td style={{padding:'4px 4px 4px 0',color:'#555',fontSize:'0.60rem',whiteSpace:'nowrap'}}>{f.causa || '—'}</td>
+                      <td style={{padding:'4px 4px 4px 0',verticalAlign:'top'}}>
+                        {(f.caps||[]).length > 0
+                          ? [...new Set(f.caps)].map(label => (
+                              <div key={label} style={{marginBottom:2}}>
+                                <span style={{display:'inline-block',
+                                  padding:'1px 4px',borderRadius:3,fontSize:'0.58rem',fontWeight:500,
+                                  background:'#E8EBF4',color:'#2D4170',whiteSpace:'nowrap'}}>
+                                  {label}
+                                </span>
+                              </div>
+                            ))
+                          : <span style={{color:'#ccc',fontSize:'0.6rem'}}>—</span>
+                        }
+                      </td>
+                      <td style={{padding:'4px 8px',color:'#444',lineHeight:1.35,fontSize:'0.65rem',width:'35%'}}>{f.descripcion || '—'}</td>
+                      <td style={{padding:'4px 8px',textAlign:'right',fontWeight:400,whiteSpace:'nowrap',
+                        color: f.valor >= 0 ? '#c62828' : '#1565C0'}}>
+                        {(f.valor>=0?'+':'')+fmtM(f.valor)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : causaMesesData.length === 0 ? (
+              <div style={{padding:16,color:'#bbb',fontSize:'0.72rem',textAlign:'center'}}>Sin datos</div>
+            ) : (
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.68rem'}}>
+                <tbody>
+                  {causaMesesPorAnio.map(([year, meses]) => {
+                    const yearTotal = meses.reduce((s, r) => s + r.valor, 0);
+                    return (
+                      <React.Fragment key={year}>
+                        <tr style={{background:'#f0f4f8'}}>
+                          <td colSpan={2} style={{padding:'4px 8px',fontWeight:700,color:'#2D4170',fontSize:'0.72rem'}}>{year}</td>
+                          <td style={{padding:'4px 8px',textAlign:'right',fontWeight:700,
+                            color: yearTotal >= 0 ? '#c62828' : '#1565C0',fontSize:'0.72rem',whiteSpace:'nowrap'}}>
+                            {(yearTotal >= 0 ? '+' : '') + fmtM(yearTotal)}
+                          </td>
+                        </tr>
+                        {meses.map((r, i) => (
+                          <tr key={r.ym} style={{background: i%2===0 ? 'transparent' : '#fafafa'}}>
+                            <td style={{padding:'3px 8px 3px 20px',color:'#888',whiteSpace:'nowrap',width:80}}>{ymLabel(r.ym)}</td>
+                            <td style={{padding:'3px 8px'}}>
+                              <div style={{height:6,borderRadius:3,background:'#f0f0f0',position:'relative'}}>
+                                <div style={{position:'absolute',top:0,height:'100%',borderRadius:3,
+                                  background: r.valor >= 0 ? '#c62828' : '#1565C0',opacity:0.7,
+                                  width:`${Math.min(100,Math.abs(r.valor)/Math.max(...causaMesesData.map(x=>Math.abs(x.valor)),1)*100)}%`}}/>
+                              </div>
+                            </td>
+                            <td style={{padding:'3px 8px',textAlign:'right',fontWeight:600,
+                              color: r.valor >= 0 ? '#c62828' : '#1565C0',whiteSpace:'nowrap'}}>
+                              {(r.valor >= 0 ? '+' : '') + fmtM(r.valor)}
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
