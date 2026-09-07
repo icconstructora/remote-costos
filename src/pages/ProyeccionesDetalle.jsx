@@ -797,12 +797,12 @@ export default function ProyeccionesDetalle() {
               justifyContent:'flex-start',gap:2,minHeight:0,overflowY:'auto',
               border:'1px solid #e0e0e0',borderRadius:5,margin:'6px 4px 6px 6px'}}>
               {/* Header */}
-              <div style={{display:'flex',gap:2,borderBottom:'1px solid #e0e0e0',paddingBottom:3,marginBottom:2,flexShrink:0}}>
-                <span style={{flex:'0 0 8px'}}/>
-                <span style={{flex:1,fontSize:'0.48rem',color:'#888',fontWeight:700,textTransform:'uppercase'}}>Actividades</span>
-                <span style={{width:38,fontSize:'0.48rem',color:'#888',fontWeight:700,textAlign:'right'}}>Base</span>
-                <span style={{width:38,fontSize:'0.48rem',color:'#1565C0',fontWeight:700,textAlign:'right'}}>Proy</span>
-                <span style={{width:36,fontSize:'0.48rem',color:'#888',fontWeight:700,textAlign:'right'}}>$Δ</span>
+              <div style={{display:'flex',gap:3,borderBottom:'1px solid #e0e0e0',paddingBottom:3,marginBottom:2,flexShrink:0}}>
+                <span style={{flex:'0 0 10px'}}/>
+                <span style={{flex:1,fontSize:'0.55rem',color:'#888',fontWeight:700,textTransform:'uppercase'}}>Actividades</span>
+                <span style={{width:44,fontSize:'0.55rem',color:'#888',fontWeight:700,textAlign:'right'}}>Base</span>
+                <span style={{width:44,fontSize:'0.55rem',color:'#1565C0',fontWeight:700,textAlign:'right'}}>Proy</span>
+                <span style={{width:34,fontSize:'0.55rem',color:'#888',fontWeight:700,textAlign:'right'}}>%Δ</span>
               </div>
               {pptoCatsGranular ? (() => {
                 const lastRing = donutRings[donutRings.length - 1];
@@ -812,31 +812,31 @@ export default function ProyeccionesDetalle() {
                   const base = pptoCatsGranular[grp.key] || 0;
                   if (!base) return null;
                   const proy = base * projFactor;
-                  const delta = proy - base;
-                  const deltaColor = delta > 0 ? '#1a6b1a' : delta < 0 ? '#b00' : '#888';
+                  const pctDelta = ((proy - base) / base * 100);
+                  const deltaColor = pctDelta > 0 ? '#1a6b1a' : pctDelta < 0 ? '#b00' : '#888';
                   const isActSelected = selectedActivity === grp.key;
                   return (
                     <div key={grp.key}
                       onClick={() => { setSelectedActivity(isActSelected ? null : grp.key); setSelectedCausa(null); }}
-                      style={{display:'flex',alignItems:'center',gap:2,minHeight:13,cursor:'pointer',
-                        opacity: selectedActivity && !isActSelected ? 0.45 : 1,
-                        background: isActSelected ? '#f0f4ff' : 'transparent', borderRadius:3, padding:'0 1px'}}>
-                      <span style={{width:8,height:8,borderRadius:2,background:grp.color,flexShrink:0,display:'inline-block'}}/>
-                      <span style={{flex:1,fontSize:'0.52rem',color:grp.color,fontWeight:700,
+                      style={{display:'flex',alignItems:'center',gap:3,minHeight:15,cursor:'pointer',
+                        opacity: selectedActivity && !isActSelected ? 0.4 : 1,
+                        background: isActSelected ? '#f0f4ff' : 'transparent', borderRadius:3, padding:'0 2px'}}>
+                      <span style={{width:10,height:10,borderRadius:2,background:grp.color,flexShrink:0,display:'inline-block'}}/>
+                      <span style={{flex:1,fontSize:'0.6rem',color:grp.color,fontWeight:700,
                         whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}
                         title={grp.label}>{grp.label}</span>
-                      <span style={{width:38,fontSize:'0.52rem',color:'#555',fontWeight:600,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(base)}</span>
-                      <span style={{width:38,fontSize:'0.52rem',color:'#1565C0',fontWeight:700,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(proy)}</span>
-                      <span style={{width:36,fontSize:'0.52rem',fontWeight:700,color:deltaColor,textAlign:'right',whiteSpace:'nowrap'}}>
-                        {(delta>=0?'+':'')+fmtM(delta)}
+                      <span style={{width:44,fontSize:'0.6rem',color:'#555',fontWeight:600,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(base)}</span>
+                      <span style={{width:44,fontSize:'0.6rem',color:'#1565C0',fontWeight:700,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(proy)}</span>
+                      <span style={{width:34,fontSize:'0.6rem',fontWeight:700,color:deltaColor,textAlign:'right',whiteSpace:'nowrap'}}>
+                        {(pctDelta>=0?'+':'')+pctDelta.toFixed(1)+'%'}
                       </span>
                     </div>
                   );
                 });
               })() : CDD_APP_GROUPS.map(grp => (
-                <div key={grp.key} style={{display:'flex',alignItems:'center',gap:4,minHeight:14}}>
-                  <span style={{width:8,height:8,borderRadius:2,background:grp.color,flexShrink:0,display:'inline-block'}}/>
-                  <span style={{fontSize:'0.58rem',color:grp.color,fontWeight:700,lineHeight:1.1,
+                <div key={grp.key} style={{display:'flex',alignItems:'center',gap:4,minHeight:15}}>
+                  <span style={{width:10,height:10,borderRadius:2,background:grp.color,flexShrink:0,display:'inline-block'}}/>
+                  <span style={{fontSize:'0.62rem',color:grp.color,fontWeight:700,lineHeight:1.1,
                     whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
                     {grp.label}
                   </span>
