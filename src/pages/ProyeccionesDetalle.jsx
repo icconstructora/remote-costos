@@ -77,6 +77,40 @@ const CAT_DEFS = [
   // Morado — DSC
   { key:'dsc', label:'Descuentos',            color:'#6A1B9A', tipo:'dsc' },
 ];
+// 30 grupos granulares "Nombre en App" del Excel capitulos_control_proyecto.xlsx
+const CDD_APP_GROUPS = [
+  { key:'gg',   label:'Gastos Generales',             color:'#0A3D1A', codes:['CDD01','CDD02','CDD03','CDD37','CDD38','CDD39','CDD40'], tipo:'cdd' },
+  { key:'dcp',  label:'Descapote, excav. y rellenos', color:'#155724', codes:['CDD04'], tipo:'cdd' },
+  { key:'pil',  label:'Pilotaje',                     color:'#1B6B30', codes:['CDD05'], tipo:'cdd' },
+  { key:'cie',  label:'Cimentacion y Estructura',     color:'#256E3A', codes:['CDD06','CDD07','CDD08'], tipo:'cdd' },
+  { key:'ihs',  label:'Inst. Hidrosanitarias',        color:'#1565C0', codes:['CDD09','CDD10'], tipo:'cdd' },
+  { key:'iel',  label:'Inst. Electricas',             color:'#1976D2', codes:['CDD11'], tipo:'cdd' },
+  { key:'igs',  label:'Inst. de Gas',                 color:'#1E88E5', codes:['CDD12'], tipo:'cdd' },
+  { key:'irci', label:'Inst. Red contra Incendio',    color:'#2196F3', codes:['CDD13'], tipo:'cdd' },
+  { key:'isc',  label:'Inst. Seguridad y Control',    color:'#42A5F5', codes:['CDD14'], tipo:'cdd' },
+  { key:'mamp', label:'Mampostería y Pañetes',        color:'#2E9E50', codes:['CDD15','CDD16'], tipo:'cdd' },
+  { key:'pint', label:'Pinturas y Drywall',           color:'#3DB060', codes:['CDD17','CDD18','CDD24'], tipo:'cdd' },
+  { key:'piso', label:'Pisos y Enchapes',             color:'#52C76A', codes:['CDD19','CDD21'], tipo:'cdd' },
+  { key:'impe', label:'Impermeabilizaciones',         color:'#68D680', codes:['CDD20'], tipo:'cdd' },
+  { key:'equi', label:'Equipamento',                  color:'#80E090', codes:['CDD22'], tipo:'cdd' },
+  { key:'eesp', label:'Equipos Especiales',           color:'#96E0A0', codes:['CDD23'], tipo:'cdd' },
+  { key:'cmet', label:'Carpintería Metálica',         color:'#4CAF50', codes:['CDD26'], tipo:'cdd' },
+  { key:'calu', label:'Carpintería Aluminio',         color:'#66BB6A', codes:['CDD27'], tipo:'cdd' },
+  { key:'cmad', label:'Carpintería Madera',           color:'#81C784', codes:['CDD28'], tipo:'cdd' },
+  { key:'nome', label:'Nomenclatura',                 color:'#A5D6A7', codes:['CDD29'], tipo:'cdd' },
+  { key:'aseo', label:'Aseo',                         color:'#C8E6C9', codes:['CDD30'], tipo:'cdd' },
+  { key:'zv',   label:'Zonas Verdes, Vías',           color:'#2E7D32', codes:['CDD31','CDD32','CDD33'], tipo:'cdd' },
+  { key:'omit', label:'Obras de Mitigación',          color:'#558B2F', codes:['CDD34'], tipo:'cdd' },
+  { key:'ref',  label:'Reformas',                     color:'#7B1041', codes:['CDD35'], tipo:'cdd' },
+  { key:'imp',  label:'Imprevistos',                  color:'#880E4F', codes:['CDD36','CDD42','CDD44','CDD45'], tipo:'imp' },
+  { key:'hvac', label:'Inst. de HVAC',                color:'#0D47A1', codes:['CDD43'], tipo:'cdd' },
+  { key:'dsc',  label:'Descuentos',                   color:'#6A1B9A', codes:['CDD99'], tipo:'dsc' },
+  { key:'nom',  label:'Nómina Administrativa',        color:'#BF360C', codes:[], tipo:'cid' },
+  { key:'spu',  label:'Servicios Públicos',           color:'#E64A19', codes:[], tipo:'cid' },
+  { key:'gob',  label:'Gastos de Obra',               color:'#FF7043', codes:[], tipo:'cid' },
+  { key:'sst',  label:'Seguridad Industrial',         color:'#FF8A65', codes:[], tipo:'cid' },
+];
+
 // Grados asignados a cada tipo (visual, independiente del valor real)
 // 70% verdes CDD / 8% azules IMP / 20% naranjas CID / 2% morado DSC — gaps 3° x3
 const TIPO_DEGS = { cdd: 246, imp: 28, cid: 70, dsc: 7 };
@@ -365,6 +399,7 @@ export default function ProyeccionesDetalle() {
   const [selectedP1, setSelectedP1] = useState(null);
   const [selectedP2, setSelectedP2] = useState(null);
   const [selectedCausa, setSelectedCausa] = useState(null);
+  const [selectedActivity, setSelectedActivity] = useState(null);
   const [sortP3, setSortP3] = useState('valor');
   const [sortP4, setSortP4] = useState('valor');
 
@@ -446,6 +481,30 @@ export default function ProyeccionesDetalle() {
       const cidCats = CAT_DEFS.filter(c => c.tipo === 'cid');
       cidCats.forEach(c => { vals[c.key] = cidReal / cidCats.length; });
     }
+    return vals;
+  }, [detalleItems, detalle, macroKey]);
+
+  // Base presupuesto por grupo granular (30 grupos Nombre en App)
+  const pptoCatsGranular = useMemo(() => {
+    const tot = detalle?.[macroKey]?.totales;
+    if (!tot) return null;
+    const codeToGrp = {};
+    CDD_APP_GROUPS.forEach(g => { g.codes.forEach(c => { codeToGrp[c] = g.key; }); });
+    const raw = {};
+    CDD_APP_GROUPS.forEach(g => { raw[g.key] = 0; });
+    detalleItems.forEach(it => {
+      const grp = codeToGrp[it.num];
+      if (grp !== undefined) raw[grp] += it.ppto || 0;
+    });
+    const nonCidCats = CDD_APP_GROUPS.filter(g => g.tipo !== 'cid');
+    const cddRaw = nonCidCats.reduce((s, g) => s + raw[g.key], 0);
+    const cddReal = tot.cdd?.ppto || 0;
+    const cddFactor = cddRaw > 0 ? cddReal / cddRaw : 1;
+    const vals = {};
+    nonCidCats.forEach(g => { vals[g.key] = raw[g.key] * cddFactor; });
+    const cidCats = CDD_APP_GROUPS.filter(g => g.tipo === 'cid');
+    const cidReal = tot.cid?.ppto || 0;
+    cidCats.forEach(g => { vals[g.key] = cidReal / cidCats.length; });
     return vals;
   }, [detalleItems, detalle, macroKey]);
 
@@ -578,13 +637,16 @@ export default function ProyeccionesDetalle() {
     return proyData.meses[selectedP2]?.folios || [];
   }, [proyData, selectedP2]);
 
-  // P3: folios agrupados por folio-key, filtrados por causa seleccionada
+  // P3: folios agrupados por folio-key, filtrados por causa o actividad seleccionada
   const foliosP3Data = useMemo(() => {
     if (!proyData) return [];
+    const actGrp = selectedActivity ? CDD_APP_GROUPS.find(g => g.key === selectedActivity) : null;
+    const actCodes = actGrp?.codes || [];
     const map = {};
     Object.entries(proyData.meses).forEach(([ym, md]) => {
       (md.folios || []).forEach(f => {
         if (selectedCausa && normCausa(f.causa) !== selectedCausa) return;
+        if (actCodes.length > 0 && !(f.capKeys || []).some(ck => actCodes.includes(ck))) return;
         const k = f._key ?? String(f.folio ?? f.reforma ?? f.id ?? `${ym}-anon`);
         if (!map[k]) map[k] = {
           folio: f.folio ?? f.reforma ?? k,
@@ -601,7 +663,7 @@ export default function ProyeccionesDetalle() {
       });
     });
     return Object.values(map).sort((a, b) => b.valor - a.valor);
-  }, [proyData, selectedCausa]);
+  }, [proyData, selectedCausa, selectedActivity]);
 
   // Fallback: meses agrupados por año cuando no hay folios
   const causaMesesData = useMemo(() => {
@@ -721,7 +783,7 @@ export default function ProyeccionesDetalle() {
               })()}
             </span>
             <button
-              onClick={() => setSelectedCausa(null)}
+              onClick={() => { setSelectedCausa(null); setSelectedActivity(null); }}
               style={{marginLeft:'auto',padding:'2px 8px',fontSize:'0.62rem',fontWeight:400,
                 border:'1px solid #2D4170',borderRadius:4,cursor:'pointer',
                 background:'transparent',color:'#222',whiteSpace:'nowrap',flexShrink:0}}>
@@ -737,25 +799,32 @@ export default function ProyeccionesDetalle() {
               {/* Header */}
               <div style={{display:'flex',gap:2,borderBottom:'1px solid #e0e0e0',paddingBottom:3,marginBottom:2,flexShrink:0}}>
                 <span style={{flex:'0 0 8px'}}/>
-                <span style={{flex:1,fontSize:'0.48rem',color:'#888',fontWeight:700,textTransform:'uppercase'}}>Capítulo</span>
+                <span style={{flex:1,fontSize:'0.48rem',color:'#888',fontWeight:700,textTransform:'uppercase'}}>Actividades</span>
                 <span style={{width:38,fontSize:'0.48rem',color:'#888',fontWeight:700,textAlign:'right'}}>Base</span>
                 <span style={{width:38,fontSize:'0.48rem',color:'#1565C0',fontWeight:700,textAlign:'right'}}>Proy</span>
                 <span style={{width:36,fontSize:'0.48rem',color:'#888',fontWeight:700,textAlign:'right'}}>$Δ</span>
               </div>
-              {pptoCats ? (() => {
+              {pptoCatsGranular ? (() => {
                 const lastRing = donutRings[donutRings.length - 1];
-                return CAT_DEFS.map(cat => {
-                  const base = pptoCats[cat.key] || 0;
-                  const proy = lastRing?.vals?.[cat.key] || 0;
-                  if (!base && !proy) return null;
+                const lastTotal = lastRing ? Object.values(lastRing.vals).reduce((s,v) => s+v, 0) : pptoTotal;
+                const projFactor = pptoTotal > 0 ? lastTotal / pptoTotal : 1;
+                return CDD_APP_GROUPS.map(grp => {
+                  const base = pptoCatsGranular[grp.key] || 0;
+                  if (!base) return null;
+                  const proy = base * projFactor;
                   const delta = proy - base;
                   const deltaColor = delta > 0 ? '#1a6b1a' : delta < 0 ? '#b00' : '#888';
+                  const isActSelected = selectedActivity === grp.key;
                   return (
-                    <div key={cat.key} style={{display:'flex',alignItems:'center',gap:2,minHeight:13}}>
-                      <span style={{width:8,height:8,borderRadius:2,background:cat.color,flexShrink:0,display:'inline-block'}}/>
-                      <span style={{flex:1,fontSize:'0.52rem',color:cat.color,fontWeight:700,
+                    <div key={grp.key}
+                      onClick={() => { setSelectedActivity(isActSelected ? null : grp.key); setSelectedCausa(null); }}
+                      style={{display:'flex',alignItems:'center',gap:2,minHeight:13,cursor:'pointer',
+                        opacity: selectedActivity && !isActSelected ? 0.45 : 1,
+                        background: isActSelected ? '#f0f4ff' : 'transparent', borderRadius:3, padding:'0 1px'}}>
+                      <span style={{width:8,height:8,borderRadius:2,background:grp.color,flexShrink:0,display:'inline-block'}}/>
+                      <span style={{flex:1,fontSize:'0.52rem',color:grp.color,fontWeight:700,
                         whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}
-                        title={cat.label}>{cat.label}</span>
+                        title={grp.label}>{grp.label}</span>
                       <span style={{width:38,fontSize:'0.52rem',color:'#555',fontWeight:600,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(base)}</span>
                       <span style={{width:38,fontSize:'0.52rem',color:'#1565C0',fontWeight:700,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(proy)}</span>
                       <span style={{width:36,fontSize:'0.52rem',fontWeight:700,color:deltaColor,textAlign:'right',whiteSpace:'nowrap'}}>
@@ -764,19 +833,19 @@ export default function ProyeccionesDetalle() {
                     </div>
                   );
                 });
-              })() : CAT_DEFS.map(cat => (
-                <div key={cat.key} style={{display:'flex',alignItems:'center',gap:4,minHeight:14}}>
-                  <span style={{width:8,height:8,borderRadius:2,background:cat.color,flexShrink:0,display:'inline-block'}}/>
-                  <span style={{fontSize:'0.58rem',color:cat.color,fontWeight:700,lineHeight:1.1,
+              })() : CDD_APP_GROUPS.map(grp => (
+                <div key={grp.key} style={{display:'flex',alignItems:'center',gap:4,minHeight:14}}>
+                  <span style={{width:8,height:8,borderRadius:2,background:grp.color,flexShrink:0,display:'inline-block'}}/>
+                  <span style={{fontSize:'0.58rem',color:grp.color,fontWeight:700,lineHeight:1.1,
                     whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                    {cat.label}
+                    {grp.label}
                   </span>
                 </div>
               ))}
             </div>
 
             {/* Centro: Donut */}
-            <div style={{flex:'0 0 38%',padding:'4px',display:'flex',flexDirection:'column',minHeight:0,minWidth:0}}>
+            <div style={{flex:1,padding:'4px',display:'flex',flexDirection:'column',minHeight:0,minWidth:0}}>
               {donutRings.length > 0 ? (
                 <DonutMultiRing
                   rings={donutRings}
@@ -795,12 +864,12 @@ export default function ProyeccionesDetalle() {
             {(() => {
               const totalVar = Object.values(causaAcumTotal).reduce((s,v)=>s+v,0);
               return (
-                <div style={{flex:1,display:'flex',flexDirection:'column',borderLeft:'1px solid #f0f0f0',minHeight:0,overflow:'hidden'}}>
+                <div style={{flex:'0 0 30%',display:'flex',flexDirection:'column',borderLeft:'1px solid #f0f0f0',minHeight:0,overflow:'hidden'}}>
                   <div style={{padding:'6px 8px 2px',fontSize:'0.65rem',fontWeight:600,color:'#666',flexShrink:0}}>
                     Variación acumulada por causa
                   </div>
                   <CausaBars causaAcum={causaAcumTotal} causas={data?.causas || []}
-                    selectedCausa={selectedCausa} onSelectCausa={setSelectedCausa} />
+                    selectedCausa={selectedCausa} onSelectCausa={c => { setSelectedCausa(c); setSelectedActivity(null); }} />
                   <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px 6px',display:'flex',alignItems:'center',gap:4,flexShrink:0,marginBottom:10}}>
                     <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color:'#333'}}>Total</div>
                     <div style={{fontSize:'0.65rem',fontWeight:700,color:'#222'}}>
@@ -850,7 +919,9 @@ export default function ProyeccionesDetalle() {
             <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P3</span>
             {selectedCausa
               ? <span style={{fontSize:'0.75rem',fontWeight:600,color:'#2D4170'}}>· {selectedCausa}</span>
-              : <span style={{fontSize:'0.7rem',color:'#888'}}>· Total variación</span>}
+              : selectedActivity
+                ? <span style={{fontSize:'0.75rem',fontWeight:600,color:'#256E3A'}}>· {CDD_APP_GROUPS.find(g=>g.key===selectedActivity)?.label}</span>
+                : <span style={{fontSize:'0.7rem',color:'#888'}}>· Total variación</span>}
             <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#888'}}>
               {hasRealFolios
                 ? `${foliosP3Data.length} folios · Total ${fmtM(foliosP3Data.reduce((s,f)=>s+f.valor,0))}`
