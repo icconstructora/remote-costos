@@ -138,11 +138,9 @@ def build_cap_dim(token):
             continue
         code = (r.get('Capitulo Numero') or r.get('capitulo_numero') or '').strip().upper()
         # Descripción: varios nombres posibles según la API
-        desc = (r.get('Capitulo_Descripcion') or '').strip()
+        desc = (r.get('Capitulo Descripcion') or '').strip()
         if code:
             cap_map[skid] = {'code': code, 'desc': desc}
-    if rows:
-        print(f'  [DEBUG] Campos dim_cap: {sorted(rows[0].keys())}', flush=True)
     print(f'  dim_capitulopresupuesto: {len(cap_map)} capítulos', flush=True)
     return cap_map
 
@@ -290,9 +288,6 @@ def main():
                 }
                 for ym, md in sorted(meses_combined.items())
             }}
-
-    if unmapped_skids:
-        print(f'  [DEBUG] skidproyecto SIN mapear ({len(unmapped_skids)}): {sorted(unmapped_skids)}', flush=True)
 
     print('[3/3] Construyendo JSON...', flush=True)
     resultado = {
