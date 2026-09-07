@@ -98,7 +98,7 @@ const CDD_APP_GROUPS = [
   { key:'calu', label:'Carpintería Aluminio',         color:'#66BB6A', codes:['CDD27'], tipo:'cdd' },
   { key:'cmad', label:'Carpintería Madera',           color:'#81C784', codes:['CDD28'], tipo:'cdd' },
   { key:'nome', label:'Nomenclatura',                 color:'#A5D6A7', codes:['CDD29'], tipo:'cdd' },
-  { key:'aseo', label:'Aseo',                         color:'#C8E6C9', codes:['CDD30'], tipo:'cdd' },
+  { key:'aseo', label:'Aseo',                         color:'#4E9A56', codes:['CDD30'], tipo:'cdd' },
   { key:'zv',   label:'Zonas Verdes, Vías',           color:'#2E7D32', codes:['CDD31','CDD32','CDD33'], tipo:'cdd' },
   { key:'omit', label:'Obras de Mitigación',          color:'#558B2F', codes:['CDD34'], tipo:'cdd' },
   { key:'ref',  label:'Reformas',                     color:'#7B1041', codes:['CDD35'], tipo:'cdd' },
