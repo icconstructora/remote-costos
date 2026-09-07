@@ -508,7 +508,7 @@ export default function ProyeccionesDetalle() {
     return vals;
   }, [detalleItems, detalle, macroKey]);
 
-  // Variación acumulada real por grupo granular — suma valor de folios cuyo capKey pertenece al grupo
+  // Variación acumulada real por grupo granular usando capVals (valor exacto por capítulo)
   const variaGranular = useMemo(() => {
     if (!proyData) return {};
     const codeToGrp = {};
@@ -517,15 +517,22 @@ export default function ProyeccionesDetalle() {
     CDD_APP_GROUPS.forEach(g => { varia[g.key] = 0; });
     Object.values(proyData.meses).forEach(md => {
       (md.folios || []).forEach(f => {
-        const keys = f.capKeys || [];
-        if (keys.length === 0) return;
-        // Grupos afectados por este folio (sin duplicados)
-        const grpsSet = new Set(keys.map(ck => codeToGrp[ck]).filter(Boolean));
-        const grpsList = [...grpsSet];
-        if (grpsList.length === 0) return;
-        // Distribuir valor equitativamente entre grupos afectados
-        const share = (f.valor || 0) / grpsList.length;
-        grpsList.forEach(gk => { varia[gk] += share; });
+        const capVals = f.capVals;
+        if (capVals && Object.keys(capVals).length > 0) {
+          // Usar valores reales por capítulo (precisión exacta)
+          Object.entries(capVals).forEach(([ck, cv]) => {
+            const gk = codeToGrp[ck];
+            if (gk) varia[gk] += cv;
+          });
+        } else {
+          // Fallback: distribuir total entre capKeys (datos sin capVals)
+          const keys = f.capKeys || [];
+          const grpsList = [...new Set(keys.map(ck => codeToGrp[ck]).filter(Boolean))];
+          if (grpsList.length > 0) {
+            const share = (f.valor || 0) / grpsList.length;
+            grpsList.forEach(gk => { varia[gk] += share; });
+          }
+        }
       });
     });
     return varia;

@@ -166,9 +166,9 @@ def build_cap_dim(token):
         skid = r.get('skidcapitulo')
         if not skid:
             continue
-        code = (r.get('Capitulo Numero') or r.get('capitulo_numero') or '').strip().upper()
+        code = (r.get('Capitulo Numero') or r.get('capitulo_numero') or '').strip().upper().replace(' ', '')
         # Descripción: varios nombres posibles según la API
-        desc = (r.get('Capitulo Descripcion') or '').strip()
+        desc = (r.get('Capitulo Descripcion') or r.get('capitulo_descripcion') or '').strip()
         if code:
             cap_map[skid] = {'code': code, 'desc': desc}
     print(f'  dim_capitulopresupuesto: {len(cap_map)} capítulos', flush=True)
@@ -261,16 +261,18 @@ def main():
                 'capitulo':   cap_desc,
                 'caps':       [cap_desc] if cap_desc else [],
                 'capKeys':    [cap_code] if cap_code else [],
+                'capVals':    {cap_code: valor} if cap_code else {},
                 'valor':      0,
                 'comentario': comentario,
             }
         else:
-            # Acumular caps/capKeys si el folio tiene más de un capítulo
             entry = fd[folio_key]
             if cap_desc and cap_desc not in entry['caps']:
                 entry['caps'].append(cap_desc)
             if cap_code and cap_code not in entry['capKeys']:
                 entry['capKeys'].append(cap_code)
+            if cap_code:
+                entry.setdefault('capVals', {})[cap_code] = entry['capVals'].get(cap_code, 0) + valor
         fd[folio_key]['valor'] += valor
 
     # ── Serializar ─────────────────────────────────────────────────────────────
@@ -302,6 +304,7 @@ def main():
                         meses_combined[ym]['folios'][fk] = dict(f)
                         meses_combined[ym]['folios'][fk]['caps'] = list(f.get('caps', []))
                         meses_combined[ym]['folios'][fk]['capKeys'] = list(f.get('capKeys', []))
+                        meses_combined[ym]['folios'][fk]['capVals'] = dict(f.get('capVals', {}))
                     else:
                         entry = meses_combined[ym]['folios'][fk]
                         entry['valor'] += f['valor']
@@ -311,6 +314,8 @@ def main():
                         for c in f.get('capKeys', []):
                             if c not in entry['capKeys']:
                                 entry['capKeys'].append(c)
+                        for ck, cv in f.get('capVals', {}).items():
+                            entry.setdefault('capVals', {})[ck] = entry['capVals'].get(ck, 0) + cv
         if meses_combined:
             out[macro_key] = {'meses': {
                 ym: {
