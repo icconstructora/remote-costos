@@ -838,9 +838,9 @@ export default function ProyeccionesDetalle() {
                   });
                 return sortedGrps.map(({ grp, base, varia }) => {
                   const proy = base + varia;
-                  const pctDelta = base > 0 ? (varia / base * 100) : null;
-                  const deltaColor = (pctDelta === null || pctDelta > 0) ? '#1a6b1a' : pctDelta < 0 ? '#b00' : '#888';
-                  const pctStr = pctDelta === null ? 'S/B' : (pctDelta >= 0 ? '+' : '') + pctDelta.toFixed(1) + '%';
+                  const pctDelta = base > 0 ? (varia / base * 100) : (varia !== 0 ? 100 : 0);
+                  const deltaColor = pctDelta > 0 ? '#1a6b1a' : pctDelta < 0 ? '#b00' : '#888';
+                  const pctStr = (pctDelta >= 0 ? '+' : '') + pctDelta.toFixed(1) + '%';
                   const isActSelected = selectedActivity === grp.key;
                   return (
                     <div key={grp.key}
