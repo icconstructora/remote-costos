@@ -23,21 +23,50 @@ _out_dir  = os.environ.get('OUTPUT_DIR') or os.path.join(
     os.path.dirname(os.path.abspath(__file__)), '..', '..', 'public', 'data')
 DEST = os.path.join(_out_dir, 'proyecciones_data.json')
 
-# ── Mapeo skidproyecto → macroKey (mismo que gen_estado_api) ──────────────────
-# Proyectos activos — ampliar si se agregan nuevos
+# ── Mapeo skidproyecto → subKey  (skidproyecto = codigo + 100000) ─────────────
+# DIR y NOMINA de cada sub-etapa según subproyectos_skids.xlsx
 SKID_TO_KEY = {
-    100186: 'pra-e1',   100187: 'pra-e2',   100306: 'pra-zc',
-    100188: 'opo-e12',  100302: 'opo-e3',
-    100189: 'pri-e12',  100305: 'pri-zc',
-    100190: 'well',     100192: 'well',
-    100303: 'hac-ref',  100307: 'hac-e3',
-    100147: 'bosque',   100143: 'bosque',
-    100193: 'gaia',
-    100194: 'mit-11',   100308: 'mit-12',
-    100195: 'azt-e1',   100196: 'azt-e2',
-    100197: 'azc-e1',   100198: 'azc-e2',   100309: 'azc-e3',
-    100199: 'ver-e1',   100200: 'ver-e2',   100310: 'ver-e3',
-    100201: 'cai-e2b',  100311: 'cai-zc',
+    # PRAIA NATURA
+    100105: 'pra-e1', 100103: 'pra-e1',
+    100108: 'pra-e2', 100344: 'pra-e2',
+    100101: 'pra-zc',
+    # RESERVA DE OPORTO
+    100117: 'opo-e12', 100116: 'opo-e12',
+    100118: 'opo-e3',  100401: 'opo-e3',
+    # PRIMERA ESTE
+    100125: 'pri-e12', 100121: 'pri-e12',
+    100119: 'pri-zc',
+    # LA HACIENDA
+    100133: 'hac-e1', 100131: 'hac-e1',
+    100457: 'hac-ref',
+    100139: 'hac-e3',
+    # AZUL TURQUESA
+    100168: 'azt-e1',
+    100169: 'azt-e2', 100167: 'azt-e2',
+    # AZUL CELESTE
+    100174: 'azc-e1',
+    100175: 'azc-e2', 100173: 'azc-e2',
+    100176: 'azc-e3',
+    # VERDE VIVO
+    100180: 'ver-e1',
+    100181: 'ver-e2', 100179: 'ver-e2',
+    100182: 'ver-e3',
+    # MÍTIKA
+    100186: 'mit-11', 100184: 'mit-11', 100185: 'mit-11',
+    100408: 'mit-t5', 100409: 'mit-t5',
+    100187: 'mit-t6', 100189: 'mit-t6',
+    100188: 'mit-t7', 100337: 'mit-t7',
+    # CASTILLA IMPERIAL
+    100201: 'cai-e2b', 100195: 'cai-e2b',
+    100193: 'cai-zc',
+    # GAIA
+    100160: 'gaia', 100162: 'gaia',
+    # BOSQUE CENTRAL
+    100147: 'bosque', 100143: 'bosque',
+    # CASTILLA LIVING
+    100155: 'cast-l', 100157: 'cast-l',
+    # WELL
+    100190: 'well', 100192: 'well',
 }
 
 MACRO_SUBS = {
@@ -45,7 +74,8 @@ MACRO_SUBS = {
     'oporto':   ['opo-e12', 'opo-e3'],
     'primera':  ['pri-e12', 'pri-zc'],
     'hacienda': ['hac-e1', 'hac-ref', 'hac-e3'],
-    'mitika':   ['mit-11', 'mit-12'],
+    'mitika':   ['mit-11', 'mit-t5', 'mit-t6', 'mit-t7'],
+    'mit-12':   ['mit-t5', 'mit-t6', 'mit-t7'],
     'azul-t':   ['azt-e1', 'azt-e2'],
     'azul-c':   ['azc-e1', 'azc-e2', 'azc-e3'],
     'verde':    ['ver-e1', 'ver-e2', 'ver-e3'],
