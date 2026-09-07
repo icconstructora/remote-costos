@@ -256,7 +256,7 @@ def main():
         fd = proj_data[sub_key]['meses'][ym]['folios']
         if folio_key not in fd:
             fd[folio_key] = {
-                'folio':      folio_label or f'({ymLabel_py(ym)})',
+                'folio':      folio_label or f'Sin Folio - {ymLabel_py(ym)}',
                 'causa':      causa_desc,
                 'capitulo':   cap_desc,
                 'caps':       [cap_desc] if cap_desc else [],
