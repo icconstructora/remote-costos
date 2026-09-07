@@ -671,25 +671,54 @@ export default function ProyeccionesDetalle() {
   const foliosP3Data = useMemo(() => {
     if (!proyData) return [];
     const actGrp = selectedActivity ? CDD_APP_GROUPS.find(g => g.key === selectedActivity) : null;
-    const actCodes = actGrp?.codes || [];
+    const actCodes = new Set(actGrp?.codes || []);
     const map = {};
     Object.entries(proyData.meses).forEach(([ym, md]) => {
       (md.folios || []).forEach(f => {
         if (selectedCausa && normCausa(f.causa) !== selectedCausa) return;
-        if (actCodes.length > 0 && !(f.capKeys || []).some(ck => actCodes.includes(ck))) return;
+
+        // Calcular valor y caps filtrados por actividad seleccionada
+        let valorFolio, capsMatch, capKeysMatch;
+        if (actCodes.size > 0) {
+          // Solo capítulos que pertenecen a la actividad seleccionada
+          capKeysMatch = (f.capKeys || []).filter(ck => actCodes.has(ck));
+          if (capKeysMatch.length === 0) return; // folio no toca esta actividad
+          // Valor exacto desde capVals; fallback: proporción del total
+          const capVals = f.capVals || {};
+          const hasCapVals = Object.keys(capVals).length > 0;
+          if (hasCapVals) {
+            valorFolio = capKeysMatch.reduce((s, ck) => s + (capVals[ck] || 0), 0);
+          } else {
+            // Fallback: proporción según capKeys que coinciden
+            const totalKeys = (f.capKeys || []).length || 1;
+            valorFolio = (f.valor || 0) * capKeysMatch.length / totalKeys;
+          }
+          if (valorFolio === 0) return;
+          // Caps display: solo los que coinciden con la actividad
+          capsMatch = (f.caps || []).filter((_, i) => {
+            const ck = (f.capKeys || [])[i];
+            return ck && actCodes.has(ck);
+          });
+          if (capsMatch.length === 0) capsMatch = capKeysMatch; // fallback a códigos
+        } else {
+          valorFolio = f.valor || 0;
+          capsMatch = f.caps || [];
+          capKeysMatch = f.capKeys || [];
+        }
+
         const k = f._key ?? String(f.folio ?? f.reforma ?? f.id ?? `${ym}-anon`);
         if (!map[k]) map[k] = {
           folio: f.folio ?? f.reforma ?? k,
           ym,
           descripcion: f.comentario || f.descripcion || '',
           causa: normCausa(f.causa),
-          caps: f.caps || [],
-          capKeys: f.capKeys || [],
+          caps: [...capsMatch],
+          capKeys: [...capKeysMatch],
           valor: 0,
         };
-        map[k].valor += f.valor || 0;
-        (f.caps || []).forEach(c => { if (!map[k].caps.includes(c)) map[k].caps.push(c); });
-        (f.capKeys || []).forEach(c => { if (!map[k].capKeys.includes(c)) map[k].capKeys.push(c); });
+        map[k].valor += valorFolio;
+        capsMatch.forEach(c => { if (!map[k].caps.includes(c)) map[k].caps.push(c); });
+        capKeysMatch.forEach(c => { if (!map[k].capKeys.includes(c)) map[k].capKeys.push(c); });
       });
     });
     return Object.values(map).sort((a, b) => b.valor - a.valor);
