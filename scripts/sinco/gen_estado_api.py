@@ -43,7 +43,7 @@ API_BASE  = 'https://api.icconstructora.co/api/sinco/data'
 BASE     = os.path.dirname(os.path.abspath(__file__))
 DEST_DET = os.path.join(BASE, 'estado_detalle_data.js')
 DEST_RES = os.path.join(BASE, 'estado_resumen.js')
-_out_dir      = os.environ.get('OUTPUT_DIR') or os.path.join(BASE, '..', 'control-costos', 'public', 'data')
+_out_dir      = os.environ.get('OUTPUT_DIR') or os.path.join(BASE, '..', '..', 'public', 'data')
 DEST_DET_JSON = os.path.join(_out_dir, 'estado_detalle_data.json')
 CACHE_F  = os.path.join(BASE, 'token_cache.json')
 
@@ -337,6 +337,17 @@ def agregar_control(rows, clase_map, cap_map, macro_key, sub_keys_for_skid, item
                     sub['num']  = item_num
             elif tipo_clase == 'consumido':   entry['cons'] += val
 
+        # Duración programada: CID52 clase presupuesto → Cantidad (meses)
+        if cap_num == 'CID52' and tipo_clase == 'presupuesto':
+            try:
+                cant = float(r.get('Cantidad') or 0)
+            except (TypeError, ValueError):
+                cant = 0.0
+            if cant > meses_prog[sub_key]:
+                meses_prog[sub_key] = cant
+            if sub_key != macro_key and cant > meses_prog[macro_key]:
+                meses_prog[macro_key] = cant
+
         add(sub_key)
         if sub_key != macro_key:
             add(macro_key)
@@ -395,7 +406,7 @@ def agregar_control(rows, clase_map, cap_map, macro_key, sub_keys_for_skid, item
             },
         }
 
-    return result
+    return result, dict(meses_prog)
 
 # ── Resumen (mismo algoritmo que gen_estado.py) ────────────────────────────────
 def cap_code(desc):
@@ -560,7 +571,7 @@ def main():
         if not rows:
             continue
 
-        resultado = agregar_control(rows, clase_map, cap_map, key, skid_to_sub, item_map)
+        resultado, meses_prog = agregar_control(rows, clase_map, cap_map, key, skid_to_sub, item_map)
 
         for sub_key, val in resultado.items():
             items   = val['items']
@@ -572,6 +583,9 @@ def main():
             for tipo in ('cdd', 'cid'):
                 for k in ('ppto', 'proy', 'aseg', 'cons'):
                     detalle_data[sub_key]['totales'][tipo][k] += totales[tipo][k]
+            mp = meses_prog.get(sub_key, 0)
+            if mp:
+                detalle_data[sub_key]['mesesProgramados'] = int(mp)
 
         # Combos
         for combo_key, sources in COMBOS.items():
@@ -625,6 +639,7 @@ def main():
         sys.exit(1)
 
     dest_json = os.path.normpath(DEST_DET_JSON)
+    os.makedirs(os.path.dirname(dest_json), exist_ok=True)
     with open(dest_json, 'w', encoding='utf-8') as f:
         json.dump({'data': detalle_data}, f, ensure_ascii=False, separators=(',', ':'))
     print(f'  OK {dest_json}')

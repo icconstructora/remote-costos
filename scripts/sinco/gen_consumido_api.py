@@ -353,7 +353,7 @@ cap_map   = build_cap_map(cap_rows)
 proj_map  = build_proj_map(proj_rows)
 
 print(f'\n[2/3] Descargando fact_controlproyecto (paginado 2000/página)...')
-fact_rows = api_get_paged(token, 'adp_dtm_fact_controlproyecto')
+fact_rows = api_get_paged(token, 'adp_dtm_fact_controlproyecto', page_size=5000)
 print(f'  Total: {len(fact_rows):,} filas')
 
 if not fact_rows:

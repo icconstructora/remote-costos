@@ -4,7 +4,7 @@ gen_proyecciones_api.py — Genera proyecciones_data.json desde adp_dtm_fact_pro
 Agrupa por proyecto / mes / causa / folio (skidreforma) para alimentar
 el tablero de Variación Acumulada y Mensual.
 """
-import sys, os, json, datetime
+import sys, os, json, datetime, re
 from collections import defaultdict
 
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -52,6 +52,16 @@ MACRO_SUBS = {
     'cast-i':   ['cai-e2b', 'cai-zc'],
 }
 
+MESES_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+
+def ymLabel_py(ym):
+    """'2026-07' → 'Jul 2026'"""
+    try:
+        y, m = ym.split('-')
+        return f'{MESES_ES[int(m)-1]} {y}'
+    except Exception:
+        return ym
+
 def skid_fecha_to_ym(v):
     """20240229 → '2024-02'. Retorna None para fechas inválidas (< 2020)."""
     s = str(v)
@@ -59,7 +69,7 @@ def skid_fecha_to_ym(v):
         return f'{s[:4]}-{s[4:6]}'
     return None
 
-def api_get_paginado(token, tabla, page_size=2000):
+def api_get_paginado(token, tabla, page_size=500):
     import time
     headers = {'Authorization': f'Bearer {token}'}
     url = f'{API_BASE}/{tabla}'
@@ -71,7 +81,7 @@ def api_get_paginado(token, tabla, page_size=2000):
             try:
                 r = requests.get(url, headers=headers,
                                  params={'$top': page_size, '$skip': skip},
-                                 timeout=300)
+                                 timeout=600)
                 if not r.ok:
                     print(f'  WARN HTTP {r.status_code} en skip={skip}')
                     return all_rows
@@ -122,6 +132,8 @@ def main():
     causas_set = set()
     seen_ids = set()
 
+    # Debug: print fields of first WELL row
+    _debug_done = False
     for row in rows:
         row_id = row.get('_row_id')
         if row_id is not None:
@@ -134,6 +146,11 @@ def main():
         if not sub_key:
             continue
 
+        if not _debug_done and sub_key == 'well':
+            print(f'  [DEBUG] Campos fila WELL: {sorted(row.keys())}', flush=True)
+            print(f'  [DEBUG] skidreforma={row.get("skidreforma")!r}', flush=True)
+            _debug_done = True
+
         ym = skid_fecha_to_ym(row.get('skidfechaaprobacion'))
         if not ym:
             ym = skid_fecha_to_ym(row.get('skidfechanovedad'))
@@ -142,24 +159,36 @@ def main():
 
         causa_desc = row.get('Descripcion Causa') or 'Otra'
         valor = float(row.get('Valor_Total') or row.get('Valor Total') or 0)
-        folio = row.get('skidreforma')
+        comentario = (row.get('comentario') or row.get('Comentario') or '').strip()
         capitulo = row.get('skidcapitulo') or ''
-        comentario = row.get('comentario') or ''
+
+        # Extraer folio: primero campo explícito, luego regex en comentario
+        folio_text = (row.get('Folio') or row.get('folio') or row.get('Reforma') or
+                      row.get('NombreReforma') or row.get('reforma') or '').strip()
+        folio_num = row.get('skidreforma')
+        if folio_text:
+            folio = folio_text
+        elif folio_num:
+            folio = f'Folio {folio_num}'
+        else:
+            m = re.search(r'(?:folio|reforma)\s*(\d+)', comentario, re.IGNORECASE)
+            folio = f'Folio {m.group(1)}' if m else None
 
         causas_set.add(causa_desc)
         proj_data[sub_key]['meses'][ym]['causas'][causa_desc] += valor
 
-        if folio is not None:
-            folio_key = str(folio)
-            if folio_key not in proj_data[sub_key]['meses'][ym]['folios']:
-                proj_data[sub_key]['meses'][ym]['folios'][folio_key] = {
-                    'folio': folio,
-                    'causa': causa_desc,
-                    'capitulo': capitulo,
-                    'valor': 0,
-                    'comentario': comentario,
-                }
-            proj_data[sub_key]['meses'][ym]['folios'][folio_key]['valor'] += valor
+        # Siempre agregar entrada: folio real o agrupado por comentario+ym
+        folio_label = folio if folio else None
+        folio_key = f"{folio_label}|{ym}" if folio_label else f"anon|{ym}|{comentario[:40]}"
+        if folio_key not in proj_data[sub_key]['meses'][ym]['folios']:
+            proj_data[sub_key]['meses'][ym]['folios'][folio_key] = {
+                'folio': folio_label or f'({ymLabel_py(ym)})',
+                'causa': causa_desc,
+                'capitulo': capitulo,
+                'valor': 0,
+                'comentario': comentario,
+            }
+        proj_data[sub_key]['meses'][ym]['folios'][folio_key]['valor'] += valor
 
     # ── Serializar (convertir defaultdicts a dicts normales) ─────────────────
     out = {}
