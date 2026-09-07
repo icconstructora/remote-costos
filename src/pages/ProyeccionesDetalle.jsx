@@ -734,7 +734,37 @@ export default function ProyeccionesDetalle() {
             <div style={{flex:'0 0 15%',padding:'6px 4px 4px 6px',display:'flex',flexDirection:'column',
               justifyContent:'flex-start',gap:2,minHeight:0,overflowY:'auto',
               border:'1px solid #e0e0e0',borderRadius:5,margin:'6px 4px 6px 6px'}}>
-              {CAT_DEFS.map(cat => (
+              {/* Header */}
+              <div style={{display:'flex',gap:2,borderBottom:'1px solid #e0e0e0',paddingBottom:3,marginBottom:2,flexShrink:0}}>
+                <span style={{flex:'0 0 8px'}}/>
+                <span style={{flex:1,fontSize:'0.48rem',color:'#888',fontWeight:700,textTransform:'uppercase'}}>Capítulo</span>
+                <span style={{width:38,fontSize:'0.48rem',color:'#888',fontWeight:700,textAlign:'right'}}>Base</span>
+                <span style={{width:38,fontSize:'0.48rem',color:'#1565C0',fontWeight:700,textAlign:'right'}}>Proy</span>
+                <span style={{width:36,fontSize:'0.48rem',color:'#888',fontWeight:700,textAlign:'right'}}>$Δ</span>
+              </div>
+              {pptoCats ? (() => {
+                const lastRing = donutRings[donutRings.length - 1];
+                return CAT_DEFS.map(cat => {
+                  const base = pptoCats[cat.key] || 0;
+                  const proy = lastRing?.vals?.[cat.key] || 0;
+                  if (!base && !proy) return null;
+                  const delta = proy - base;
+                  const deltaColor = delta > 0 ? '#1a6b1a' : delta < 0 ? '#b00' : '#888';
+                  return (
+                    <div key={cat.key} style={{display:'flex',alignItems:'center',gap:2,minHeight:13}}>
+                      <span style={{width:8,height:8,borderRadius:2,background:cat.color,flexShrink:0,display:'inline-block'}}/>
+                      <span style={{flex:1,fontSize:'0.52rem',color:cat.color,fontWeight:700,
+                        whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}
+                        title={cat.label}>{cat.label}</span>
+                      <span style={{width:38,fontSize:'0.52rem',color:'#555',fontWeight:600,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(base)}</span>
+                      <span style={{width:38,fontSize:'0.52rem',color:'#1565C0',fontWeight:700,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(proy)}</span>
+                      <span style={{width:36,fontSize:'0.52rem',fontWeight:700,color:deltaColor,textAlign:'right',whiteSpace:'nowrap'}}>
+                        {(delta>=0?'+':'')+fmtM(delta)}
+                      </span>
+                    </div>
+                  );
+                });
+              })() : CAT_DEFS.map(cat => (
                 <div key={cat.key} style={{display:'flex',alignItems:'center',gap:4,minHeight:14}}>
                   <span style={{width:8,height:8,borderRadius:2,background:cat.color,flexShrink:0,display:'inline-block'}}/>
                   <span style={{fontSize:'0.58rem',color:cat.color,fontWeight:700,lineHeight:1.1,
@@ -743,35 +773,6 @@ export default function ProyeccionesDetalle() {
                   </span>
                 </div>
               ))}
-              {pptoCats && (() => {
-                const lastRing = donutRings[donutRings.length - 1];
-                return (
-                  <>
-                    <div style={{marginTop:10,marginBottom:2,display:'flex',gap:2,borderTop:'1px solid #eee',paddingTop:4}}>
-                      <span style={{flex:1,fontSize:'0.5rem',color:'#333',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.03em'}}>Base</span>
-                      <span style={{flex:1,fontSize:'0.5rem',color:'#333',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.03em'}}>Proy Act</span>
-                      <span style={{width:32,fontSize:'0.5rem',color:'#333',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.03em',textAlign:'right'}}>%</span>
-                    </div>
-                    {CAT_DEFS.map(cat => {
-                      const base = pptoCats[cat.key] || 0;
-                      const proy = lastRing?.vals?.[cat.key] || 0;
-                      if (!base && !proy) return null;
-                      const pctCat = base > 0 ? ((proy - base) / base * 100) : 0;
-                      const pctColor = pctCat > 0 ? '#1a6b1a' : pctCat < 0 ? '#b00' : '#888';
-                      return (
-                        <div key={`v-${cat.key}`} style={{display:'flex',alignItems:'center',gap:2,minHeight:13}}>
-                          <span style={{width:6,height:6,borderRadius:1,background:cat.color,flexShrink:0,display:'inline-block'}}/>
-                          <span style={{flex:1,fontSize:'0.55rem',color:'#444',fontWeight:600,whiteSpace:'nowrap'}}>{fmtM(base)}</span>
-                          <span style={{flex:1,fontSize:'0.55rem',color:'#1565C0',fontWeight:600,whiteSpace:'nowrap'}}>{fmtM(proy)}</span>
-                          <span style={{width:32,fontSize:'0.55rem',fontWeight:700,color:pctColor,textAlign:'right',whiteSpace:'nowrap'}}>
-                            {(pctCat >= 0 ? '+' : '')}{pctCat.toFixed(1)}%
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </>
-                );
-              })()}
             </div>
 
             {/* Centro: Donut */}
