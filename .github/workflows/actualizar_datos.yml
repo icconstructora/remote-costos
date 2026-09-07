@@ -56,7 +56,7 @@ jobs:
           SINCO_PASS: ${{ secrets.SINCO_PASS }}
           OUTPUT_DIR: ${{ github.workspace }}/public/data
         run: python scripts/sinco/gen_consumido_api.py
-        timeout-minutes: 15
+        timeout-minutes: 30
 
       - name: gen_compras_api
         env:
