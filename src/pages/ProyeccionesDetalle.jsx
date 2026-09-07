@@ -830,12 +830,17 @@ export default function ProyeccionesDetalle() {
               {pptoCatsGranular ? (() => {
                 const sortedGrps = [...CDD_APP_GROUPS]
                   .map(g => ({ grp: g, base: pptoCatsGranular[g.key] || 0, varia: variaGranular[g.key] || 0 }))
-                  .filter(x => x.base > 0)
-                  .sort((a, b) => (b.varia / b.base) - (a.varia / a.base));
+                  .filter(x => x.base > 0 || x.varia !== 0)
+                  .sort((a, b) => {
+                    const pa = a.base > 0 ? a.varia / a.base : (a.varia > 0 ? Infinity : -Infinity);
+                    const pb = b.base > 0 ? b.varia / b.base : (b.varia > 0 ? Infinity : -Infinity);
+                    return pb - pa;
+                  });
                 return sortedGrps.map(({ grp, base, varia }) => {
                   const proy = base + varia;
-                  const pctDelta = base > 0 ? (varia / base * 100) : 0;
-                  const deltaColor = pctDelta > 0 ? '#1a6b1a' : pctDelta < 0 ? '#b00' : '#888';
+                  const pctDelta = base > 0 ? (varia / base * 100) : null;
+                  const deltaColor = (pctDelta === null || pctDelta > 0) ? '#1a6b1a' : pctDelta < 0 ? '#b00' : '#888';
+                  const pctStr = pctDelta === null ? 'S/B' : (pctDelta >= 0 ? '+' : '') + pctDelta.toFixed(1) + '%';
                   const isActSelected = selectedActivity === grp.key;
                   return (
                     <div key={grp.key}
@@ -850,7 +855,7 @@ export default function ProyeccionesDetalle() {
                       <span style={{width:44,fontSize:'0.6rem',color:'#555',fontWeight:600,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(base)}</span>
                       <span style={{width:44,fontSize:'0.6rem',color:'#1565C0',fontWeight:700,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(proy)}</span>
                       <span style={{width:34,fontSize:'0.6rem',fontWeight:700,color:deltaColor,textAlign:'right',whiteSpace:'nowrap'}}>
-                        {(pctDelta>=0?'+':'')+pctDelta.toFixed(1)+'%'}
+                        {pctStr}
                       </span>
                     </div>
                   );
