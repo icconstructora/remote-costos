@@ -138,7 +138,7 @@ def build_cap_dim(token):
             continue
         code = (r.get('Capitulo Numero') or r.get('capitulo_numero') or '').strip().upper()
         # Descripción: varios nombres posibles según la API
-        desc = (r.get('Capitulo descripcion') or r.get('Capitulo Descripcion') or '').strip()
+        desc = (r.get('Capitulo_Descripcion') or '').strip()
         if code:
             cap_map[skid] = {'code': code, 'desc': desc}
     print(f'  dim_capitulopresupuesto: {len(cap_map)} capítulos', flush=True)
@@ -168,6 +168,7 @@ def main():
 
     causas_set = set()
     seen_ids = set()
+    unmapped_skids = set()
 
     _debug_done = False
     for row in rows:
@@ -180,6 +181,7 @@ def main():
         skid = row.get('skidproyecto')
         sub_key = SKID_TO_KEY.get(skid)
         if not sub_key:
+            unmapped_skids.add(skid)
             continue
 
         if not _debug_done and sub_key == 'well':
@@ -225,7 +227,7 @@ def main():
             fd[folio_key] = {
                 'folio':      folio_label or f'({ymLabel_py(ym)})',
                 'causa':      causa_desc,
-                'capitulo':   cap_code,
+                'capitulo':   cap_desc,
                 'caps':       [cap_desc] if cap_desc else [],
                 'capKeys':    [cap_code] if cap_code else [],
                 'valor':      0,
@@ -286,6 +288,9 @@ def main():
                 }
                 for ym, md in sorted(meses_combined.items())
             }}
+
+    if unmapped_skids:
+        print(f'  [DEBUG] skidproyecto SIN mapear ({len(unmapped_skids)}): {sorted(unmapped_skids)}', flush=True)
 
     print('[3/3] Construyendo JSON...', flush=True)
     resultado = {
