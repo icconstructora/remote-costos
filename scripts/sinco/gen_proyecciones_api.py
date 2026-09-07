@@ -262,6 +262,7 @@ def main():
                 'caps':       [cap_desc] if cap_desc else [],
                 'capKeys':    [cap_code] if cap_code else [],
                 'capVals':    {cap_code: valor} if cap_code else {},
+                'capMap':     {cap_code: cap_desc} if cap_code else {},
                 'valor':      0,
                 'comentario': comentario,
             }
@@ -273,6 +274,7 @@ def main():
                 entry['capKeys'].append(cap_code)
             if cap_code:
                 entry.setdefault('capVals', {})[cap_code] = entry['capVals'].get(cap_code, 0) + valor
+                entry.setdefault('capMap', {})[cap_code] = cap_desc
         fd[folio_key]['valor'] += valor
 
     # ── Serializar ─────────────────────────────────────────────────────────────
@@ -305,6 +307,7 @@ def main():
                         meses_combined[ym]['folios'][fk]['caps'] = list(f.get('caps', []))
                         meses_combined[ym]['folios'][fk]['capKeys'] = list(f.get('capKeys', []))
                         meses_combined[ym]['folios'][fk]['capVals'] = dict(f.get('capVals', {}))
+                        meses_combined[ym]['folios'][fk]['capMap'] = dict(f.get('capMap', {}))
                     else:
                         entry = meses_combined[ym]['folios'][fk]
                         entry['valor'] += f['valor']
@@ -316,6 +319,7 @@ def main():
                                 entry['capKeys'].append(c)
                         for ck, cv in f.get('capVals', {}).items():
                             entry.setdefault('capVals', {})[ck] = entry['capVals'].get(ck, 0) + cv
+                        entry.setdefault('capMap', {}).update(f.get('capMap', {}))
         if meses_combined:
             out[macro_key] = {'meses': {
                 ym: {

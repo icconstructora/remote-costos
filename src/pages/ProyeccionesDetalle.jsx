@@ -694,12 +694,10 @@ export default function ProyeccionesDetalle() {
             valorFolio = (f.valor || 0) * capKeysMatch.length / totalKeys;
           }
           if (valorFolio === 0) return;
-          // Caps display: solo los que coinciden con la actividad
-          capsMatch = (f.caps || []).filter((_, i) => {
-            const ck = (f.capKeys || [])[i];
-            return ck && actCodes.has(ck);
-          });
-          if (capsMatch.length === 0) capsMatch = capKeysMatch; // fallback a códigos
+          // Caps display: descripciones de los caps que coinciden, vía capMap
+          const capMap = f.capMap || {};
+          capsMatch = capKeysMatch.map(ck => capMap[ck] || ck);
+          if (capsMatch.length === 0) capsMatch = capKeysMatch;
         } else {
           valorFolio = f.valor || 0;
           capsMatch = f.caps || [];
