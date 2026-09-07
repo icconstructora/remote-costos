@@ -251,11 +251,17 @@ def main():
         proj_data[sub_key]['meses'][ym]['causas'][causa_desc] += valor
 
         folio_label = folio if folio else None
-        # Clave única = comentario completo + mes (cada texto distinto es una entrada separada)
-        folio_key = f"{comentario}|{ym}" if comentario else f"anon|{ym}"
+        # Clave única = skidreforma (folio ID) + mes cuando existe; sino comentario + mes
+        if folio_num:
+            folio_key = f"skid:{folio_num}|{ym}"
+        elif comentario:
+            folio_key = f"{comentario}|{ym}"
+        else:
+            folio_key = f"anon|{ym}"
         fd = proj_data[sub_key]['meses'][ym]['folios']
         if folio_key not in fd:
             fd[folio_key] = {
+                '_key':       folio_key,
                 'folio':      folio_label or f'Sin Folio - {ymLabel_py(ym)}',
                 'causa':      causa_desc,
                 'capitulo':   cap_desc,
@@ -301,7 +307,7 @@ def main():
                 for causa, val in md['causas'].items():
                     meses_combined[ym]['causas'][causa] += val
                 for f in md['folios']:
-                    fk = f.get('comentario') or str(f['folio'])
+                    fk = f.get('_key') or f.get('comentario') or str(f['folio'])
                     if fk not in meses_combined[ym]['folios']:
                         meses_combined[ym]['folios'][fk] = dict(f)
                         meses_combined[ym]['folios'][fk]['caps'] = list(f.get('caps', []))
