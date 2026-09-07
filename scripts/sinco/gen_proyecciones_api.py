@@ -109,11 +109,51 @@ def api_get_paginado(token, tabla, page_size=500):
         skip += page_size
     return all_rows
 
+def build_cap_dim(token):
+    """Descarga dim_capitulopresupuesto → {skidcapitulo: {code, desc}}"""
+    import requests, time
+    headers = {'Authorization': f'Bearer {token}'}
+    url = f'{API_BASE}/adp_dtm_dim_capitulopresupuesto'
+    for intento in range(3):
+        try:
+            r = requests.get(url, headers=headers, timeout=120)
+            if r.ok:
+                rows = r.json()
+                if not isinstance(rows, list):
+                    rows = rows.get('value', rows.get('data', []))
+                break
+        except Exception as e:
+            print(f'  WARN dim_cap intento {intento+1}: {e}', flush=True)
+            if intento < 2:
+                time.sleep(5)
+            else:
+                return {}
+    else:
+        return {}
+
+    cap_map = {}
+    for r in rows:
+        skid = r.get('skidcapitulo')
+        if not skid:
+            continue
+        code = (r.get('Capitulo Numero') or r.get('capitulo_numero') or '').strip().upper()
+        # Descripción: varios nombres posibles según la API
+        desc = (r.get('Nombre') or r.get('nombre') or r.get('Descripcion') or
+                r.get('descripcion') or r.get('NombreCapitulo') or r.get('nombre_capitulo') or '').strip()
+        if code:
+            cap_map[skid] = {'code': code, 'desc': desc}
+    print(f'  dim_capitulopresupuesto: {len(cap_map)} capítulos', flush=True)
+    return cap_map
+
+
 def main():
     print('[gen_proyecciones] Iniciando...', flush=True)
     token = get_token()
 
-    print('[1/2] Descargando adp_dtm_fact_proyeccion...', flush=True)
+    print('[1/3] Cargando dimensión de capítulos...', flush=True)
+    cap_dim = build_cap_dim(token)
+
+    print('[2/3] Descargando adp_dtm_fact_proyeccion...', flush=True)
     rows = api_get_paginado(token, 'adp_dtm_fact_proyeccion')
     print(f'  Total filas: {len(rows):,}', flush=True)
 
@@ -122,8 +162,6 @@ def main():
         sys.exit(1)
 
     # ── Estructura de salida por sub-proyecto ─────────────────────────────────
-    # proj_data[sub_key]['meses'][ym]['causas'][causa_desc] += valor
-    # proj_data[sub_key]['meses'][ym]['folios'][folio] = { causa, capitulo, valor, comentario }
     proj_data = defaultdict(lambda: {'meses': defaultdict(lambda: {
         'causas': defaultdict(float),
         'folios': {}
@@ -132,7 +170,6 @@ def main():
     causas_set = set()
     seen_ids = set()
 
-    # Debug: print fields of first WELL row
     _debug_done = False
     for row in rows:
         row_id = row.get('_row_id')
@@ -160,7 +197,12 @@ def main():
         causa_desc = row.get('Descripcion Causa') or 'Otra'
         valor = float(row.get('Valor_Total') or row.get('Valor Total') or 0)
         comentario = (row.get('comentario') or row.get('Comentario') or '').strip()
-        capitulo = row.get('skidcapitulo') or ''
+
+        # Resolver capítulo desde la dimensión
+        skid_cap = row.get('skidcapitulo')
+        cap_info = cap_dim.get(skid_cap, {})
+        cap_code = cap_info.get('code', '')   # e.g. "CDD06"
+        cap_desc = cap_info.get('desc', '')   # e.g. "CIMENTACION"
 
         # Extraer folio: primero campo explícito, luego regex en comentario
         folio_text = (row.get('Folio') or row.get('folio') or row.get('Reforma') or
@@ -177,20 +219,29 @@ def main():
         causas_set.add(causa_desc)
         proj_data[sub_key]['meses'][ym]['causas'][causa_desc] += valor
 
-        # Siempre agregar entrada: folio real o agrupado por comentario+ym
         folio_label = folio if folio else None
         folio_key = f"{folio_label}|{ym}" if folio_label else f"anon|{ym}|{comentario[:40]}"
-        if folio_key not in proj_data[sub_key]['meses'][ym]['folios']:
-            proj_data[sub_key]['meses'][ym]['folios'][folio_key] = {
-                'folio': folio_label or f'({ymLabel_py(ym)})',
-                'causa': causa_desc,
-                'capitulo': capitulo,
-                'valor': 0,
+        fd = proj_data[sub_key]['meses'][ym]['folios']
+        if folio_key not in fd:
+            fd[folio_key] = {
+                'folio':      folio_label or f'({ymLabel_py(ym)})',
+                'causa':      causa_desc,
+                'capitulo':   cap_code,
+                'caps':       [cap_desc] if cap_desc else [],
+                'capKeys':    [cap_code] if cap_code else [],
+                'valor':      0,
                 'comentario': comentario,
             }
-        proj_data[sub_key]['meses'][ym]['folios'][folio_key]['valor'] += valor
+        else:
+            # Acumular caps/capKeys si el folio tiene más de un capítulo
+            entry = fd[folio_key]
+            if cap_desc and cap_desc not in entry['caps']:
+                entry['caps'].append(cap_desc)
+            if cap_code and cap_code not in entry['capKeys']:
+                entry['capKeys'].append(cap_code)
+        fd[folio_key]['valor'] += valor
 
-    # ── Serializar (convertir defaultdicts a dicts normales) ─────────────────
+    # ── Serializar ─────────────────────────────────────────────────────────────
     out = {}
     for sub_key, sd in proj_data.items():
         meses_out = {}
@@ -217,8 +268,17 @@ def main():
                     fk = str(f['folio'])
                     if fk not in meses_combined[ym]['folios']:
                         meses_combined[ym]['folios'][fk] = dict(f)
+                        meses_combined[ym]['folios'][fk]['caps'] = list(f.get('caps', []))
+                        meses_combined[ym]['folios'][fk]['capKeys'] = list(f.get('capKeys', []))
                     else:
-                        meses_combined[ym]['folios'][fk]['valor'] += f['valor']
+                        entry = meses_combined[ym]['folios'][fk]
+                        entry['valor'] += f['valor']
+                        for c in f.get('caps', []):
+                            if c not in entry['caps']:
+                                entry['caps'].append(c)
+                        for c in f.get('capKeys', []):
+                            if c not in entry['capKeys']:
+                                entry['capKeys'].append(c)
         if meses_combined:
             out[macro_key] = {'meses': {
                 ym: {
@@ -228,6 +288,7 @@ def main():
                 for ym, md in sorted(meses_combined.items())
             }}
 
+    print('[3/3] Construyendo JSON...', flush=True)
     resultado = {
         'generatedAt': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).strftime('%d %b %Y %H:%M'),
         'causas': sorted(causas_set),
