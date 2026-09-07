@@ -508,6 +508,29 @@ export default function ProyeccionesDetalle() {
     return vals;
   }, [detalleItems, detalle, macroKey]);
 
+  // Variación acumulada real por grupo granular — suma valor de folios cuyo capKey pertenece al grupo
+  const variaGranular = useMemo(() => {
+    if (!proyData) return {};
+    const codeToGrp = {};
+    CDD_APP_GROUPS.forEach(g => { g.codes.forEach(c => { codeToGrp[c] = g.key; }); });
+    const varia = {};
+    CDD_APP_GROUPS.forEach(g => { varia[g.key] = 0; });
+    Object.values(proyData.meses).forEach(md => {
+      (md.folios || []).forEach(f => {
+        const keys = f.capKeys || [];
+        if (keys.length === 0) return;
+        // Grupos afectados por este folio (sin duplicados)
+        const grpsSet = new Set(keys.map(ck => codeToGrp[ck]).filter(Boolean));
+        const grpsList = [...grpsSet];
+        if (grpsList.length === 0) return;
+        // Distribuir valor equitativamente entre grupos afectados
+        const share = (f.valor || 0) / grpsList.length;
+        grpsList.forEach(gk => { varia[gk] += share; });
+      });
+    });
+    return varia;
+  }, [proyData]);
+
   const pptoTotal = useMemo(() => {
     const tot = detalle?.[macroKey]?.totales;
     if (tot) return (tot.cdd?.ppto || 0) + (tot.cid?.ppto || 0);
@@ -805,14 +828,12 @@ export default function ProyeccionesDetalle() {
                 <span style={{width:34,fontSize:'0.55rem',color:'#888',fontWeight:700,textAlign:'right'}}>%Δ</span>
               </div>
               {pptoCatsGranular ? (() => {
-                const lastRing = donutRings[donutRings.length - 1];
-                const lastTotal = lastRing ? Object.values(lastRing.vals).reduce((s,v) => s+v, 0) : pptoTotal;
-                const projFactor = pptoTotal > 0 ? lastTotal / pptoTotal : 1;
                 return CDD_APP_GROUPS.map(grp => {
                   const base = pptoCatsGranular[grp.key] || 0;
                   if (!base) return null;
-                  const proy = base * projFactor;
-                  const pctDelta = ((proy - base) / base * 100);
+                  const varia = variaGranular[grp.key] || 0;
+                  const proy = base + varia;
+                  const pctDelta = base > 0 ? (varia / base * 100) : 0;
                   const deltaColor = pctDelta > 0 ? '#1a6b1a' : pctDelta < 0 ? '#b00' : '#888';
                   const isActSelected = selectedActivity === grp.key;
                   return (
