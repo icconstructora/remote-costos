@@ -105,10 +105,10 @@ const CDD_APP_GROUPS = [
   { key:'imp',  label:'Imprevistos',                  color:'#880E4F', codes:['CDD36','CDD42','CDD44','CDD45'], tipo:'imp' },
   { key:'hvac', label:'Inst. de HVAC',                color:'#3ACC6A', codes:['CDD43'], tipo:'cdd' },
   { key:'dsc',  label:'Descuentos',                   color:'#6A1B9A', codes:['CDD99'], tipo:'dsc' },
-  { key:'nom',  label:'Nómina Administrativa',        color:'#BF360C', codes:[], tipo:'cid' },
-  { key:'spu',  label:'Servicios Públicos',           color:'#E64A19', codes:[], tipo:'cid' },
-  { key:'gob',  label:'Gastos de Obra',               color:'#FF7043', codes:[], tipo:'cid' },
-  { key:'sst',  label:'Seguridad Industrial',         color:'#FF8A65', codes:[], tipo:'cid' },
+  { key:'nom',  label:'Nómina Administrativa',        color:'#BF360C', codes:['CID51','CID'], tipo:'cid' },
+  { key:'spu',  label:'Servicios Públicos',           color:'#E64A19', codes:['CID52'], tipo:'cid' },
+  { key:'gob',  label:'Gastos de Obra',               color:'#FF7043', codes:['CID53','CID56'], tipo:'cid' },
+  { key:'sst',  label:'Seguridad Industrial',         color:'#FF8A65', codes:['CID54'], tipo:'cid' },
 ];
 
 // Grados asignados a cada tipo (visual, independiente del valor real)
@@ -591,15 +591,19 @@ export default function ProyeccionesDetalle() {
       const grp = codeToGrp[it.num];
       if (grp !== undefined) raw[grp] += it.ppto || 0;
     });
-    const nonCidCats = CDD_APP_GROUPS.filter(g => g.tipo !== 'cid');
-    const cddRaw = nonCidCats.reduce((s, g) => s + raw[g.key], 0);
+    // Escalar CDD al total real
+    const cddCats = CDD_APP_GROUPS.filter(g => g.tipo !== 'cid');
+    const cddRaw = cddCats.reduce((s, g) => s + raw[g.key], 0);
     const cddReal = tot.cdd?.ppto || 0;
     const cddFactor = cddRaw > 0 ? cddReal / cddRaw : 1;
     const vals = {};
-    nonCidCats.forEach(g => { vals[g.key] = raw[g.key] * cddFactor; });
+    cddCats.forEach(g => { vals[g.key] = raw[g.key] * cddFactor; });
+    // Escalar CID al total real (usando ítems reales, no distribución igual)
     const cidCats = CDD_APP_GROUPS.filter(g => g.tipo === 'cid');
+    const cidRaw = cidCats.reduce((s, g) => s + raw[g.key], 0);
     const cidReal = tot.cid?.ppto || 0;
-    cidCats.forEach(g => { vals[g.key] = cidReal / cidCats.length; });
+    const cidFactor = cidRaw > 0 ? cidReal / cidRaw : 1;
+    cidCats.forEach(g => { vals[g.key] = raw[g.key] * cidFactor; });
     return vals;
   }, [detalleItems, detalle, macroKey]);
 
