@@ -185,6 +185,101 @@ function calcAngles(catDefs, vals) {
 }
 
 // ── Donut multi-anillo ────────────────────────────────────────────────────────
+function StaircaseChart({ donutRings, pptoTotal, fmtM }) {
+  if (!donutRings || donutRings.length < 2) return null;
+
+  // Construir pasos: base + un paso por año
+  const steps = donutRings.map((r, i) => {
+    if (i === 0) return { label: 'Base', value: pptoTotal, delta: null };
+    const acum = donutRings.slice(1, i + 1).reduce((s, x) => s + (x.delta || 0), 0);
+    const isLast = i === donutRings.length - 1;
+    return { label: isLast ? `${r.label}*` : r.label, value: pptoTotal + acum, delta: r.delta };
+  });
+
+  const values = steps.map(s => s.value);
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+  const range = maxV - minV || 1;
+
+  const W = 260, H = 160;
+  const PAD_L = 8, PAD_R = 8, PAD_T = 28, PAD_B = 30;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+  const n = steps.length;
+  const barW = Math.floor(chartW / n * 0.55);
+  const gap = chartW / n;
+
+  const colors = ['#1B5E20','#2E7D32','#388E3C','#43A047','#4CAF50','#66BB6A','#81C784'];
+  const toY = v => PAD_T + chartH - ((v - minV) / range) * chartH;
+
+  return (
+    <div style={{width:'100%',flex:'1 1 auto',minHeight:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'100%',display:'block'}}>
+        {/* Línea base */}
+        <line x1={PAD_L} y1={toY(minV)} x2={W-PAD_R} y2={toY(minV)} stroke="#e0e0e0" strokeWidth={0.8}/>
+
+        {steps.map((step, i) => {
+          const x = PAD_L + i * gap + (gap - barW) / 2;
+          const y = toY(step.value);
+          const barH = chartH - (y - PAD_T);
+          const col = colors[Math.min(i, colors.length - 1)];
+          const isBase = i === 0;
+          const isLast = i === n - 1;
+
+          // Línea escalonada al siguiente
+          const nextStep = steps[i + 1];
+          const nextX = nextStep ? PAD_L + (i + 1) * gap + (gap - barW) / 2 : null;
+          const nextY = nextStep ? toY(nextStep.value) : null;
+
+          return (
+            <g key={i}>
+              {/* Barra */}
+              <rect x={x} y={y} width={barW} height={barH}
+                fill={isBase ? '#B0BEC5' : col}
+                rx={2} opacity={isLast ? 1 : 0.85}/>
+
+              {/* Línea escalonada al siguiente */}
+              {nextStep && (
+                <polyline
+                  points={`${x+barW},${y} ${nextX},${y} ${nextX},${nextY}`}
+                  fill="none" stroke="#aaa" strokeWidth={0.8} strokeDasharray="3,2"/>
+              )}
+
+              {/* Valor encima */}
+              <text x={x + barW/2} y={y - 4} textAnchor="middle"
+                fontSize={isLast ? 8 : 7} fontWeight={isLast ? 700 : 600}
+                fill={isBase ? '#607D8B' : col} fontFamily="Century Gothic,sans-serif">
+                {fmtM(step.value)}
+              </text>
+
+              {/* Delta entre barras */}
+              {step.delta != null && (
+                <text x={x + barW/2} y={y - 13} textAnchor="middle"
+                  fontSize={6} fill={step.delta >= 0 ? '#B85520' : '#2E7D32'}
+                  fontFamily="Century Gothic,sans-serif">
+                  {(step.delta >= 0 ? '+' : '') + fmtM(step.delta)}
+                </text>
+              )}
+
+              {/* Etiqueta año abajo */}
+              <text x={x + barW/2} y={H - PAD_B + 10} textAnchor="middle"
+                fontSize={isLast ? 7 : 6.5} fontWeight={isLast ? 700 : 500}
+                fill={isBase ? '#999' : isLast ? col : '#555'}
+                fontFamily="Century Gothic,sans-serif">
+                {step.label}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Nota mes actual */}
+        <text x={W/2} y={H - 2} textAnchor="middle" fontSize={5.5} fill="#aaa"
+          fontFamily="Century Gothic,sans-serif">* hasta mes actual</text>
+      </svg>
+    </div>
+  );
+}
+
 function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
   const [hovered, setHovered] = useState(null);
   const SIZE = 260;
@@ -907,13 +1002,8 @@ export default function ProyeccionesDetalle() {
 
             {/* Centro: Donut */}
             <div style={{flex:'1 1 0',padding:'4px',display:'flex',flexDirection:'column',minHeight:0,minWidth:0}}>
-              {donutRings.length > 0 ? (
-                <DonutMultiRing
-                  rings={donutRings}
-                  catDefs={CAT_DEFS}
-                  totalLabel={fmtM(pptoTotal)}
-                  deltaLabels={deltaLabels}
-                />
+              {donutRings.length > 1 ? (
+                <StaircaseChart donutRings={donutRings} pptoTotal={pptoTotal} fmtM={fmtM} />
               ) : (
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',color:'#999',fontSize:'0.75rem'}}>
                   Sin datos base
