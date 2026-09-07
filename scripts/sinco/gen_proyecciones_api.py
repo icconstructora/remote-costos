@@ -179,27 +179,48 @@ def build_ppto_base(token, cap_dim):
     """Lee adp_dtm_fact_controlproyecto → {sub_key: {cap_code: ppto_base}}"""
     import requests, time
     headers = {'Authorization': f'Bearer {token}'}
-    url = f'{API_BASE}/adp_dtm_fact_controlproyecto'
-    for intento in range(3):
-        try:
-            r = requests.get(url, headers=headers, timeout=180)
-            if r.ok:
-                rows = r.json()
-                if not isinstance(rows, list):
-                    rows = rows.get('value', rows.get('data', []))
-                break
-        except Exception as e:
-            print(f'  WARN controlproyecto intento {intento+1}: {e}', flush=True)
-            if intento < 2:
-                time.sleep(5)
-            else:
-                return {}
-    else:
+
+    def api_fetch(endpoint):
+        url = f'{API_BASE}/{endpoint}'
+        for intento in range(3):
+            try:
+                r = requests.get(url, headers=headers, timeout=180)
+                if r.ok:
+                    rows = r.json()
+                    if not isinstance(rows, list):
+                        rows = rows.get('value', rows.get('data', []))
+                    return rows
+            except Exception as e:
+                print(f'  WARN {endpoint} intento {intento+1}: {e}', flush=True)
+                if intento < 2:
+                    time.sleep(5)
+        return None
+
+    # Clase mapa: skidclaseorigen → 'presupuesto' | 'proyectado' | ...
+    clase_rows = api_fetch('adp_dtm_dim_claseorigen')
+    if clase_rows is None:
+        return {}
+    clase_map = {}
+    for cr in clase_rows:
+        c = (cr.get('clase') or '').upper()
+        clase_map[cr.get('skidclaseorigen')] = (
+            'presupuesto' if c == 'P' else
+            'proyectado'  if c == 'Y' else
+            'asegurado'   if c == 'A' else
+            'consumido'   if c == 'C' else 'otro'
+        )
+
+    rows = api_fetch('adp_dtm_fact_controlproyecto')
+    if rows is None:
         return {}
 
     print(f'  controlproyecto: {len(rows):,} filas', flush=True)
     ppto = {}  # {sub_key: {cap_code: total_ppto}}
     for row in rows:
+        # Solo filas de presupuesto (clase 'P')
+        tipo_clase = clase_map.get(row.get('skidclaseorigen'))
+        if tipo_clase != 'presupuesto':
+            continue
         skid_proy = row.get('skidproyecto')
         sub_key = SKID_TO_KEY.get(skid_proy)
         if not sub_key:
@@ -209,8 +230,7 @@ def build_ppto_base(token, cap_dim):
         cap_code = cap_info.get('code', '')
         if not cap_code:
             continue
-        valor = float(row.get('Presupuesto') or row.get('presupuesto') or
-                      row.get('ValorPresupuesto') or row.get('valor_presupuesto') or 0)
+        valor = float(row.get('Valor Total') or row.get('valor_total') or 0)
         ppto.setdefault(sub_key, {})
         ppto[sub_key][cap_code] = ppto[sub_key].get(cap_code, 0) + valor
 
