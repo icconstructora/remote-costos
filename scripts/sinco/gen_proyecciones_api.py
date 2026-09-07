@@ -251,13 +251,8 @@ def main():
         proj_data[sub_key]['meses'][ym]['causas'][causa_desc] += valor
 
         folio_label = folio if folio else None
-        # Clave única = skidreforma (folio ID) + mes cuando existe; sino comentario + mes
-        if folio_num:
-            folio_key = f"skid:{folio_num}|{ym}"
-        elif comentario:
-            folio_key = f"{comentario}|{ym}"
-        else:
-            folio_key = f"anon|{ym}"
+        # Clave única = comentario completo + mes (cada texto distinto es una entrada separada)
+        folio_key = f"{comentario}|{ym}" if comentario else f"anon|{ym}"
         fd = proj_data[sub_key]['meses'][ym]['folios']
         if folio_key not in fd:
             fd[folio_key] = {
