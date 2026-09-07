@@ -168,6 +168,7 @@ def main():
 
     causas_set = set()
     seen_ids = set()
+    unmapped_skids = set()
 
     _debug_done = False
     for row in rows:
@@ -180,6 +181,7 @@ def main():
         skid = row.get('skidproyecto')
         sub_key = SKID_TO_KEY.get(skid)
         if not sub_key:
+            unmapped_skids.add(skid)
             continue
 
         if not _debug_done and sub_key == 'well':
@@ -286,6 +288,9 @@ def main():
                 }
                 for ym, md in sorted(meses_combined.items())
             }}
+
+    if unmapped_skids:
+        print(f'  [DEBUG] skidproyecto SIN mapear ({len(unmapped_skids)}): {sorted(unmapped_skids)}', flush=True)
 
     print('[3/3] Construyendo JSON...', flush=True)
     resultado = {
