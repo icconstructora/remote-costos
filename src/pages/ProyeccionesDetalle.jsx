@@ -247,41 +247,56 @@ function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
 const COLOR_POS = '#2D4170';
 const COLOR_NEG = '#7A92C0';
 
-function CausaBars({ causaAcum, causas, selectedCausa, onSelectCausa }) {
+function CausaBars({ causaAcum, causas, selectedCausa, onSelectCausa, pptoTotal }) {
   const sorted = [...causas]
-    .map(c => ({ causa: c, val: causaAcum[c] || 0 }))
+    .map(c => ({ causa: c, val: causaAcum[normCausa(c)] || 0 }))
     .filter(x => x.val !== 0)
     .sort((a, b) => b.val - a.val);
 
   const maxAbs = Math.max(...sorted.map(x => Math.abs(x.val)), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, padding: '2px 8px 4px', overflow: 'hidden', flex: 1, justifyContent: 'space-between' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, padding: '0 6px 4px', overflow: 'hidden', flex: 1, justifyContent: 'space-between' }}>
+      {/* Header columnas */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 2px 2px', borderBottom: '1px solid #eee' }}>
+        <div style={{ width: 90, fontSize: '0.58rem', color: '#999', fontWeight: 600 }} />
+        <div style={{ flex: 2 }} />
+        <div style={{ width: 46, textAlign: 'right', fontSize: '0.58rem', color: '#999', fontWeight: 600, flexShrink: 0 }}>Base</div>
+        <div style={{ width: 52, textAlign: 'right', fontSize: '0.58rem', color: '#999', fontWeight: 600, flexShrink: 0 }}>Proy.</div>
+        <div style={{ width: 40, textAlign: 'right', fontSize: '0.58rem', color: '#999', fontWeight: 600, flexShrink: 0 }}>%</div>
+      </div>
       {sorted.map(({ causa, val }) => {
         const pct = Math.abs(val) / maxAbs * 100;
         const isPos = val >= 0;
         const color = isPos ? COLOR_POS : COLOR_NEG;
-        const isSelected = causa === selectedCausa;
+        const isSelected = normCausa(causa) === selectedCausa;
+        const proy = pptoTotal + val;
+        const pctBase = pptoTotal > 0 ? (val / pptoTotal * 100) : 0;
         return (
           <div key={causa}
-            onClick={() => onSelectCausa(isSelected ? null : causa)}
+            onClick={() => onSelectCausa(isSelected ? null : normCausa(causa))}
             style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
               borderRadius: 3, padding: '1px 2px',
               background: isSelected ? '#EEF2FF' : 'transparent' }}>
-            <div style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
-            <div style={{ flex: 1, fontSize: '0.62rem', color: isSelected ? '#1a237e' : '#555',
+            <div style={{ width: 90, fontSize: '0.60rem', color: isSelected ? '#1a237e' : '#444',
               fontWeight: isSelected ? 700 : 400,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, width: 80 }}
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}
               title={causa}>{causa.trim()}</div>
-            <div style={{ flex: 2, position: 'relative', height: 10, background: '#f0f0f0', borderRadius: 3 }}>
+            <div style={{ flex: 2, position: 'relative', height: 9, background: '#f0f0f0', borderRadius: 3, marginLeft: 4 }}>
               <div style={{
                 position: 'absolute', top: 0, height: '100%', borderRadius: 3,
                 width: `${pct}%`, background: color, opacity: 0.85,
               }} />
             </div>
-            <div style={{ width: 52, textAlign: 'right', fontSize: '0.62rem', fontWeight: 600,
-              color, flexShrink: 0 }}>
-              {fmtM(val)}
+            <div style={{ width: 46, textAlign: 'right', fontSize: '0.60rem', color: '#888', flexShrink: 0 }}>
+              {fmtM(pptoTotal)}
+            </div>
+            <div style={{ width: 52, textAlign: 'right', fontSize: '0.60rem', fontWeight: 600, color: '#222', flexShrink: 0 }}>
+              {fmtM(proy)}
+            </div>
+            <div style={{ width: 40, textAlign: 'right', fontSize: '0.60rem', fontWeight: 600,
+              color: isPos ? '#1a6b1a' : '#b00', flexShrink: 0 }}>
+              {(pctBase >= 0 ? '+' : '')}{pctBase.toFixed(1)}%
             </div>
           </div>
         );
@@ -793,7 +808,8 @@ export default function ProyeccionesDetalle() {
                     Variación acumulada por causa
                   </div>
                   <CausaBars causaAcum={causaAcumTotal} causas={data?.causas || []}
-                    selectedCausa={selectedCausa} onSelectCausa={setSelectedCausa} />
+                    selectedCausa={selectedCausa} onSelectCausa={setSelectedCausa}
+                    pptoTotal={pptoTotal} />
                   <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px 6px',display:'flex',alignItems:'center',gap:4,flexShrink:0,marginBottom:10}}>
                     <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color:'#333'}}>Total</div>
                     <div style={{fontSize:'0.65rem',fontWeight:700,color:'#222'}}>
