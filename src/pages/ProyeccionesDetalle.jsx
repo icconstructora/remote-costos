@@ -828,10 +828,11 @@ export default function ProyeccionesDetalle() {
                 <span style={{width:34,fontSize:'0.55rem',color:'#888',fontWeight:700,textAlign:'right'}}>%Δ</span>
               </div>
               {pptoCatsGranular ? (() => {
-                return CDD_APP_GROUPS.map(grp => {
-                  const base = pptoCatsGranular[grp.key] || 0;
-                  if (!base) return null;
-                  const varia = variaGranular[grp.key] || 0;
+                const sortedGrps = [...CDD_APP_GROUPS]
+                  .map(g => ({ grp: g, base: pptoCatsGranular[g.key] || 0, varia: variaGranular[g.key] || 0 }))
+                  .filter(x => x.base > 0)
+                  .sort((a, b) => (b.varia / b.base) - (a.varia / a.base));
+                return sortedGrps.map(({ grp, base, varia }) => {
                   const proy = base + varia;
                   const pctDelta = base > 0 ? (varia / base * 100) : 0;
                   const deltaColor = pctDelta > 0 ? '#1a6b1a' : pctDelta < 0 ? '#b00' : '#888';
