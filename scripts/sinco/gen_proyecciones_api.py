@@ -138,7 +138,7 @@ def build_cap_dim(token):
             continue
         code = (r.get('Capitulo Numero') or r.get('capitulo_numero') or '').strip().upper()
         # Descripción: varios nombres posibles según la API
-        desc = (r.get('Capitulo descripcion') or r.get('Capitulo Descripcion') or '').strip()
+        desc = (r.get('Capitulo_Descripcion') or '').strip()
         if code:
             cap_map[skid] = {'code': code, 'desc': desc}
     print(f'  dim_capitulopresupuesto: {len(cap_map)} capítulos', flush=True)
@@ -225,7 +225,7 @@ def main():
             fd[folio_key] = {
                 'folio':      folio_label or f'({ymLabel_py(ym)})',
                 'causa':      causa_desc,
-                'capitulo':   cap_code,
+                'capitulo':   cap_desc,
                 'caps':       [cap_desc] if cap_desc else [],
                 'capKeys':    [cap_code] if cap_code else [],
                 'valor':      0,
