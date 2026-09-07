@@ -142,6 +142,10 @@ def build_cap_dim(token):
                 r.get('descripcion') or r.get('NombreCapitulo') or r.get('nombre_capitulo') or '').strip()
         if code:
             cap_map[skid] = {'code': code, 'desc': desc}
+    # Debug: mostrar campos de la primera fila para identificar el nombre de descripción
+    if rows:
+        print(f'  [DEBUG] Campos dim_cap: {sorted(rows[0].keys())}', flush=True)
+        print(f'  [DEBUG] Primera fila: {rows[0]}', flush=True)
     print(f'  dim_capitulopresupuesto: {len(cap_map)} capítulos', flush=True)
     return cap_map
 
