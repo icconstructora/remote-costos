@@ -579,33 +579,41 @@ export default function ProyeccionesDetalle() {
     return vals;
   }, [detalleItems, detalle, macroKey]);
 
-  // Base presupuesto por grupo granular (30 grupos Nombre en App)
+  // Base presupuesto por grupo granular — fuente: pptoCaps del controlproyecto (gen_proyecciones_api)
   const pptoCatsGranular = useMemo(() => {
-    const tot = detalle?.[macroKey]?.totales;
-    if (!tot) return null;
     const codeToGrp = {};
     CDD_APP_GROUPS.forEach(g => { g.codes.forEach(c => { codeToGrp[c] = g.key; }); });
     const raw = {};
     CDD_APP_GROUPS.forEach(g => { raw[g.key] = 0; });
+
+    // Fuente primaria: pptoCaps del JSON de proyecciones (adp_dtm_fact_controlproyecto)
+    const pptoCaps = proyData?.pptoCaps;
+    if (pptoCaps && Object.keys(pptoCaps).length > 0) {
+      Object.entries(pptoCaps).forEach(([code, val]) => {
+        const grp = codeToGrp[code];
+        if (grp !== undefined) raw[grp] += val || 0;
+      });
+      return { ...raw };
+    }
+
+    // Fallback: detalleItems de estado_detalle (si pptoCaps aún no existe en el JSON)
+    const tot = detalle?.[macroKey]?.totales;
+    if (!tot) return null;
     detalleItems.forEach(it => {
       const grp = codeToGrp[it.num];
       if (grp !== undefined) raw[grp] += it.ppto || 0;
     });
-    // Escalar CDD al total real
     const cddCats = CDD_APP_GROUPS.filter(g => g.tipo !== 'cid');
     const cddRaw = cddCats.reduce((s, g) => s + raw[g.key], 0);
-    const cddReal = tot.cdd?.ppto || 0;
-    const cddFactor = cddRaw > 0 ? cddReal / cddRaw : 1;
+    const cddFactor = cddRaw > 0 ? (tot.cdd?.ppto || 0) / cddRaw : 1;
     const vals = {};
     cddCats.forEach(g => { vals[g.key] = raw[g.key] * cddFactor; });
-    // Escalar CID al total real (usando ítems reales, no distribución igual)
     const cidCats = CDD_APP_GROUPS.filter(g => g.tipo === 'cid');
     const cidRaw = cidCats.reduce((s, g) => s + raw[g.key], 0);
-    const cidReal = tot.cid?.ppto || 0;
-    const cidFactor = cidRaw > 0 ? cidReal / cidRaw : 1;
+    const cidFactor = cidRaw > 0 ? (tot.cid?.ppto || 0) / cidRaw : 1;
     cidCats.forEach(g => { vals[g.key] = raw[g.key] * cidFactor; });
     return vals;
-  }, [detalleItems, detalle, macroKey]);
+  }, [proyData, detalleItems, detalle, macroKey]);
 
   // Variación acumulada real por grupo granular usando capVals (valor exacto por capítulo)
   const variaGranular = useMemo(() => {

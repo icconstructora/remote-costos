@@ -175,14 +175,71 @@ def build_cap_dim(token):
     return cap_map
 
 
+def build_ppto_base(token, cap_dim):
+    """Lee adp_dtm_fact_controlproyecto → {sub_key: {cap_code: ppto_base}}"""
+    import requests, time
+    headers = {'Authorization': f'Bearer {token}'}
+    url = f'{API_BASE}/adp_dtm_fact_controlproyecto'
+    for intento in range(3):
+        try:
+            r = requests.get(url, headers=headers, timeout=180)
+            if r.ok:
+                rows = r.json()
+                if not isinstance(rows, list):
+                    rows = rows.get('value', rows.get('data', []))
+                break
+        except Exception as e:
+            print(f'  WARN controlproyecto intento {intento+1}: {e}', flush=True)
+            if intento < 2:
+                time.sleep(5)
+            else:
+                return {}
+    else:
+        return {}
+
+    print(f'  controlproyecto: {len(rows):,} filas', flush=True)
+    ppto = {}  # {sub_key: {cap_code: total_ppto}}
+    for row in rows:
+        skid_proy = row.get('skidproyecto')
+        sub_key = SKID_TO_KEY.get(skid_proy)
+        if not sub_key:
+            continue
+        skid_cap = row.get('skidcapitulo')
+        cap_info = cap_dim.get(skid_cap, {})
+        cap_code = cap_info.get('code', '')
+        if not cap_code:
+            continue
+        valor = float(row.get('Presupuesto') or row.get('presupuesto') or
+                      row.get('ValorPresupuesto') or row.get('valor_presupuesto') or 0)
+        ppto.setdefault(sub_key, {})
+        ppto[sub_key][cap_code] = ppto[sub_key].get(cap_code, 0) + valor
+
+    # Agregar macros
+    for macro_key, subs in MACRO_SUBS.items():
+        combined = {}
+        for sub in subs:
+            if sub not in ppto:
+                continue
+            for code, val in ppto[sub].items():
+                combined[code] = combined.get(code, 0) + val
+        if combined:
+            ppto[macro_key] = combined
+
+    print(f'  Presupuesto base cargado para {len(ppto)} proyectos', flush=True)
+    return ppto
+
+
 def main():
     print('[gen_proyecciones] Iniciando...', flush=True)
     token = get_token()
 
-    print('[1/3] Cargando dimensión de capítulos...', flush=True)
+    print('[1/4] Cargando dimensión de capítulos...', flush=True)
     cap_dim = build_cap_dim(token)
 
-    print('[2/3] Descargando adp_dtm_fact_proyeccion...', flush=True)
+    print('[2/4] Cargando presupuesto base (controlproyecto)...', flush=True)
+    ppto_base = build_ppto_base(token, cap_dim)
+
+    print('[3/4] Descargando adp_dtm_fact_proyeccion...', flush=True)
     rows = api_get_paginado(token, 'adp_dtm_fact_proyeccion')
     print(f'  Total filas: {len(rows):,}', flush=True)
 
@@ -330,7 +387,14 @@ def main():
                 for ym, md in sorted(meses_combined.items())
             }}
 
-    print('[3/3] Construyendo JSON...', flush=True)
+    # Añadir ppto_base a cada proyecto en out
+    for sub_key, cap_ppto in ppto_base.items():
+        if sub_key in out:
+            out[sub_key]['pptoCaps'] = cap_ppto
+        else:
+            out[sub_key] = {'meses': {}, 'pptoCaps': cap_ppto}
+
+    print('[4/4] Construyendo JSON...', flush=True)
     resultado = {
         'generatedAt': datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).strftime('%d %b %Y %H:%M'),
         'causas': sorted(causas_set),
