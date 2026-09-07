@@ -251,7 +251,8 @@ def main():
         proj_data[sub_key]['meses'][ym]['causas'][causa_desc] += valor
 
         folio_label = folio if folio else None
-        folio_key = f"{folio_label}|{ym}" if folio_label else f"anon|{ym}|{comentario[:40]}"
+        # Clave única = comentario completo + mes (cada texto distinto es una entrada separada)
+        folio_key = f"{comentario}|{ym}" if comentario else f"anon|{ym}"
         fd = proj_data[sub_key]['meses'][ym]['folios']
         if folio_key not in fd:
             fd[folio_key] = {
@@ -296,7 +297,7 @@ def main():
                 for causa, val in md['causas'].items():
                     meses_combined[ym]['causas'][causa] += val
                 for f in md['folios']:
-                    fk = str(f['folio'])
+                    fk = f.get('comentario') or str(f['folio'])
                     if fk not in meses_combined[ym]['folios']:
                         meses_combined[ym]['folios'][fk] = dict(f)
                         meses_combined[ym]['folios'][fk]['caps'] = list(f.get('caps', []))
