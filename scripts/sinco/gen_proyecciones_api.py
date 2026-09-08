@@ -197,7 +197,7 @@ def build_ppto_base(token, cap_dim):
         return None
 
     # Clase mapa: skidclaseorigen → 'presupuesto' | 'proyectado' | ...
-    clase_rows = api_fetch('adp_dtm_dim_claseorigen')
+    clase_rows = api_fetch('adp_dtm_dim_controlclaseorigen')
     if clase_rows is None:
         return {}
     clase_map = {}
