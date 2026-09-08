@@ -85,15 +85,15 @@ MACRO_SUBS = {
 # Duración planeada en meses por proyecto (fuente: programación de obra)
 MESES_PROGRAMADOS = {
     'well':     20,
-    'pra-e1':   24, 'pra-e2': 24, 'pra-zc': 6,
+    'pra-e1':   23, 'pra-e2': 22, 'pra-zc': 6,
     'opo-e12':  24, 'opo-e3': 24,
     'pri-e12':  24, 'pri-zc': 6,
-    'hac-e1':   24, 'hac-e3': 24, 'hac-ref': 12,
+    'hac-e1':   10, 'hac-e3': 24, 'hac-ref': 12,
     'azt-e1':   24, 'azt-e2': 24,
     'azc-e1':   24, 'azc-e2': 24, 'azc-e3': 24,
     'ver-e1':   24, 'ver-e2': 24, 'ver-e3': 24,
-    'mit-t6':   24, 'mit-t7': 24, 'mit-t5': 24, 'mit-11': 24,
-    'cast-l':   24, 'bosque': 24,
+    'mit-t5':    7, 'mit-t6':  7, 'mit-t7':  8, 'mit-11': 24,
+    'cast-l':   25, 'bosque': 24,
 }
 
 MESES_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
