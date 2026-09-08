@@ -377,9 +377,10 @@ const COLOR_POS = '#2D4170';
 const COLOR_NEG = '#7A92C0';
 
 function CausaBars({ causaAcum, causas, selectedCausa, onSelectCausa }) {
-  const sorted = [...causas]
-    .map(c => ({ causa: c, val: causaAcum[c] || 0 }))
-    .filter(x => x.val !== 0)
+  // Usar causaAcum directamente para no perder causas que no estén en data.causas
+  const sorted = Object.entries(causaAcum)
+    .filter(([, v]) => v !== 0)
+    .map(([c, v]) => ({ causa: c, val: v }))
     .sort((a, b) => b.val - a.val);
 
   const maxAbs = Math.max(...sorted.map(x => Math.abs(x.val)), 1);
