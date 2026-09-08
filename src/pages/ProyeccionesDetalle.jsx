@@ -131,6 +131,204 @@ const ymLabel = ym => {
   return `${MESES_ES[parseInt(m,10)-1]} ${y}`;
 };
 
+// ── Staircase timeline chart (P1 center) ─────────────────────────────────────
+function StaircaseChart({ donutRings, pptoTotal, fmtM, startYm, mesesProgramados, numMesesEjecucion }) {
+  if (!donutRings || donutRings.length < 2) return null;
+
+  // Build steps: Base + one per year, with CUMULATIVE month count from startYm
+  let cumMeses = 0;
+  const steps = donutRings.map((r, i) => {
+    if (i === 0) return { label: 'Base', value: pptoTotal, delta: null, meses: null };
+    const acum = donutRings.slice(1, i + 1).reduce((s, x) => s + (x.delta || 0), 0);
+    const isLast = i === donutRings.length - 1;
+    const periodMeses = r.vals ? Object.keys(r.vals).length : 0;
+    cumMeses += periodMeses;
+    return { label: isLast ? `${r.label}*` : r.label, value: pptoTotal + acum, delta: r.delta, meses: cumMeses };
+  });
+
+  // Planned-end line: bar index + fraction within that bar + label
+  let plannedBarIdx = null, plannedFrac = 0, plannedLabel = '';
+  if (startYm && mesesProgramados) {
+    const [sy, sm] = startYm.split('-').map(Number);
+    const totalOffset = (sm - 1) + (mesesProgramados - 1);
+    const endAbsYear = sy + Math.floor(totalOffset / 12);
+    const endMonth = (totalOffset % 12) + 1;
+    const MN = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    for (let i = 1; i < donutRings.length; i++) {
+      if (donutRings[i].label.replace('*','') === String(endAbsYear)) {
+        plannedBarIdx = i;
+        plannedFrac = endMonth / 12;
+        plannedLabel = `${MN[endMonth-1]} ${endAbsYear} · mes ${mesesProgramados}`;
+        break;
+      }
+    }
+  }
+
+  const COLORS    = ['#546E7A','#5C35D4','#1D9E8F','#E07B39','#8B4513','#1565C0'];
+  const OPACITIES = [0.75, 0.90, 0.90, 1.0, 0.9, 0.9];
+
+  const W = 320, H = 210;
+  const PAD_L = 52, PAD_R = 10, PAD_T = 62, PAD_B = 32;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+  const n = steps.length;
+  const barW = Math.floor(chartW / n * 0.58);
+  const spacing = chartW / n;
+  const bx = i => PAD_L + i * spacing + (spacing - barW) / 2;
+
+  const values = steps.map(s => s.value);
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+  const range = maxV - minV || 1;
+  const yMin = minV - range * 0.15;
+  const yMax = maxV + range * 0.12;
+  const yRange = yMax - yMin;
+  const toY  = v => PAD_T + chartH - (v - yMin) / yRange * chartH;
+  const toBH = v => (v - yMin) / yRange * chartH;
+
+  // Compute ~5 nice Y ticks
+  const rawStep = (yMax - yMin) / 4;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const niceStep = Math.ceil(rawStep / mag) * mag;
+  const tickStart = Math.ceil(yMin / niceStep) * niceStep;
+  const ticks = [];
+  for (let t = tickStart; t <= yMax + niceStep * 0.01; t += niceStep) ticks.push(t);
+
+  const fmtAbs = v => {
+    const abs = Math.abs(v || 0);
+    if (abs >= 1e9) return `$${(abs/1e9).toFixed(1)}MM`;
+    if (abs >= 1e6) return `$${(abs/1e6).toFixed(1)}M`;
+    return `$${Math.round(abs).toLocaleString('es-CO')}`;
+  };
+  const fmtDlt = v => {
+    if (v == null) return '';
+    const abs = Math.abs(v), sign = v < 0 ? '-' : '+';
+    if (abs >= 1e9) return `${sign}$${(abs/1e9).toFixed(1)}MM`;
+    if (abs >= 1e6) return `${sign}$${(abs/1e6).toFixed(1)}M`;
+    if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(0)}K`;
+    return `${sign}$${Math.round(abs)}`;
+  };
+
+  return (
+    <div style={{width:'100%',flex:'1 1 auto',minHeight:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'100%',display:'block'}}>
+
+        {/* Y axis grid lines + labels */}
+        {ticks.map((tv, ti) => {
+          const gy = toY(tv);
+          if (gy < PAD_T - 6 || gy > PAD_T + chartH + 6) return null;
+          return (
+            <g key={`g${ti}`}>
+              <line x1={PAD_L - 4} y1={gy} x2={W - PAD_R} y2={gy}
+                stroke="#ddd" strokeWidth={0.6} strokeDasharray="3,2" opacity={0.8}/>
+              <text x={PAD_L - 6} y={gy + 3.5} textAnchor="end"
+                fontSize={5.5} fill="#999" fontFamily="Century Gothic,sans-serif">
+                {fmtAbs(tv)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* X axis base line */}
+        <line x1={PAD_L - 4} y1={PAD_T + chartH} x2={W - PAD_R} y2={PAD_T + chartH}
+          stroke="#ccc" strokeWidth={0.8}/>
+
+        {/* Axis break // symbol */}
+        <text x={PAD_L - 18} y={PAD_T + chartH + 10} textAnchor="middle"
+          fontSize={9} fill="#aaa" fontFamily="Century Gothic,sans-serif">//</text>
+
+        {/* Staircase connectors */}
+        {steps.map((step, i) => {
+          if (i >= n - 1) return null;
+          const x1 = bx(i) + barW, x2 = bx(i + 1);
+          const y1 = toY(step.value), y2 = toY(steps[i + 1].value);
+          return <polyline key={`c${i}`} points={`${x1},${y1} ${x2},${y1} ${x2},${y2}`}
+            fill="none" stroke="#ccc" strokeWidth={0.8} strokeDasharray="3,2"/>;
+        })}
+
+        {/* Bars */}
+        {steps.map((step, i) => {
+          const x = bx(i), yTop = toY(step.value), bh = toBH(step.value);
+          const col = COLORS[Math.min(i, COLORS.length - 1)];
+          const op  = OPACITIES[Math.min(i, OPACITIES.length - 1)];
+          const isLast = i === n - 1;
+          const isPos = (step.delta || 0) >= 0;
+
+          // Labels stacked above bar (from bar top, going up):
+          // pill (14px) → chip (13px) → total value (10px)
+          const pillY   = yTop - 18;   // pill rect top
+          const chipY   = yTop - 36;   // chip rect top (above pill)
+          const totalY  = yTop - 48;   // total value text
+
+          return (
+            <g key={`b${i}`}>
+              {isLast && <rect x={x+1.5} y={yTop+1.5} width={barW} height={bh} fill={col} opacity={0.15} rx={2}/>}
+              <rect x={x} y={yTop} width={barW} height={bh} fill={col} opacity={op} rx={2}/>
+              <rect x={x} y={yTop} width={barW} height={3} fill={col} rx={2}/>
+
+              {/* Year pill */}
+              <rect x={x-1} y={pillY} width={barW+2} height={14} fill={col} opacity={op} rx={2}/>
+              <text x={x + barW/2} y={pillY + 10} textAnchor="middle"
+                fontSize={isLast ? 7.5 : 7} fontWeight={700} fill="#fff"
+                fontFamily="Century Gothic,sans-serif" letterSpacing="0.03em">
+                {step.label}
+              </text>
+
+              {/* Delta chip — above pill */}
+              {step.delta != null && i > 0 && (
+                <g>
+                  <rect x={x + barW/2 - 19} y={chipY} width={38} height={12}
+                    fill={isPos ? '#E8F5E9' : '#FFF3E0'} rx={5} opacity={0.95}/>
+                  <text x={x + barW/2} y={chipY + 8.5} textAnchor="middle"
+                    fontSize={6} fontWeight={700}
+                    fill={isPos ? '#2E7D32' : '#E65100'}
+                    fontFamily="Century Gothic,sans-serif">
+                    {fmtDlt(step.delta)}
+                  </text>
+                </g>
+              )}
+
+              {/* Total accumulated value — topmost */}
+              <text x={x + barW/2} y={totalY} textAnchor="middle"
+                fontSize={isLast ? 7 : 6.5} fontWeight={isLast ? 700 : 500}
+                fill={isLast ? col : '#777'} fontFamily="Century Gothic,sans-serif">
+                {fmtAbs(step.value)}
+              </text>
+
+              {/* Months label below X axis */}
+              {step.meses != null && (
+                <text x={x + barW/2} y={PAD_T + chartH + 13} textAnchor="middle"
+                  fontSize={5.5} fill="#999" fontFamily="Century Gothic,sans-serif">
+                  {step.meses} meses
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Planned-end vertical line */}
+        {plannedBarIdx != null && (() => {
+          const lx = bx(plannedBarIdx) + plannedFrac * barW;
+          const dmY = PAD_T + chartH * 0.82;
+          return (
+            <g>
+              <text x={lx} y={14} textAnchor="middle"
+                fontSize={5.5} fontWeight={600} fill="#C62828"
+                fontFamily="Century Gothic,sans-serif" opacity={0.85}>
+                {plannedLabel || `Fin prog. · mes ${mesesProgramados}`}
+              </text>
+              <line x1={lx} y1={18} x2={lx} y2={PAD_T + chartH}
+                stroke="#C62828" strokeWidth={0.9} strokeDasharray="4,4" opacity={0.6}/>
+              <polygon points={`${lx},${dmY-5} ${lx+4},${dmY} ${lx},${dmY+5} ${lx-4},${dmY}`}
+                fill="#C62828" opacity={0.7}/>
+            </g>
+          );
+        })()}
+      </svg>
+    </div>
+  );
+}
+
 // ── SVG donut helpers ─────────────────────────────────────────────────────────
 function polarToCart(cx, cy, r, angleDeg) {
   const rad = (angleDeg - 90) * Math.PI / 180;
@@ -184,102 +382,7 @@ function calcAngles(catDefs, vals) {
   return angles;
 }
 
-// ── Donut multi-anillo ────────────────────────────────────────────────────────
-function StaircaseChart({ donutRings, pptoTotal, fmtM }) {
-  if (!donutRings || donutRings.length < 2) return null;
-
-  // Construir pasos: base + un paso por año
-  const steps = donutRings.map((r, i) => {
-    if (i === 0) return { label: 'Base', value: pptoTotal, delta: null };
-    const acum = donutRings.slice(1, i + 1).reduce((s, x) => s + (x.delta || 0), 0);
-    const isLast = i === donutRings.length - 1;
-    return { label: isLast ? `${r.label}*` : r.label, value: pptoTotal + acum, delta: r.delta };
-  });
-
-  const values = steps.map(s => s.value);
-  const minV = Math.min(...values);
-  const maxV = Math.max(...values);
-  const range = maxV - minV || 1;
-
-  const W = 260, H = 160;
-  const PAD_L = 8, PAD_R = 8, PAD_T = 28, PAD_B = 30;
-  const chartW = W - PAD_L - PAD_R;
-  const chartH = H - PAD_T - PAD_B;
-  const n = steps.length;
-  const barW = Math.floor(chartW / n * 0.55);
-  const gap = chartW / n;
-
-  const colors = ['#1B5E20','#2E7D32','#388E3C','#43A047','#4CAF50','#66BB6A','#81C784'];
-  const toY = v => PAD_T + chartH - ((v - minV) / range) * chartH;
-
-  return (
-    <div style={{width:'100%',flex:'1 1 auto',minHeight:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'100%',display:'block'}}>
-        {/* Línea base */}
-        <line x1={PAD_L} y1={toY(minV)} x2={W-PAD_R} y2={toY(minV)} stroke="#e0e0e0" strokeWidth={0.8}/>
-
-        {steps.map((step, i) => {
-          const x = PAD_L + i * gap + (gap - barW) / 2;
-          const y = toY(step.value);
-          const barH = chartH - (y - PAD_T);
-          const col = colors[Math.min(i, colors.length - 1)];
-          const isBase = i === 0;
-          const isLast = i === n - 1;
-
-          // Línea escalonada al siguiente
-          const nextStep = steps[i + 1];
-          const nextX = nextStep ? PAD_L + (i + 1) * gap + (gap - barW) / 2 : null;
-          const nextY = nextStep ? toY(nextStep.value) : null;
-
-          return (
-            <g key={i}>
-              {/* Barra */}
-              <rect x={x} y={y} width={barW} height={barH}
-                fill={isBase ? '#B0BEC5' : col}
-                rx={2} opacity={isLast ? 1 : 0.85}/>
-
-              {/* Línea escalonada al siguiente */}
-              {nextStep && (
-                <polyline
-                  points={`${x+barW},${y} ${nextX},${y} ${nextX},${nextY}`}
-                  fill="none" stroke="#aaa" strokeWidth={0.8} strokeDasharray="3,2"/>
-              )}
-
-              {/* Valor encima */}
-              <text x={x + barW/2} y={y - 4} textAnchor="middle"
-                fontSize={isLast ? 8 : 7} fontWeight={isLast ? 700 : 600}
-                fill={isBase ? '#607D8B' : col} fontFamily="Century Gothic,sans-serif">
-                {fmtM(step.value)}
-              </text>
-
-              {/* Delta entre barras */}
-              {step.delta != null && (
-                <text x={x + barW/2} y={y - 13} textAnchor="middle"
-                  fontSize={6} fill={step.delta >= 0 ? '#B85520' : '#2E7D32'}
-                  fontFamily="Century Gothic,sans-serif">
-                  {(step.delta >= 0 ? '+' : '') + fmtM(step.delta)}
-                </text>
-              )}
-
-              {/* Etiqueta año abajo */}
-              <text x={x + barW/2} y={H - PAD_B + 10} textAnchor="middle"
-                fontSize={isLast ? 7 : 6.5} fontWeight={isLast ? 700 : 500}
-                fill={isBase ? '#999' : isLast ? col : '#555'}
-                fontFamily="Century Gothic,sans-serif">
-                {step.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Nota mes actual */}
-        <text x={W/2} y={H - 2} textAnchor="middle" fontSize={5.5} fill="#aaa"
-          fontFamily="Century Gothic,sans-serif">* hasta mes actual</text>
-      </svg>
-    </div>
-  );
-}
-
+// DonutMultiRing kept for reference but no longer rendered
 function DonutMultiRing({ rings, catDefs, totalLabel, deltaLabels }) {
   const [hovered, setHovered] = useState(null);
   const SIZE = 260;
@@ -920,54 +1023,105 @@ export default function ProyeccionesDetalle() {
       <div style={{flex:1,display:'grid',gridTemplateColumns:'1fr 1fr',
         gridTemplateRows:'1fr 1fr',gap:8,padding:8,minHeight:0}}>
 
-        {/* P1 — Donut + Causas acumuladas */}
+        {/* P1 — Escalera proyecciones */}
+        <div style={{background:'var(--c-surface,#fff)',borderRadius:6,border:'1px solid #ddd',
+          display:'flex',overflow:'hidden',minHeight:0}}>
+          {/* Contenido — mitad izquierda */}
+          <div style={{width:'50%',flexShrink:0,display:'flex',flexDirection:'column',minHeight:0,
+            borderRight:'1px solid #eee',overflow:'hidden'}}>
+            {/* Header */}
+            <div style={{padding:'5px 12px',borderBottom:'1px solid #eee',flexShrink:0}}>
+              <div style={{fontSize:'0.6rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'#888'}}>
+                {macroKey} · Proyecciones acumuladas
+              </div>
+              <div style={{fontSize:'0.75rem',fontWeight:700,color:'#222',marginTop:1}}>
+                Variación por año{fechaInicioProyeccion ? ` · desde ${fechaInicioProyeccion}` : ''}
+              </div>
+            </div>
+            {/* KPI strip */}
+            {(() => {
+              const mp = proyData?.mesesProgramados ?? detalle?.[macroKey]?.mesesProgramados;
+              const varTotal = proyTotal != null ? proyTotal - pptoTotal : null;
+              return (
+                <div style={{display:'flex',borderBottom:'1px solid #eee',flexShrink:0}}>
+                  {[
+                    {label:'Ppto Base', val: fmtM(pptoTotal), color:'#333'},
+                    {label:'Proyección', val: proyTotal != null ? fmtM(proyTotal) : '—', color: proyTotal > pptoTotal ? '#B85520' : '#2E7D32'},
+                    {label:'Variación', val: varTotal != null ? (varTotal>=0?'+':'')+fmtM(varTotal) : '—', color: varTotal >= 0 ? '#B85520' : '#2E7D32'},
+                    {label:'Meses ejec', val: numMesesEjecucion ? `${numMesesEjecucion} de ${mp||'?'}` : '—', color:'#444'},
+                  ].map(({label,val,color},ki) => (
+                    <div key={ki} style={{flex:1,padding:'4px 6px',borderRight:'1px solid #eee',minWidth:0}}>
+                      <div style={{fontSize:'0.48rem',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.07em',whiteSpace:'nowrap'}}>{label}</div>
+                      <div style={{fontSize:'0.72rem',fontWeight:700,color,marginTop:1,whiteSpace:'nowrap'}}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            {/* Chart */}
+            <div style={{flex:1,minHeight:0,overflow:'hidden'}}>
+              {donutRings.length > 1 ? (
+                <StaircaseChart
+                  donutRings={donutRings} pptoTotal={pptoTotal} fmtM={fmtM}
+                  startYm={Object.keys(proyData.meses).sort()[0]}
+                  mesesProgramados={proyData?.mesesProgramados ?? detalle?.[macroKey]?.mesesProgramados}
+                  numMesesEjecucion={numMesesEjecucion}
+                />
+              ) : (
+                <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',color:'#999',fontSize:'0.75rem'}}>
+                  Sin datos base
+                </div>
+              )}
+            </div>
+            {/* Legend */}
+            <div style={{display:'flex',gap:10,padding:'4px 10px',borderTop:'1px solid #eee',flexShrink:0,flexWrap:'wrap',alignItems:'center'}}>
+              {[{c:'#546E7A',l:'Base'},{c:'#5C35D4',l:'2024'},{c:'#1D9E8F',l:'2025'},{c:'#E07B39',l:'2026*'}].map(({c,l})=>(
+                <div key={l} style={{display:'flex',alignItems:'center',gap:4,fontSize:'0.6rem',color:'#777'}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:c,flexShrink:0}}/>
+                  {l}
+                </div>
+              ))}
+              <div style={{display:'flex',alignItems:'center',gap:4,fontSize:'0.6rem',color:'#777'}}>
+                <div style={{width:16,height:0,borderTop:'2px dashed #C62828',flexShrink:0}}/>
+                Fin programado
+              </div>
+            </div>
+          </div>
+          {/* Mitad derecha — vacía */}
+          <div style={{flex:1}}/>
+        </div>
+
+        {/* P2 — Variación por actividad + Acumulada por causa */}
         <div style={{background:'var(--c-surface,#fff)',borderRadius:6,border:'1px solid #ddd',
           display:'flex',flexDirection:'column',overflow:'hidden',minHeight:0}}>
           <div style={{padding:'6px 12px',borderBottom:'1px solid #eee',flexShrink:0,
             display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P1 · Proyecciones</span>
-            <span style={{fontSize:'0.65rem',color:'#888'}}>
-              Base {fmtM(pptoTotal)}
-              {proyTotal != null && (
-                <>
-                  {' → '}
-                  <span style={{color: proyTotal > pptoTotal ? '#B85520' : '#2E7D32', fontWeight:600}}>
-                    Proy. {fmtM(proyTotal)}
-                  </span>
-                </>
-              )}
-              {fechaInicioProyeccion && numMesesEjecucion > 0 && (() => {
-                const mp = detalle?.[macroKey]?.mesesProgramados;
-                return (
-                  <span style={{marginLeft:6, color:'#999'}}>
-                    · desde {fechaInicioProyeccion}
-                    {mp ? <> · <span style={{color:'#aaa'}}>{mp} prog</span></> : null}
-                    {' · '}<span style={{color:'#666',fontWeight:600}}>{numMesesEjecucion} ejec</span>
-                  </span>
-                );
-              })()}
+            <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P2 · Variación acumulada</span>
+            <span style={{display:'inline-flex',alignItems:'center',gap:4,marginLeft:8}}>
+              <span style={{width:10,height:10,borderRadius:2,background:'#2E9E50',display:'inline-block'}}/>
+              <span style={{fontSize:'0.6rem',color:'#555',fontWeight:600}}>CDD</span>
+              <span style={{width:10,height:10,borderRadius:2,background:'#FF7043',display:'inline-block',marginLeft:4}}/>
+              <span style={{fontSize:'0.6rem',color:'#555',fontWeight:600}}>CID</span>
             </span>
             <button
               onClick={() => { setSelectedCausa(null); setSelectedActivity(null); }}
               style={{marginLeft:'auto',padding:'2px 8px',fontSize:'0.62rem',fontWeight:400,
                 border:'1px solid #2D4170',borderRadius:4,cursor:'pointer',
                 background:'transparent',color:'#222',whiteSpace:'nowrap',flexShrink:0}}>
-              Proy. acum »
+              Limpiar filtros
             </button>
           </div>
           <div style={{flex:1,display:'flex',minHeight:0,overflow:'hidden'}}>
-
-            {/* Izquierda: Labels de categorías (verdes→naranjas→azules→morados) */}
+            {/* Izquierda: Variación por actividad */}
             <div style={{flex:'1 1 0',padding:'6px 4px 4px 6px',display:'flex',flexDirection:'column',
               justifyContent:'flex-start',gap:2,minHeight:0,overflowY:'auto',
               border:'1px solid #e0e0e0',borderRadius:5,margin:'6px 4px 6px 6px'}}>
-              {/* Header */}
               <div style={{display:'flex',gap:3,borderBottom:'1px solid #e0e0e0',paddingBottom:3,marginBottom:2,flexShrink:0}}>
                 <span style={{flex:'0 0 10px'}}/>
-                <span style={{flex:1,fontSize:'0.55rem',color:'#888',fontWeight:700,textTransform:'uppercase'}}>Actividades</span>
-                <span style={{width:44,fontSize:'0.55rem',color:'#888',fontWeight:700,textAlign:'right'}}>Base</span>
-                <span style={{width:44,fontSize:'0.55rem',color:'#1565C0',fontWeight:700,textAlign:'right'}}>Proy</span>
-                <span style={{width:34,fontSize:'0.55rem',color:'#888',fontWeight:700,textAlign:'right'}}>%Δ</span>
+                <span style={{flex:1,fontSize:'0.55rem',color:'#888',fontWeight:700,textTransform:'uppercase'}}>Variación por actividad</span>
+                <span style={{width:72,fontSize:'0.55rem',color:'#888',fontWeight:700,textAlign:'right'}}>Base</span>
+                <span style={{width:72,fontSize:'0.55rem',color:'#1565C0',fontWeight:700,textAlign:'right'}}>Proy</span>
+                <span style={{width:50,fontSize:'0.55rem',color:'#888',fontWeight:700,textAlign:'right'}}>%Δ</span>
               </div>
               {pptoCatsGranular ? (() => {
                 const sortedGrps = [...CDD_APP_GROUPS]
@@ -990,13 +1144,15 @@ export default function ProyeccionesDetalle() {
                       style={{display:'flex',alignItems:'center',gap:3,minHeight:15,cursor:'pointer',
                         opacity: selectedActivity && !isActSelected ? 0.4 : 1,
                         background: isActSelected ? '#f0f4ff' : 'transparent', borderRadius:3, padding:'0 2px'}}>
-                      <span style={{width:10,height:10,borderRadius:2,background:grp.color,flexShrink:0,display:'inline-block'}}/>
-                      <span style={{flex:1,fontSize:'0.6rem',color:grp.color,fontWeight:700,
+                      {(() => { const tc = grp.tipo==='cid'?'#E64A19':(grp.codes||[]).some(c=>c.startsWith('CDD'))?'#2E9E50':'#888'; return (<>
+                      <span style={{width:10,height:10,borderRadius:2,background:tc,flexShrink:0,display:'inline-block'}}/>
+                      <span style={{flex:1,fontSize:'0.6rem',color:tc,fontWeight:700,
                         whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}
                         title={grp.label}>{grp.label}</span>
-                      <span style={{width:44,fontSize:'0.6rem',color:'#555',fontWeight:600,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(base)}</span>
-                      <span style={{width:44,fontSize:'0.6rem',color:'#1565C0',fontWeight:700,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(proy)}</span>
-                      <span style={{width:34,fontSize:'0.6rem',fontWeight:700,color:deltaColor,textAlign:'right',whiteSpace:'nowrap'}}>
+                      </>); })()}
+                      <span style={{width:72,fontSize:'0.6rem',color:'#555',fontWeight:600,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(base)}</span>
+                      <span style={{width:72,fontSize:'0.6rem',color:'#1565C0',fontWeight:700,textAlign:'right',whiteSpace:'nowrap'}}>{fmtM(proy)}</span>
+                      <span style={{width:50,fontSize:'0.6rem',fontWeight:700,color:deltaColor,textAlign:'right',whiteSpace:'nowrap'}}>
                         {pctStr}
                       </span>
                     </div>
@@ -1012,25 +1168,13 @@ export default function ProyeccionesDetalle() {
                 </div>
               ))}
             </div>
-
-            {/* Centro: Donut */}
-            <div style={{flex:'1 1 0',padding:'4px',display:'flex',flexDirection:'column',minHeight:0,minWidth:0}}>
-              {donutRings.length > 1 ? (
-                <StaircaseChart donutRings={donutRings} pptoTotal={pptoTotal} fmtM={fmtM} />
-              ) : (
-                <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',color:'#999',fontSize:'0.75rem'}}>
-                  Sin datos base
-                </div>
-              )}
-            </div>
-
-            {/* Derecha: Barras por causa acumulada (todos los años) */}
+            {/* Derecha: Variación acumulada por causa */}
             {(() => {
               const totalVar = Object.values(causaAcumTotal).reduce((s,v)=>s+v,0);
               return (
                 <div style={{flex:'1 1 0',display:'flex',flexDirection:'column',borderLeft:'1px solid #f0f0f0',minHeight:0,overflow:'hidden'}}>
-                  <div style={{padding:'6px 8px 2px',fontSize:'0.65rem',fontWeight:600,color:'#666',flexShrink:0}}>
-                    Variación acumulada por causa
+                  <div style={{padding:'12px 8px 3px',fontSize:'0.55rem',fontWeight:700,color:'#888',flexShrink:0,letterSpacing:'0.05em',borderBottom:'1px solid #e0e0e0'}}>
+                    VARIACIÓN POR CAUSA
                   </div>
                   <CausaBars causaAcum={causaAcumTotal} causas={data?.causas || []}
                     selectedCausa={selectedCausa} onSelectCausa={c => { setSelectedCausa(c); setSelectedActivity(null); }} />
@@ -1046,41 +1190,17 @@ export default function ProyeccionesDetalle() {
           </div>
         </div>
 
-        {/* P2 — Variación Mensual */}
+        {/* P3 — (reservado) */}
         <div style={{background:'var(--c-surface,#fff)',borderRadius:6,border:'1px solid #ddd',
-          display:'flex',flexDirection:'column',overflow:'hidden'}}>
-          <div style={{padding:'6px 12px',borderBottom:'1px solid #eee',display:'flex',
-            alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-            <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P2 Variación Mensual</span>
-            {selectedP2 && (
-              <span style={{fontSize:'0.7rem',color:'#3A7228',fontWeight:600}}>
-                {ymLabel(selectedP2)}
-              </span>
-            )}
-          </div>
-          <div style={{flex:1,padding:'6px 8px',minHeight:0,overflowX:'auto'}}>
-            {p2Meses.length === 0
-              ? <span style={{color:'#999',fontSize:'0.75rem'}}>Sin datos en {anioP1}</span>
-              : <BarChart meses={p2Meses} causas={causasActivas}
-                  causaColors={p2CausaColors} maxVal={p2Max}
-                  onSelect={ym => setSelectedP2(ym === selectedP2 ? null : ym)}
-                  selected={selectedP2} />
-            }
-          </div>
-          {selectedP2 && (
-            <div style={{padding:'4px 12px',borderTop:'1px solid #eee',
-              fontSize:'0.72rem',color:'#555',flexShrink:0}}>
-              Total mes: <strong style={{color:'#3A7228'}}>{fmtM(foliosP4.reduce((s,f)=>s+f.valor,0))}</strong>
-            </div>
-          )}
+          display:'flex',flexDirection:'column',overflow:'hidden',minHeight:0}}>
         </div>
 
-        {/* P3 — Folios por causa */}
+        {/* P4 — Folios por causa */}
         <div style={{background:'var(--c-surface,#fff)',borderRadius:6,border:'1px solid #ddd',
           display:'flex',flexDirection:'column',overflow:'hidden',minHeight:0}}>
           <div style={{padding:'6px 12px',borderBottom:'1px solid #eee',flexShrink:0,
             display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P3</span>
+            <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P4</span>
             {selectedCausa
               ? <span style={{fontSize:'0.75rem',fontWeight:600,color:'#2D4170'}}>· {selectedCausa}</span>
               : selectedActivity
@@ -1173,33 +1293,6 @@ export default function ProyeccionesDetalle() {
                 </tbody>
               </table>
             )}
-          </div>
-        </div>
-
-        {/* P4 — Detalle Variación Mensual */}
-        <div style={{background:'var(--c-surface,#fff)',borderRadius:6,border:'1px solid #ddd',
-          display:'flex',flexDirection:'column',overflow:'hidden'}}>
-          <div style={{padding:'6px 12px',borderBottom:'1px solid #eee',display:'flex',
-            alignItems:'center',gap:8,flexShrink:0}}>
-            <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P4 Detalle Mensual</span>
-            <span style={{fontSize:'0.65rem',color:'#999'}}>Ordenar:</span>
-            {['valor','causa','capitulo'].map(s => (
-              <button key={s}
-                style={{padding:'1px 6px',border:'1px solid #ccc',borderRadius:3,cursor:'pointer',
-                  fontSize:'0.65rem',background:sortP4===s?'#3A7228':'transparent',
-                  color:sortP4===s?'#fff':'#555'}}
-                onClick={() => setSortP4(s)}>
-                {s.charAt(0).toUpperCase()+s.slice(1)}
-              </button>
-            ))}
-          </div>
-          <div style={{flex:1,overflowY:'auto',minHeight:0}}>
-            {!selectedP2
-              ? <div style={{padding:16,color:'#999',fontSize:'0.75rem',textAlign:'center'}}>
-                  Selecciona un mes en P2
-                </div>
-              : <TablaFolios folios={foliosP4} sortBy={sortP4} onSortBy={setSortP4} />
-            }
           </div>
         </div>
 

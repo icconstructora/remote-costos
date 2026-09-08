@@ -82,6 +82,20 @@ MACRO_SUBS = {
     'cast-i':   ['cai-e2b', 'cai-zc'],
 }
 
+# Duración planeada en meses por proyecto (fuente: programación de obra)
+MESES_PROGRAMADOS = {
+    'well':     20,
+    'pra-e1':   24, 'pra-e2': 24, 'pra-zc': 6,
+    'opo-e12':  24, 'opo-e3': 24,
+    'pri-e12':  24, 'pri-zc': 6,
+    'hac-e1':   24, 'hac-e3': 24, 'hac-ref': 12,
+    'azt-e1':   24, 'azt-e2': 24,
+    'azc-e1':   24, 'azc-e2': 24, 'azc-e3': 24,
+    'ver-e1':   24, 'ver-e2': 24, 'ver-e3': 24,
+    'mit-t6':   24, 'mit-t7': 24, 'mit-t5': 24, 'mit-11': 24,
+    'cast-l':   24, 'bosque': 24,
+}
+
 MESES_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
 def ymLabel_py(ym):
@@ -407,12 +421,16 @@ def main():
                 for ym, md in sorted(meses_combined.items())
             }}
 
-    # Añadir ppto_base a cada proyecto en out
+    # Añadir ppto_base y mesesProgramados a cada proyecto en out
     for sub_key, cap_ppto in ppto_base.items():
         if sub_key in out:
             out[sub_key]['pptoCaps'] = cap_ppto
         else:
             out[sub_key] = {'meses': {}, 'pptoCaps': cap_ppto}
+    for sub_key in out:
+        mp = MESES_PROGRAMADOS.get(sub_key)
+        if mp:
+            out[sub_key]['mesesProgramados'] = mp
 
     print('[4/4] Construyendo JSON...', flush=True)
     resultado = {
