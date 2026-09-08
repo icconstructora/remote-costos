@@ -1003,19 +1003,6 @@ export default function ProyeccionesDetalle() {
           </div>
         </div>
         <div className="det-hdr-spacer" />
-        <div style={{display:'flex',alignItems:'center',gap:6}}>
-          <span style={{fontSize:'0.75rem',color:'#888'}}>Año:</span>
-          {anos.map(a => (
-            <button key={a}
-              style={{padding:'2px 8px',border:'1px solid #ccc',borderRadius:4,cursor:'pointer',
-                fontSize:'0.75rem',fontWeight: a===anioP1?700:400,
-                background: a===anioP1?'#5A5A8A':'transparent',
-                color: a===anioP1?'#fff':'#555'}}
-              onClick={() => { setAnioP1(a); setSelectedP1(null); setSelectedP2(null); }}>
-              {a}
-            </button>
-          ))}
-        </div>
         <img className="det-hdr-ic" src="/images/IC_logo.png" alt="IC" />
       </div>
 
@@ -1179,9 +1166,14 @@ export default function ProyeccionesDetalle() {
                   <CausaBars causaAcum={causaAcumTotal} causas={data?.causas || []}
                     selectedCausa={selectedCausa} onSelectCausa={c => { setSelectedCausa(c); setSelectedActivity(null); }} />
                   <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px 6px',display:'flex',alignItems:'center',gap:4,flexShrink:0,marginBottom:10}}>
-                    <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color:'#333'}}>Total</div>
+                    <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color: selectedCausa ? '#2D4170' : '#333'}}>
+                      {selectedCausa ? selectedCausa : 'Total'}
+                    </div>
                     <div style={{fontSize:'0.65rem',fontWeight:700,color:'#222'}}>
-                      {(totalVar>=0?'+':'')+fmtM(totalVar)}
+                      {(() => {
+                        const v = selectedCausa ? (causaAcumTotal[selectedCausa] ?? 0) : totalVar;
+                        return (v>=0?'+':'')+fmtM(v);
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1208,7 +1200,14 @@ export default function ProyeccionesDetalle() {
                 : <span style={{fontSize:'0.7rem',color:'#888'}}>· Total variación</span>}
             <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#888'}}>
               {hasRealFolios
-                ? `${foliosP3Data.length} folios · Total ${fmtM(foliosP3Data.reduce((s,f)=>s+f.valor,0))}`
+                ? (() => {
+                    const total = selectedCausa
+                      ? (causaAcumTotal[selectedCausa] ?? foliosP3Data.reduce((s,f)=>s+f.valor,0))
+                      : selectedActivity
+                        ? (variaGranular[selectedActivity] ?? foliosP3Data.reduce((s,f)=>s+f.valor,0))
+                        : foliosP3Data.reduce((s,f)=>s+f.valor,0);
+                    return `${foliosP3Data.length} folios · Total ${fmtM(total)}`;
+                  })()
                 : `${causaMesesData.length} meses · Total ${fmtM(causaMesesData.reduce((s,r)=>s+r.valor,0))}`}
             </span>
           </div>
