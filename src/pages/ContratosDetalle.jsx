@@ -232,6 +232,17 @@ export default function ContratosDetalle() {
     return { conActaByTercero: byTercero, conActaByNC: byNC };
   }, [balanceData, balanceKey]);
 
+  // ConActa por tercero vía NC (más confiable que match por nombre)
+  const conActaByTerceroNC = useMemo(() => {
+    const map = {};
+    contratos.forEach(c => {
+      const k = normN(c.contratista);
+      const v = conActaByNC[c.noContrato] || 0;
+      if (v) map[k] = (map[k] || 0) + v;
+    });
+    return map;
+  }, [contratos, conActaByNC]);
+
   // Saldo RTE por tercero — contratos del CC activo
   const saldoRteByTercero = useMemo(() => {
     const map = {};
@@ -291,12 +302,12 @@ export default function ContratosDetalle() {
     return [...terceros].filter(k => {
       const gtaCumpl  = gtaByTercero[k]      || 0;
       if (gtaCumpl < TOL) return false;
-      const conActa   = conActaByTercero[k]  || 0;
+      const conActa   = (conActaByTerceroNC[k] || conActaByTercero[k]) || 0;
       const saldoRte  = saldoRteByTercero[k] || 0;
       const remanente = gtaCumpl - conActa;
       return remanente > saldoRte + TOL;
     }).sort();
-  }, [contratos, gtaByTercero, conActaByTercero, saldoRteByTercero]);
+  }, [contratos, gtaByTercero, conActaByTercero, conActaByTerceroNC, saldoRteByTercero]);
 
   const contratosFiltrados = useMemo(() => {
     let list = contratos;
@@ -603,7 +614,7 @@ export default function ContratosDetalle() {
                 const ffCls   = dias !== null && dias < 0 ? 'txt-red' : '';
                 const normT      = normN(c.contratista);
                 const gtaCumpl   = filtroActivo === 'irr' ? (gtaByTercero[normT]      || 0) : 0;
-                const conActaT   = filtroActivo === 'irr' ? (conActaByTercero[normT]  || 0) : 0;
+                const conActaT   = filtroActivo === 'irr' ? (conActaByTerceroNC[normT] || conActaByTercero[normT] || 0) : 0;
                 const conActaNC  = filtroActivo === 'irr' ? (conActaByNC[c.noContrato] || 0) : 0;
                 const saldoRteT  = filtroActivo === 'irr' ? (saldoRteByTercero[normT] || 0) : 0;
                 const remanente  = gtaCumpl - conActaT;
