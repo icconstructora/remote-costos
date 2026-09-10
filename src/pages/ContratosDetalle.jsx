@@ -662,7 +662,10 @@ export default function ContratosDetalle() {
             {contratosFiltrados.length > 0 && (
               <tfoot>
                 <tr className="row-total">
-                  <td colSpan={7}>TOTALES ({contratosFiltrados.length})</td>
+                  {(() => {
+                    const showDsa = !['cerrado','irr','irr-ant','liquidar'].includes(filtroActivo);
+                    return <td colSpan={showDsa ? 8 : 7}>TOTALES ({contratosFiltrados.length})</td>;
+                  })()}
                   <td className="col-num">{fmtPesos(totales.valorContrato)}</td>
                   <td className="col-num">{fmtPesos(totales.acumulado)}</td>
                   <td className="col-num txt-warn">{totales.saldoAnticipo > 0 ? fmtPesos(totales.saldoAnticipo) : '—'}</td>
@@ -672,19 +675,23 @@ export default function ContratosDetalle() {
                   {filtroActivo === 'irr-ant' && <><td /><td /><td /></>}
                 </tr>
                 <tr className="row-summary">
-                  <td colSpan={filtroActivo === 'irr' ? 17 : filtroActivo === 'irr-ant' ? 15 : 12}>
-                    Valor Total: {fmtK(totales.valorContrato)} &nbsp;·&nbsp;
-                    Acumulado: {fmtK(totales.acumulado)} &nbsp;·&nbsp;
-                    Faltante: {fmtK(totales.faltante)} &nbsp;·&nbsp;
-                    Saldo Rte: {fmtK(totales.saldoRte)} &nbsp;·&nbsp;
-                    Contratos: {contratosFiltrados.length}
-                  </td>
+                  {(() => {
+                    const showDsa = !['cerrado','irr','irr-ant','liquidar'].includes(filtroActivo);
+                    const span = filtroActivo === 'irr' ? 17 : filtroActivo === 'irr-ant' ? 15 : showDsa ? 13 : 12;
+                    return <td colSpan={span}>
+                      Valor Total: {fmtK(totales.valorContrato)} &nbsp;·&nbsp;
+                      Acumulado: {fmtK(totales.acumulado)} &nbsp;·&nbsp;
+                      Faltante: {fmtK(totales.faltante)} &nbsp;·&nbsp;
+                      Saldo Rte: {fmtK(totales.saldoRte)} &nbsp;·&nbsp;
+                      Contratos: {contratosFiltrados.length}
+                    </td>;
+                  })()}
                 </tr>
               </tfoot>
             )}
             {contratosFiltrados.length === 0 && (
               <tbody>
-                <tr><td colSpan={filtroActivo === 'irr' ? 17 : 12} style={{textAlign:'center',padding:'32px',color:'var(--muted)'}}>
+                <tr><td colSpan={filtroActivo === 'irr' ? 17 : filtroActivo === 'irr-ant' ? 15 : !['cerrado','liquidar'].includes(filtroActivo) ? 13 : 12} style={{textAlign:'center',padding:'32px',color:'var(--muted)'}}>
                   Sin contratos en esta categoría
                 </td></tr>
               </tbody>
