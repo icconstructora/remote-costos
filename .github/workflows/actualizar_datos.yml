@@ -2,8 +2,8 @@ name: Actualizar datos Control Costos
 
 on:
   schedule:
-    # 7:00am Colombia (COT = UTC-5) → 12:00 UTC  · todos los días
-    - cron: '0 12 * * *'
+    # 07:00am Colombia (COT = UTC-5) → 12:00 UTC · lunes a viernes
+    - cron: '0 12 * * 1-5'
   workflow_dispatch:
     # También se puede lanzar manualmente desde GitHub → Actions → Run workflow
 
@@ -101,7 +101,8 @@ jobs:
                   m = json.load(f)
           except Exception:
               m = {}
-          m['last_run'] = datetime.datetime.utcnow().strftime('%d %b %Y %H:%M')
+          cot = datetime.timezone(datetime.timedelta(hours=-5))
+          m['last_run'] = datetime.datetime.now(cot).strftime('%d %b %Y %H:%M')
           m['all_ok'] = True
           with open(path, 'w', encoding='utf-8') as f:
               json.dump(m, f, ensure_ascii=False)
