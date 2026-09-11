@@ -1332,23 +1332,37 @@ export default function ProyeccionesDetalle() {
               <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.67rem'}}>
                 <thead>
                   <tr style={{background:'#f5f7fa',position:'sticky',top:0}}>
-                    <th style={{padding:'4px 8px',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'12%'}}>Folio</th>
-                    <th style={{padding:'4px 6px 4px 0',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'10%'}}>Causa</th>
-                    <th style={{padding:'4px 4px 4px 0',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'10%'}}>Capítulo</th>
+                    <th style={{padding:'4px 8px',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'8%'}}>Folio · Mes</th>
+                    <th style={{padding:'4px 6px 4px 0',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'8%'}}>Causa</th>
+                    <th style={{padding:'4px 4px 4px 0',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'9%'}}>Capítulos</th>
                     <th style={{padding:'4px 8px',textAlign:'left',fontWeight:600,color:'#666'}}>Descripción</th>
-                    <th style={{padding:'4px 8px',textAlign:'right',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'8%'}}>Valor</th>
+                    <th style={{padding:'4px 8px',textAlign:'right',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'7%'}}>Valor</th>
                   </tr>
                 </thead>
                 <tbody>
                   {foliosP3Month.map((f, i) => (
                     <tr key={i} style={{background: i%2===0?'transparent':'#fafafa',verticalAlign:'top'}}>
-                      <td style={{padding:'4px 8px',color:'#5A5A8A',fontWeight:700,whiteSpace:'nowrap',fontSize:'0.65rem'}}>{f.folio || '—'}</td>
-                      <td style={{padding:'4px 4px 4px 0',color:'#555',fontSize:'0.60rem',whiteSpace:'nowrap'}}>{f.causa||'—'}</td>
-                      <td style={{padding:'4px 4px 4px 0',fontSize:'0.60rem',color:'#666'}}>{f.capitulo||'—'}</td>
-                      <td style={{padding:'4px 8px',color:'#444',lineHeight:1.35,fontSize:'0.65rem'}}>
-                        {f.comentario||'—'}
+                      <td style={{padding:'4px 8px',color:'#2D4170',whiteSpace:'nowrap',fontSize:'0.65rem'}}>
+                        {f.folio || '—'}<br/>
+                        <span style={{fontWeight:400,color:'#aaa',fontSize:'0.6rem'}}>{ymLabel(selectedMonthP1)}</span>
                       </td>
-                      <td style={{padding:'4px 8px',textAlign:'right',fontWeight:600,whiteSpace:'nowrap',
+                      <td style={{padding:'4px 4px 4px 0',color:'#555',fontSize:'0.60rem',whiteSpace:'nowrap'}}>{f.causa||'—'}</td>
+                      <td style={{padding:'4px 4px 4px 0',verticalAlign:'top'}}>
+                        {(f.caps||[]).length > 0
+                          ? [...new Set(f.caps)].map(label => (
+                              <div key={label} style={{marginBottom:2}}>
+                                <span style={{display:'inline-block',
+                                  padding:'1px 4px',borderRadius:3,fontSize:'0.58rem',fontWeight:500,
+                                  background:'#E8EBF4',color:'#2D4170',whiteSpace:'nowrap'}}>
+                                  {label}
+                                </span>
+                              </div>
+                            ))
+                          : <span style={{color:'#ccc',fontSize:'0.6rem'}}>—</span>
+                        }
+                      </td>
+                      <td style={{padding:'4px 8px',color:'#444',lineHeight:1.35,fontSize:'0.65rem'}}>{f.comentario||'—'}</td>
+                      <td style={{padding:'4px 8px',textAlign:'right',fontWeight:400,whiteSpace:'nowrap',
                         color: f.valor>=0?'#c62828':'#1565C0'}}>
                         {(f.valor>=0?'+':'')+fmtM(f.valor)}
                       </td>
