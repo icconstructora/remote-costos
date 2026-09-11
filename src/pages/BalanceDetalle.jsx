@@ -10,7 +10,7 @@ function fmtK(v) {
   const abs = Math.abs(n);
   if (abs >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
   if (abs >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
-  if (abs >= 1e3) return '$' + Math.round(n / 1e3) + 'K';
+  if (abs >= 1e3) return '$' + Math.round(n / 1e3) + 'Mil';
   return '$' + Math.round(n).toLocaleString('es-CO');
 }
 

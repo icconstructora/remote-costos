@@ -13,7 +13,7 @@ const fmtV = v => {
   if (!v || v < 1000) return '$0';
   if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'MM';
   if (v >= 1e6) return '$' + (v / 1e6).toFixed(0) + 'M';
-  return '$' + Math.round(v / 1e3) + 'K';
+  return '$' + Math.round(v / 1e3) + 'Mil';
 };
 
 const fmtM = v => {
@@ -22,7 +22,7 @@ const fmtM = v => {
   const s   = v < 0 ? '-' : '';
   if (abs >= 1e9) return s + '$' + (abs / 1e9).toFixed(2) + 'MM';
   if (abs >= 1e6) return s + '$' + (abs / 1e6).toFixed(1) + 'M';
-  return s + '$' + Math.round(abs / 1e3) + 'K';
+  return s + '$' + Math.round(abs / 1e3) + 'Mil';
 };
 
 const CONCEPTOS = [

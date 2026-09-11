@@ -121,7 +121,7 @@ const fmtM = v => {
   const sign = v < 0 ? '-' : '';
   if (abs >= 1e9) return `${sign}$${(abs/1e9).toFixed(1)}MM`;
   if (abs >= 1e6) return `${sign}$${(abs/1e6).toFixed(1)}M`;
-  if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(0)}K`;
+  if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(0)}Mil`;
   return `${sign}$${Math.round(abs).toLocaleString('es-CO')}`;
 };
 
@@ -205,7 +205,7 @@ function StaircaseChart({ donutRings, pptoTotal, fmtM, startYm, mesesProgramados
     const abs = Math.abs(v), sign = v < 0 ? '-' : '+';
     if (abs >= 1e9) return `${sign}$${(abs/1e9).toFixed(1)}MM`;
     if (abs >= 1e6) return `${sign}$${(abs/1e6).toFixed(1)}M`;
-    if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(0)}K`;
+    if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(0)}Mil`;
     return `${sign}$${Math.round(abs)}`;
   };
 

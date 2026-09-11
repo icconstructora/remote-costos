@@ -6,7 +6,7 @@ const fmtM = v => {
   const abs = Math.abs(v);
   if (abs >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'MM';
   if (abs >= 1e6) return '$' + Math.round(v / 1e6) + 'M';
-  if (abs >= 1e3) return '$' + Math.round(v / 1e3) + 'K';
+  if (abs >= 1e3) return '$' + Math.round(v / 1e3) + 'Mil';
   return '$' + Math.round(v);
 };
 
