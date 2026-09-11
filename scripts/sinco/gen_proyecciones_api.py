@@ -310,9 +310,9 @@ def main():
             print(f'  [DEBUG] skidreforma={row.get("skidreforma")!r}', flush=True)
             _debug_done = True
 
+        # Solo incluir folios con skidfechaaprobacion válida (>= 2020)
+        # 19000101 = sentinel de Sinco para "no aprobado" → excluir
         ym = skid_fecha_to_ym(row.get('skidfechaaprobacion'))
-        if not ym:
-            ym = skid_fecha_to_ym(row.get('skidfechanovedad'))
         if not ym:
             continue
 
