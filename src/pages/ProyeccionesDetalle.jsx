@@ -587,25 +587,52 @@ function TablaFolios({ folios, sortBy, onSortBy }) {
   );
 }
 
-// ── Helper: semanas Vie–Jue para un array de folios ──────────────────────────
-function getWeekChips(folios) {
-  const weekMap = {};
-  folios.forEach(f => {
+// ── Helper: semanas Vie–Jue del calendario para un mes dado ──────────────────
+// Genera todas las semanas que han iniciado (viernes ≤ hoy) y solapan con el mes.
+// Cuenta folios con fecha en cada semana.
+function getCalendarWeekChips(ym, folios) {
+  if (!ym) return [];
+  const [y, m] = ym.split('-').map(Number);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Encontrar el primer viernes <= dia 1 del mes
+  const firstDay = new Date(y, m - 1, 1);
+  const dow1 = firstDay.getDay(); // 0=Dom...5=Vie,6=Sab
+  const daysBack = dow1 >= 5 ? dow1 - 5 : dow1 + 2;
+  let fri = new Date(firstDay);
+  fri.setDate(firstDay.getDate() - daysBack);
+
+  const fmt = dt => `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+  const toYM = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+
+  // Índice de folios por semana
+  const countByKey = {};
+  (folios || []).forEach(f => {
     if (!f.fecha) return;
     const ds = String(f.fecha);
     if (ds.length < 8) return;
-    const y = parseInt(ds.slice(0,4),10), mo = parseInt(ds.slice(4,6),10)-1, d = parseInt(ds.slice(6,8),10);
-    const date = new Date(y, mo, d);
-    const dow = date.getDay(); // 0=Dom...5=Vie,6=Sab
-    const daysBack = dow >= 5 ? dow - 5 : dow + 2;
-    const fri = new Date(date); fri.setDate(date.getDate() - daysBack);
-    const thu = new Date(fri); thu.setDate(fri.getDate() + 6);
-    const fmt = dt => `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
-    const key = fri.toISOString().slice(0,10);
-    if (!weekMap[key]) weekMap[key] = { key, label: `${fmt(fri)}–${fmt(thu)}`, count: 0 };
-    weekMap[key].count++;
+    const fy = parseInt(ds.slice(0,4),10), fm = parseInt(ds.slice(4,6),10)-1, fd = parseInt(ds.slice(6,8),10);
+    const date = new Date(fy, fm, fd);
+    const dow = date.getDay();
+    const db = dow >= 5 ? dow - 5 : dow + 2;
+    const fFri = new Date(date); fFri.setDate(date.getDate() - db);
+    const key = fFri.toISOString().slice(0,10);
+    countByKey[key] = (countByKey[key] || 0) + 1;
   });
-  return Object.values(weekMap).sort((a,b) => a.key.localeCompare(b.key));
+
+  const chips = [];
+  while (fri <= today) {
+    const thu = new Date(fri); thu.setDate(fri.getDate() + 6);
+    const friYM = toYM(fri), thuYM = toYM(thu);
+    // Solo semanas que solapan con el mes seleccionado
+    if (friYM === ym || thuYM === ym) {
+      const key = fri.toISOString().slice(0,10);
+      chips.push({ key, label: `${fmt(fri)}–${fmt(thu)}`, count: countByKey[key] || 0 });
+    }
+    fri = new Date(fri); fri.setDate(fri.getDate() + 7);
+  }
+  return chips;
 }
 
 // ── Página principal ──────────────────────────────────────────────────────────
@@ -1170,12 +1197,7 @@ export default function ProyeccionesDetalle() {
               const curYM = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
               const foliosMes = proyData?.meses[selectedMonthP1]?.folios || [];
               const weeks = selectedMonthP1 === curYM
-                ? getWeekChips(foliosMes).filter(w => {
-                    const fri = new Date(w.key);
-                    const thu = new Date(fri); thu.setDate(fri.getDate() + 6);
-                    const toYM = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-                    return toYM(fri) === selectedMonthP1 || toYM(thu) === selectedMonthP1;
-                  })
+                ? getCalendarWeekChips(selectedMonthP1, foliosMes)
                 : [];
               return (
                 <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden',paddingBottom:28}}>
@@ -1351,7 +1373,7 @@ export default function ProyeccionesDetalle() {
             <span style={{fontSize:'0.75rem',fontWeight:600,color:'#5A5A8A'}}>
               · {selectedMonthP1 ? ymLabel(selectedMonthP1) : '—'}
               {selectedCausaP1 ? ` · ${selectedCausaP1}` : ''}
-              {selectedWeekP1 ? ` · ${getWeekChips(proyData?.meses[selectedMonthP1]?.folios||[]).find(w=>w.key===selectedWeekP1)?.label||''}` : ''}
+              {selectedWeekP1 ? ` · ${getCalendarWeekChips(selectedMonthP1, proyData?.meses[selectedMonthP1]?.folios||[]).find(w=>w.key===selectedWeekP1)?.label||''}` : ''}
             </span>
             <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#888'}}>
               {foliosP3Month.length} folios · {fmtM(foliosP3Month.reduce((s,f)=>s+f.valor,0))}
