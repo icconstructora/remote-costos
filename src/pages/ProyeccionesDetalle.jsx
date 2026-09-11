@@ -1343,8 +1343,7 @@ export default function ProyeccionesDetalle() {
                   {foliosP3Month.map((f, i) => (
                     <tr key={i} style={{background: i%2===0?'transparent':'#fafafa',verticalAlign:'top'}}>
                       <td style={{padding:'4px 8px',color:'#2D4170',whiteSpace:'nowrap',fontSize:'0.65rem'}}>
-                        {f.folio || '—'}<br/>
-                        <span style={{fontWeight:400,color:'#aaa',fontSize:'0.6rem'}}>{ymLabel(selectedMonthP1)}</span>
+                        {f.folio || '—'}
                       </td>
                       <td style={{padding:'4px 4px 4px 0',color:'#555',fontSize:'0.60rem',whiteSpace:'nowrap'}}>{f.causa||'—'}</td>
                       <td style={{padding:'4px 4px 4px 0',verticalAlign:'top'}}>
