@@ -66,6 +66,7 @@ CC_KEY_RULES = [
     ('opo-e3',  ['RESERVA DE OPORTO ETAPA 3']),
     ('hac-e1',  ['LA HACIENDA ETAPA 1', 'HACIENDA ETAPA 1', 'LA HACIENDA JAMUNDI ETAPA 1']),
     ('hac-e3',  ['LA HACIENDA ETAPA 3', 'LA HACIENDA JAMUNDI ETAPA 3']),
+    ('hac-ref', ['LA HACIENDA JAMUNDI IC']),
     ('pri-e12', ['PRIMERA ESTE ETAPA 1 Y 2']),
     ('pri-zc',  ['PRIMERA ESTE COSTOS COMUNES']),
     ('azt-e1',  ['AZUL TURQUESA ETAPA 1']),
@@ -106,7 +107,7 @@ CC_KEY_RULES = [
 SUB_TO_MACRO = {
     'pra-e1':  'praia',   'pra-e2':  'praia',   'pra-zc':  'praia',
     'opo-e12': 'oporto',  'opo-e3':  'oporto',
-    'hac-e1':  'hacienda','hac-e3':  'hacienda',
+    'hac-e1':  'hacienda','hac-e3':  'hacienda','hac-ref': 'hacienda',
     'pri-e12': 'primera', 'pri-zc':  'primera',
     'azt-e1':  'azul-t',  'azt-e2':  'azul-t',
     'azc-e1':  'azul-c',  'azc-e2':  'azul-c',  'azc-e3':  'azul-c',
@@ -165,7 +166,7 @@ SKID_KEYS = {
     119: ['pri-zc',  'primera'],
     # Hacienda
     133: ['hac-e1', 'hacienda'], 131: ['hac-e1', 'hacienda'],
-    457: ['hac-e1', 'hacienda'],
+    457: ['hac-ref', 'hacienda'],
     139: ['hac-e3', 'hacienda'],
     # Azul Turquesa
     168: ['azt-e1', 'azul-t'], 167: ['azt-e1', 'azul-t'],
