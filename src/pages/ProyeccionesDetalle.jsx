@@ -622,12 +622,13 @@ export default function ProyeccionesDetalle() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [sortP3, setSortP3] = useState('valor');
   const [sortP4, setSortP4] = useState('valor');
-  // P1 right half: month + week selection
+  // P1 right half: month + week + causa selection
   const [selectedMonthP1, setSelectedMonthP1] = useState(() => {
     const n = new Date();
     return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
   });
   const [selectedWeekP1, setSelectedWeekP1] = useState(null);
+  const [selectedCausaP1, setSelectedCausaP1] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -905,10 +906,13 @@ export default function ProyeccionesDetalle() {
     return proyData.meses[selectedP2]?.folios || [];
   }, [proyData, selectedP2]);
 
-  // P3 folios for selected month (P1 right half), filtered by week if set
+  // P3 folios for selected month (P1 right half), filtered by causa and/or week
   const foliosP3Month = useMemo(() => {
     if (!proyData || !selectedMonthP1) return [];
     let folios = proyData.meses[selectedMonthP1]?.folios || [];
+    if (selectedCausaP1) {
+      folios = folios.filter(f => normCausa(f.causa) === selectedCausaP1);
+    }
     if (selectedWeekP1) {
       folios = folios.filter(f => {
         if (!f.fecha) return false;
@@ -923,7 +927,7 @@ export default function ProyeccionesDetalle() {
       });
     }
     return [...folios].sort((a,b) => Math.abs(b.valor) - Math.abs(a.valor));
-  }, [proyData, selectedMonthP1, selectedWeekP1]);
+  }, [proyData, selectedMonthP1, selectedWeekP1, selectedCausaP1]);
 
   // P3: folios agrupados por folio-key, filtrados por causa o actividad seleccionada
   const foliosP3Data = useMemo(() => {
@@ -1122,7 +1126,7 @@ export default function ProyeccionesDetalle() {
             </div>
           </div>
           {/* Mitad derecha — variación mensual */}
-          <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}}>
+          <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden',position:'relative'}}>
             {/* Header + month chips */}
             <div style={{padding:'5px 8px',borderBottom:'1px solid #eee',flexShrink:0}}>
               <div style={{fontSize:'0.6rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'#888'}}>
@@ -1153,7 +1157,7 @@ export default function ProyeccionesDetalle() {
                 ? Object.fromEntries(Object.entries(proyData.meses[selectedMonthP1].causas||{}).map(([c,v])=>[normCausa(c),v]))
                 : {};
               return (
-                <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}}>
+                <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden',paddingBottom:28}}>
                   <div style={{padding:'4px 8px 2px',fontSize:'0.55rem',fontWeight:700,color:'#888',flexShrink:0,
                     letterSpacing:'0.05em',borderBottom:'1px solid #f0f0f0'}}>
                     VARIACIÓN POR CAUSA{selectedMonthP1?` · ${ymLabel(selectedMonthP1)}`:''}
@@ -1161,8 +1165,8 @@ export default function ProyeccionesDetalle() {
                   <CausaBars
                     causaAcum={causasMes}
                     causas={data?.causas||[]}
-                    selectedCausa={null}
-                    onSelectCausa={()=>{}}
+                    selectedCausa={selectedCausaP1}
+                    onSelectCausa={c => { setSelectedCausaP1(c); }}
                   />
                 </div>
               );
@@ -1196,16 +1200,19 @@ export default function ProyeccionesDetalle() {
                 </div>
               );
             })()}
-            {/* Total — anclado al fondo del panel */}
+            {/* Total — posición absoluta en el fondo del panel */}
             {(() => {
               const causasMes = selectedMonthP1 && proyData?.meses[selectedMonthP1]
                 ? Object.fromEntries(Object.entries(proyData.meses[selectedMonthP1].causas||{}).map(([c,v])=>[normCausa(c),v]))
                 : {};
               const totalMes = Object.values(causasMes).reduce((s,v)=>s+v,0);
               return (
-                <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px 6px',display:'flex',
-                  alignItems:'center',gap:4,flexShrink:0,marginTop:'auto'}}>
-                  <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color: '#333'}}>Total</div>
+                <div style={{position:'absolute',bottom:0,left:0,right:0,
+                  borderTop:'1px solid #e0e0e0',padding:'6px 8px',display:'flex',
+                  alignItems:'center',gap:4,background:'var(--c-surface,#fff)'}}>
+                  <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color:'#333'}}>
+                    {selectedCausaP1 ? selectedCausaP1 : 'Total'}
+                  </div>
                   <div style={{fontSize:'0.65rem',fontWeight:700,color:'#222'}}>
                     {(totalMes>=0?'+':'')+fmtM(totalMes)}
                   </div>
@@ -1327,8 +1334,17 @@ export default function ProyeccionesDetalle() {
             <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P3</span>
             <span style={{fontSize:'0.75rem',fontWeight:600,color:'#5A5A8A'}}>
               · {selectedMonthP1 ? ymLabel(selectedMonthP1) : '—'}
+              {selectedCausaP1 ? ` · ${selectedCausaP1}` : ''}
               {selectedWeekP1 ? ` · ${getWeekChips(proyData?.meses[selectedMonthP1]?.folios||[]).find(w=>w.key===selectedWeekP1)?.label||''}` : ''}
             </span>
+            {(selectedCausaP1 || selectedWeekP1) && (
+              <button onClick={() => { setSelectedCausaP1(null); setSelectedWeekP1(null); }}
+                style={{padding:'2px 8px',fontSize:'0.62rem',fontWeight:400,
+                  border:'1px solid #2D4170',borderRadius:4,cursor:'pointer',
+                  background:'transparent',color:'#222',whiteSpace:'nowrap',flexShrink:0}}>
+                Limpiar filtro
+              </button>
+            )}
             <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#888'}}>
               {foliosP3Month.length} folios · {fmtM(foliosP3Month.reduce((s,f)=>s+f.valor,0))}
             </span>
