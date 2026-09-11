@@ -489,7 +489,7 @@ function CausaBars({ causaAcum, causas, selectedCausa, onSelectCausa }) {
   const maxAbs = Math.max(...sorted.map(x => Math.abs(x.val)), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 8px', overflow: 'hidden', flex: 1, justifyContent: 'flex-start' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '4px 8px', overflowY: 'auto', overflowX: 'hidden', flex: 1, justifyContent: 'flex-start' }}>
       {sorted.map(({ causa, val }) => {
         const pct = Math.abs(val) / maxAbs * 100;
         const isPos = val >= 0;
@@ -1356,8 +1356,10 @@ export default function ProyeccionesDetalle() {
                   <div style={{padding:'12px 8px 3px',fontSize:'0.55rem',fontWeight:700,color:'#888',flexShrink:0,letterSpacing:'0.05em',borderBottom:'1px solid #e0e0e0'}}>
                     VARIACIÓN POR CAUSA
                   </div>
+                  <div style={{flex:1,overflowY:'auto',minHeight:0}}>
                   <CausaBars causaAcum={causaAcumTotal} causas={data?.causas || []}
                     selectedCausa={selectedCausa} onSelectCausa={c => { setSelectedCausa(c); setSelectedActivity(null); }} />
+                  </div>
                   <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px 6px',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
                     <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color: selectedCausa ? '#2D4170' : '#333'}}>
                       {selectedCausa ? selectedCausa : 'Total'}
