@@ -1161,52 +1161,47 @@ export default function ProyeccionesDetalle() {
                 })()}
               </div>
             </div>
-            {/* Causa bars for selected month */}
+            {/* Causa bars for selected month + week chips inside */}
             {(() => {
               const causasMes = selectedMonthP1 && proyData?.meses[selectedMonthP1]
                 ? Object.fromEntries(Object.entries(proyData.meses[selectedMonthP1].causas||{}).map(([c,v])=>[normCausa(c),v]))
                 : {};
+              const n = new Date();
+              const curYM = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+              const foliosMes = proyData?.meses[selectedMonthP1]?.folios || [];
+              const weeks = selectedMonthP1 === curYM ? getWeekChips(foliosMes) : [];
               return (
                 <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden',paddingBottom:28}}>
                   <div style={{padding:'4px 8px 2px',fontSize:'0.55rem',fontWeight:700,color:'#888',flexShrink:0,
                     letterSpacing:'0.05em',borderBottom:'1px solid #f0f0f0'}}>
                     VARIACIÓN POR CAUSA{selectedMonthP1?` · ${ymLabel(selectedMonthP1)}`:''}
                   </div>
+                  {weeks.length > 0 && (
+                    <div style={{padding:'3px 8px 3px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
+                      <div style={{fontSize:'0.52rem',color:'#aaa',fontWeight:700,textTransform:'uppercase',
+                        letterSpacing:'0.05em',marginBottom:2}}>Semanas Vie–Jue</div>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                        {weeks.map(w => {
+                          const isSel = selectedWeekP1 === w.key;
+                          return (
+                            <button key={w.key}
+                              onClick={() => setSelectedWeekP1(isSel ? null : w.key)}
+                              style={{padding:'2px 6px',fontSize:'0.57rem',fontWeight:isSel?700:400,
+                                border:`1px solid ${isSel?'#2D4170':'#ddd'}`,borderRadius:10,cursor:'pointer',
+                                background:isSel?'#2D4170':'transparent',color:isSel?'#fff':'#555'}}>
+                              {w.label} ({w.count})
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   <CausaBars
                     causaAcum={causasMes}
                     causas={data?.causas||[]}
                     selectedCausa={selectedCausaP1}
                     onSelectCausa={c => { setSelectedCausaP1(c); }}
                   />
-                </div>
-              );
-            })()}
-            {/* Week filter — only for current month */}
-            {(() => {
-              const n = new Date();
-              const curYM = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
-              if (selectedMonthP1 !== curYM) return null;
-              const foliosMes = proyData?.meses[selectedMonthP1]?.folios || [];
-              const weeks = getWeekChips(foliosMes);
-              if (!weeks.length) return null;
-              return (
-                <div style={{padding:'4px 8px',borderTop:'1px solid #eee',flexShrink:0}}>
-                  <div style={{fontSize:'0.55rem',color:'#888',fontWeight:700,textTransform:'uppercase',
-                    letterSpacing:'0.05em',marginBottom:3}}>Semanas Vie–Jue</div>
-                  <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
-                    {weeks.map(w => {
-                      const isSel = selectedWeekP1 === w.key;
-                      return (
-                        <button key={w.key}
-                          onClick={() => setSelectedWeekP1(isSel ? null : w.key)}
-                          style={{padding:'2px 6px',fontSize:'0.57rem',fontWeight:isSel?700:400,
-                            border:`1px solid ${isSel?'#2D4170':'#ddd'}`,borderRadius:10,cursor:'pointer',
-                            background:isSel?'#2D4170':'transparent',color:isSel?'#fff':'#555'}}>
-                          {w.label} ({w.count})
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
               );
             })()}
@@ -1319,7 +1314,7 @@ export default function ProyeccionesDetalle() {
                   </div>
                   <CausaBars causaAcum={causaAcumTotal} causas={data?.causas || []}
                     selectedCausa={selectedCausa} onSelectCausa={c => { setSelectedCausa(c); setSelectedActivity(null); }} />
-                  <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px 6px',display:'flex',alignItems:'center',gap:4,flexShrink:0,marginBottom:10}}>
+                  <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px 6px',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
                     <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color: selectedCausa ? '#2D4170' : '#333'}}>
                       {selectedCausa ? selectedCausa : 'Total'}
                     </div>
