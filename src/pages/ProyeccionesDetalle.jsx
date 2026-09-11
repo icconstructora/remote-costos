@@ -489,7 +489,7 @@ function CausaBars({ causaAcum, causas, selectedCausa, onSelectCausa }) {
   const maxAbs = Math.max(...sorted.map(x => Math.abs(x.val)), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '4px 8px', overflowY: 'auto', overflowX: 'hidden', flex: 1, justifyContent: 'flex-start' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '4px 8px', overflowY: 'auto', overflowX: 'hidden', flex: 1, justifyContent: 'flex-start' }}>
       {sorted.map(({ causa, val }) => {
         const pct = Math.abs(val) / maxAbs * 100;
         const isPos = val >= 0;
