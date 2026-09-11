@@ -32,7 +32,7 @@ SCOPE     = ['api://1da0f9dd-cc35-489c-937b-c66387864730/access_as_user']
 API_BASE  = 'https://api.icconstructora.co/api/sinco/data'
 BASE      = os.path.dirname(os.path.abspath(__file__))
 CACHE_F   = os.path.join(BASE, 'token_cache.json')
-_out_dir  = os.environ.get('OUTPUT_DIR') or os.path.join(BASE, '..', 'control-costos', 'public', 'data')
+_out_dir  = os.environ.get('OUTPUT_DIR') or os.path.join(BASE, '..', '..', 'public', 'data')
 DEST      = os.path.join(_out_dir, 'anticipos_data.json')
 
 # ── CC → claves de proyecto (igual que gen_balance_api.py) ────────────────────

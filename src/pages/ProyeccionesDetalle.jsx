@@ -613,6 +613,7 @@ function getCalendarWeekChips(ym, folios) {
     const ds = String(f.fecha);
     if (ds.length < 8) return;
     const fy = parseInt(ds.slice(0,4),10), fm = parseInt(ds.slice(4,6),10)-1, fd = parseInt(ds.slice(6,8),10);
+    if (fy < 2000) return; // fecha inválida (ej: 19000101)
     const date = new Date(fy, fm, fd);
     const dow = date.getDay();
     const db = dow >= 5 ? dow - 5 : dow + 2;
@@ -632,8 +633,11 @@ function getCalendarWeekChips(ym, folios) {
     }
     fri = new Date(fri); fri.setDate(fri.getDate() + 7);
   }
-  // Chip especial para folios sin skidfechaaprobacion
-  const sinFecha = (folios || []).filter(f => !f.fecha || String(f.fecha).length < 8).length;
+  // Chip especial para folios sin skidfechaaprobacion o con fecha inválida (ej: 19000101)
+  const sinFecha = (folios || []).filter(f => {
+    if (!f.fecha || String(f.fecha).length < 8) return true;
+    return parseInt(String(f.fecha).slice(0,4),10) < 2000;
+  }).length;
   if (sinFecha > 0) {
     chips.push({ key: '__sin_fecha__', label: 'Sin fecha', count: sinFecha });
   }
@@ -947,13 +951,17 @@ export default function ProyeccionesDetalle() {
     }
     if (selectedWeekP1) {
       if (selectedWeekP1 === '__sin_fecha__') {
-        folios = folios.filter(f => !f.fecha || String(f.fecha).length < 8);
+        folios = folios.filter(f => {
+          if (!f.fecha || String(f.fecha).length < 8) return true;
+          return parseInt(String(f.fecha).slice(0,4),10) < 2000;
+        });
       } else {
         folios = folios.filter(f => {
           if (!f.fecha) return false;
           const ds = String(f.fecha);
           if (ds.length < 8) return false;
           const y = parseInt(ds.slice(0,4),10), mo = parseInt(ds.slice(4,6),10)-1, d = parseInt(ds.slice(6,8),10);
+          if (y < 2000) return false; // fecha inválida
           const date = new Date(y, mo, d);
           const dow = date.getDay();
           const daysBack = dow >= 5 ? dow - 5 : dow + 2;
