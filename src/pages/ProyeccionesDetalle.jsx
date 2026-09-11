@@ -1129,8 +1129,18 @@ export default function ProyeccionesDetalle() {
           <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden',position:'relative'}}>
             {/* Header + month chips */}
             <div style={{padding:'5px 8px',borderBottom:'1px solid #eee',flexShrink:0}}>
-              <div style={{fontSize:'0.6rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'#888'}}>
-                Variación mensual · {anioP1||'2026'}
+              <div style={{display:'flex',alignItems:'center'}}>
+                <div style={{fontSize:'0.6rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'#888',flex:1}}>
+                  Variación mensual · {anioP1||'2026'}
+                </div>
+                {(selectedCausaP1 || selectedWeekP1) && (
+                  <button onClick={() => { setSelectedCausaP1(null); setSelectedWeekP1(null); }}
+                    style={{padding:'2px 8px',fontSize:'0.62rem',fontWeight:400,
+                      border:'1px solid #2D4170',borderRadius:4,cursor:'pointer',
+                      background:'transparent',color:'#222',whiteSpace:'nowrap',flexShrink:0}}>
+                    Limpiar filtro
+                  </button>
+                )}
               </div>
               <div style={{display:'flex',flexWrap:'wrap',gap:3,marginTop:4}}>
                 {(() => {
@@ -1337,14 +1347,6 @@ export default function ProyeccionesDetalle() {
               {selectedCausaP1 ? ` · ${selectedCausaP1}` : ''}
               {selectedWeekP1 ? ` · ${getWeekChips(proyData?.meses[selectedMonthP1]?.folios||[]).find(w=>w.key===selectedWeekP1)?.label||''}` : ''}
             </span>
-            {(selectedCausaP1 || selectedWeekP1) && (
-              <button onClick={() => { setSelectedCausaP1(null); setSelectedWeekP1(null); }}
-                style={{padding:'2px 8px',fontSize:'0.62rem',fontWeight:400,
-                  border:'1px solid #2D4170',borderRadius:4,cursor:'pointer',
-                  background:'transparent',color:'#222',whiteSpace:'nowrap',flexShrink:0}}>
-                Limpiar filtro
-              </button>
-            )}
             <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#888'}}>
               {foliosP3Month.length} folios · {fmtM(foliosP3Month.reduce((s,f)=>s+f.valor,0))}
             </span>
