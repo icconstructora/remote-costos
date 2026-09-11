@@ -342,8 +342,8 @@ def main():
         proj_data[sub_key]['meses'][ym]['causas'][causa_desc] += valor
 
         folio_label = folio if folio else None
-        # Clave única = comentario completo + mes (cada texto distinto es una entrada separada)
-        folio_key = f"{comentario}|{ym}" if comentario else f"anon|{ym}"
+        # Clave única = comentario + causa + mes (misma descripción con distinta causa → entradas separadas)
+        folio_key = f"{comentario}|{causa_desc}|{ym}" if comentario else f"anon|{causa_desc}|{ym}"
         fd = proj_data[sub_key]['meses'][ym]['folios']
         fecha_aprobacion = row.get('skidfechaaprobacion')
         fecha_str = str(fecha_aprobacion) if fecha_aprobacion else ''
