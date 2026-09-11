@@ -1153,14 +1153,26 @@ export default function ProyeccionesDetalle() {
                 letterSpacing:'0.05em',borderBottom:'1px solid #f0f0f0'}}>
                 VARIACIÓN POR CAUSA{selectedMonthP1?` · ${ymLabel(selectedMonthP1)}`:''}
               </div>
-              <CausaBars
-                causaAcum={selectedMonthP1 && proyData?.meses[selectedMonthP1]
+              {(() => {
+                const causasMes = selectedMonthP1 && proyData?.meses[selectedMonthP1]
                   ? Object.fromEntries(Object.entries(proyData.meses[selectedMonthP1].causas||{}).map(([c,v])=>[normCausa(c),v]))
-                  : {}}
-                causas={data?.causas||[]}
-                selectedCausa={null}
-                onSelectCausa={()=>{}}
-              />
+                  : {};
+                const totalMes = Object.values(causasMes).reduce((s,v)=>s+v,0);
+                return (<>
+                  <CausaBars
+                    causaAcum={causasMes}
+                    causas={data?.causas||[]}
+                    selectedCausa={null}
+                    onSelectCausa={()=>{}}
+                  />
+                  <div style={{borderTop:'1px solid #e0e0e0',padding:'5px 8px',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
+                    <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color:'#333'}}>Total</div>
+                    <div style={{fontSize:'0.65rem',fontWeight:700,color:'#222'}}>
+                      {(totalMes>=0?'+':'')+fmtM(totalMes)}
+                    </div>
+                  </div>
+                </>);
+              })()}
             </div>
             {/* Week filter — only for current month */}
             {(() => {
