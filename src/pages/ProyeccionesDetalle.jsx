@@ -1199,6 +1199,17 @@ export default function ProyeccionesDetalle() {
               const weeks = selectedMonthP1 === curYM
                 ? getCalendarWeekChips(selectedMonthP1, foliosMes)
                 : [];
+              // Si hay semana seleccionada, recalcular causas desde los folios filtrados por semana
+              const causasAMostrar = selectedWeekP1
+                ? (() => {
+                    const agg = {};
+                    foliosP3Month.forEach(f => {
+                      const c = normCausa(f.causa);
+                      agg[c] = (agg[c] || 0) + f.valor;
+                    });
+                    return agg;
+                  })()
+                : causasMes;
               return (
                 <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden',paddingBottom:28}}>
                   <div style={{padding:'4px 8px 2px',fontSize:'0.55rem',fontWeight:700,color:'#888',flexShrink:0,
@@ -1226,7 +1237,7 @@ export default function ProyeccionesDetalle() {
                     </div>
                   )}
                   <CausaBars
-                    causaAcum={causasMes}
+                    causaAcum={causasAMostrar}
                     causas={data?.causas||[]}
                     selectedCausa={selectedCausaP1}
                     onSelectCausa={c => { setSelectedCausaP1(c); }}
