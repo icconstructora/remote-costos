@@ -1152,7 +1152,6 @@ export default function ProyeccionesDetalle() {
               const causasMes = selectedMonthP1 && proyData?.meses[selectedMonthP1]
                 ? Object.fromEntries(Object.entries(proyData.meses[selectedMonthP1].causas||{}).map(([c,v])=>[normCausa(c),v]))
                 : {};
-              const totalMes = Object.values(causasMes).reduce((s,v)=>s+v,0);
               return (
                 <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}}>
                   <div style={{padding:'4px 8px 2px',fontSize:'0.55rem',fontWeight:700,color:'#888',flexShrink:0,
@@ -1165,13 +1164,6 @@ export default function ProyeccionesDetalle() {
                     selectedCausa={null}
                     onSelectCausa={()=>{}}
                   />
-                  <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px',display:'flex',
-                    alignItems:'center',gap:4,flexShrink:0,marginTop:'auto'}}>
-                    <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color:'#333'}}>Total</div>
-                    <div style={{fontSize:'0.65rem',fontWeight:700,color:'#222'}}>
-                      {(totalMes>=0?'+':'')+fmtM(totalMes)}
-                    </div>
-                  </div>
                 </div>
               );
             })()}
@@ -1200,6 +1192,22 @@ export default function ProyeccionesDetalle() {
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+              );
+            })()}
+            {/* Total — anclado al fondo del panel */}
+            {(() => {
+              const causasMes = selectedMonthP1 && proyData?.meses[selectedMonthP1]
+                ? Object.fromEntries(Object.entries(proyData.meses[selectedMonthP1].causas||{}).map(([c,v])=>[normCausa(c),v]))
+                : {};
+              const totalMes = Object.values(causasMes).reduce((s,v)=>s+v,0);
+              return (
+                <div style={{borderTop:'1px solid #e0e0e0',padding:'6px 8px 6px',display:'flex',
+                  alignItems:'center',gap:4,flexShrink:0,marginTop:'auto'}}>
+                  <div style={{flex:1,fontSize:'0.62rem',fontWeight:700,color: '#333'}}>Total</div>
+                  <div style={{fontSize:'0.65rem',fontWeight:700,color:'#222'}}>
+                    {(totalMes>=0?'+':'')+fmtM(totalMes)}
                   </div>
                 </div>
               );
