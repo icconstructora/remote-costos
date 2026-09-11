@@ -1169,7 +1169,14 @@ export default function ProyeccionesDetalle() {
               const n = new Date();
               const curYM = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
               const foliosMes = proyData?.meses[selectedMonthP1]?.folios || [];
-              const weeks = selectedMonthP1 === curYM ? getWeekChips(foliosMes) : [];
+              const weeks = selectedMonthP1 === curYM
+                ? getWeekChips(foliosMes).filter(w => {
+                    const fri = new Date(w.key);
+                    const thu = new Date(fri); thu.setDate(fri.getDate() + 6);
+                    const toYM = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                    return toYM(fri) === selectedMonthP1 || toYM(thu) === selectedMonthP1;
+                  })
+                : [];
               return (
                 <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden',paddingBottom:28}}>
                   <div style={{padding:'4px 8px 2px',fontSize:'0.55rem',fontWeight:700,color:'#888',flexShrink:0,
