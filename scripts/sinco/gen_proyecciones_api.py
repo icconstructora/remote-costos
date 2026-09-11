@@ -345,6 +345,9 @@ def main():
         # Clave única = comentario completo + mes (cada texto distinto es una entrada separada)
         folio_key = f"{comentario}|{ym}" if comentario else f"anon|{ym}"
         fd = proj_data[sub_key]['meses'][ym]['folios']
+        fecha_aprobacion = row.get('skidfechaaprobacion')
+        fecha_str = str(fecha_aprobacion) if fecha_aprobacion else ''
+
         if folio_key not in fd:
             fd[folio_key] = {
                 '_key':       folio_key,
@@ -357,6 +360,7 @@ def main():
                 'capMap':     {cap_code: cap_desc} if cap_code else {},
                 'valor':      0,
                 'comentario': comentario,
+                'fecha':      fecha_str,
             }
         else:
             entry = fd[folio_key]

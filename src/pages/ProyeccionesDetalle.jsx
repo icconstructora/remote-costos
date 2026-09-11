@@ -587,6 +587,27 @@ function TablaFolios({ folios, sortBy, onSortBy }) {
   );
 }
 
+// ── Helper: semanas Vie–Jue para un array de folios ──────────────────────────
+function getWeekChips(folios) {
+  const weekMap = {};
+  folios.forEach(f => {
+    if (!f.fecha) return;
+    const ds = String(f.fecha);
+    if (ds.length < 8) return;
+    const y = parseInt(ds.slice(0,4),10), mo = parseInt(ds.slice(4,6),10)-1, d = parseInt(ds.slice(6,8),10);
+    const date = new Date(y, mo, d);
+    const dow = date.getDay(); // 0=Dom...5=Vie,6=Sab
+    const daysBack = dow >= 5 ? dow - 5 : dow + 2;
+    const fri = new Date(date); fri.setDate(date.getDate() - daysBack);
+    const thu = new Date(fri); thu.setDate(fri.getDate() + 6);
+    const fmt = dt => `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+    const key = fri.toISOString().slice(0,10);
+    if (!weekMap[key]) weekMap[key] = { key, label: `${fmt(fri)}–${fmt(thu)}`, count: 0 };
+    weekMap[key].count++;
+  });
+  return Object.values(weekMap).sort((a,b) => a.key.localeCompare(b.key));
+}
+
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function ProyeccionesDetalle() {
   const { macroKey } = useParams();
@@ -601,6 +622,12 @@ export default function ProyeccionesDetalle() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [sortP3, setSortP3] = useState('valor');
   const [sortP4, setSortP4] = useState('valor');
+  // P1 right half: month + week selection
+  const [selectedMonthP1, setSelectedMonthP1] = useState(() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+  });
+  const [selectedWeekP1, setSelectedWeekP1] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -878,6 +905,26 @@ export default function ProyeccionesDetalle() {
     return proyData.meses[selectedP2]?.folios || [];
   }, [proyData, selectedP2]);
 
+  // P3 folios for selected month (P1 right half), filtered by week if set
+  const foliosP3Month = useMemo(() => {
+    if (!proyData || !selectedMonthP1) return [];
+    let folios = proyData.meses[selectedMonthP1]?.folios || [];
+    if (selectedWeekP1) {
+      folios = folios.filter(f => {
+        if (!f.fecha) return false;
+        const ds = String(f.fecha);
+        if (ds.length < 8) return false;
+        const y = parseInt(ds.slice(0,4),10), mo = parseInt(ds.slice(4,6),10)-1, d = parseInt(ds.slice(6,8),10);
+        const date = new Date(y, mo, d);
+        const dow = date.getDay();
+        const daysBack = dow >= 5 ? dow - 5 : dow + 2;
+        const fri = new Date(date); fri.setDate(date.getDate() - daysBack);
+        return fri.toISOString().slice(0,10) === selectedWeekP1;
+      });
+    }
+    return [...folios].sort((a,b) => Math.abs(b.valor) - Math.abs(a.valor));
+  }, [proyData, selectedMonthP1, selectedWeekP1]);
+
   // P3: folios agrupados por folio-key, filtrados por causa o actividad seleccionada
   const foliosP3Data = useMemo(() => {
     if (!proyData) return [];
@@ -1074,8 +1121,77 @@ export default function ProyeccionesDetalle() {
               </div>
             </div>
           </div>
-          {/* Mitad derecha — vacía */}
-          <div style={{flex:1}}/>
+          {/* Mitad derecha — variación mensual */}
+          <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}}>
+            {/* Header + month chips */}
+            <div style={{padding:'5px 8px',borderBottom:'1px solid #eee',flexShrink:0}}>
+              <div style={{fontSize:'0.6rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'#888'}}>
+                Variación mensual · {anioP1||'2026'}
+              </div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:3,marginTop:4}}>
+                {(() => {
+                  const year = anioP1||'2026';
+                  const mesesDisp = proyData ? Object.keys(proyData.meses).filter(ym=>ym.startsWith(year)).sort() : [];
+                  return mesesDisp.map(ym => {
+                    const isSel = ym === selectedMonthP1;
+                    return (
+                      <button key={ym}
+                        onClick={() => { setSelectedMonthP1(ym); setSelectedWeekP1(null); }}
+                        style={{padding:'2px 6px',fontSize:'0.6rem',fontWeight:isSel?700:400,
+                          border:`1px solid ${isSel?'#5A5A8A':'#ddd'}`,borderRadius:10,cursor:'pointer',
+                          background:isSel?'#5A5A8A':'transparent',color:isSel?'#fff':'#555'}}>
+                        {ymLabel(ym).slice(0,3)}
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+            {/* Causa bars for selected month */}
+            <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}}>
+              <div style={{padding:'4px 8px 2px',fontSize:'0.55rem',fontWeight:700,color:'#888',flexShrink:0,
+                letterSpacing:'0.05em',borderBottom:'1px solid #f0f0f0'}}>
+                VARIACIÓN POR CAUSA{selectedMonthP1?` · ${ymLabel(selectedMonthP1)}`:''}
+              </div>
+              <CausaBars
+                causaAcum={selectedMonthP1 && proyData?.meses[selectedMonthP1]
+                  ? Object.fromEntries(Object.entries(proyData.meses[selectedMonthP1].causas||{}).map(([c,v])=>[normCausa(c),v]))
+                  : {}}
+                causas={data?.causas||[]}
+                selectedCausa={null}
+                onSelectCausa={()=>{}}
+              />
+            </div>
+            {/* Week filter — only for current month */}
+            {(() => {
+              const n = new Date();
+              const curYM = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+              if (selectedMonthP1 !== curYM) return null;
+              const foliosMes = proyData?.meses[selectedMonthP1]?.folios || [];
+              const weeks = getWeekChips(foliosMes);
+              if (!weeks.length) return null;
+              return (
+                <div style={{padding:'4px 8px',borderTop:'1px solid #eee',flexShrink:0}}>
+                  <div style={{fontSize:'0.55rem',color:'#888',fontWeight:700,textTransform:'uppercase',
+                    letterSpacing:'0.05em',marginBottom:3}}>Semanas Vie–Jue</div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                    {weeks.map(w => {
+                      const isSel = selectedWeekP1 === w.key;
+                      return (
+                        <button key={w.key}
+                          onClick={() => setSelectedWeekP1(isSel ? null : w.key)}
+                          style={{padding:'2px 6px',fontSize:'0.57rem',fontWeight:isSel?700:400,
+                            border:`1px solid ${isSel?'#2D4170':'#ddd'}`,borderRadius:10,cursor:'pointer',
+                            background:isSel?'#2D4170':'transparent',color:isSel?'#fff':'#555'}}>
+                          {w.label} ({w.count})
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
 
         {/* P2 — Variación por actividad + Acumulada por causa */}
@@ -1182,9 +1298,53 @@ export default function ProyeccionesDetalle() {
           </div>
         </div>
 
-        {/* P3 — (reservado) */}
+        {/* P3 — Detalle folios del mes seleccionado en P1 */}
         <div style={{background:'var(--c-surface,#fff)',borderRadius:6,border:'1px solid #ddd',
           display:'flex',flexDirection:'column',overflow:'hidden',minHeight:0}}>
+          <div style={{padding:'6px 12px',borderBottom:'1px solid #eee',flexShrink:0,
+            display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontWeight:700,fontSize:'0.78rem',color:'#333'}}>P3</span>
+            <span style={{fontSize:'0.75rem',fontWeight:600,color:'#5A5A8A'}}>
+              · {selectedMonthP1 ? ymLabel(selectedMonthP1) : '—'}
+              {selectedWeekP1 ? ` · ${getWeekChips(proyData?.meses[selectedMonthP1]?.folios||[]).find(w=>w.key===selectedWeekP1)?.label||''}` : ''}
+            </span>
+            <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#888'}}>
+              {foliosP3Month.length} folios · {fmtM(foliosP3Month.reduce((s,f)=>s+f.valor,0))}
+            </span>
+          </div>
+          <div style={{flex:1,overflowY:'auto',minHeight:0}}>
+            {foliosP3Month.length === 0 ? (
+              <div style={{padding:16,color:'#bbb',fontSize:'0.72rem',textAlign:'center'}}>Sin datos</div>
+            ) : (
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.67rem'}}>
+                <thead>
+                  <tr style={{background:'#f5f7fa',position:'sticky',top:0}}>
+                    <th style={{padding:'4px 8px',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'12%'}}>Folio</th>
+                    <th style={{padding:'4px 6px 4px 0',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'10%'}}>Causa</th>
+                    <th style={{padding:'4px 4px 4px 0',textAlign:'left',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'10%'}}>Capítulo</th>
+                    <th style={{padding:'4px 8px',textAlign:'left',fontWeight:600,color:'#666'}}>Descripción</th>
+                    <th style={{padding:'4px 8px',textAlign:'right',fontWeight:600,color:'#666',whiteSpace:'nowrap',width:'8%'}}>Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {foliosP3Month.map((f, i) => (
+                    <tr key={i} style={{background: i%2===0?'transparent':'#fafafa',verticalAlign:'top'}}>
+                      <td style={{padding:'4px 8px',color:'#5A5A8A',fontWeight:700,whiteSpace:'nowrap',fontSize:'0.65rem'}}>{f.folio || '—'}</td>
+                      <td style={{padding:'4px 4px 4px 0',color:'#555',fontSize:'0.60rem',whiteSpace:'nowrap'}}>{f.causa||'—'}</td>
+                      <td style={{padding:'4px 4px 4px 0',fontSize:'0.60rem',color:'#666'}}>{f.capitulo||'—'}</td>
+                      <td style={{padding:'4px 8px',color:'#444',lineHeight:1.35,fontSize:'0.65rem'}}>
+                        {f.comentario||'—'}
+                      </td>
+                      <td style={{padding:'4px 8px',textAlign:'right',fontWeight:600,whiteSpace:'nowrap',
+                        color: f.valor>=0?'#c62828':'#1565C0'}}>
+                        {(f.valor>=0?'+':'')+fmtM(f.valor)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
         {/* P4 — Folios por causa */}
