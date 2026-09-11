@@ -10,17 +10,41 @@ const fmtM = v => {
   return '$' + Math.round(v);
 };
 
-// Grupos en el mismo orden del embudo P3.
-// Completada lleva sub "Cerrada" — en ADPRO las OC completadas no se cierran.
+// Grupos del embudo — mismo estilo acumulado que P3 Contratos
 const GRUPOS = [
-  { key: 'Aprobada',           color: '#1565C0', alpha: 0.85, activa: true,  sub: null },
-  { key: 'En Proceso Entrega', color: '#2E7D32', alpha: 0.85, activa: true,  sub: null },
-  { key: 'Generada',           color: '#E8A000', alpha: 0.85, activa: false, sub: null },
-  { key: 'Completada',         color: '#00897B', alpha: 0.75, activa: false,
+  { key: 'Aprobada',           label: 'Aprobada',           color: '#1565C0', alpha: 0.85, activa: true,
+    sub: null },
+  { key: 'En Proceso Entrega', label: 'En Proceso Entrega', color: '#2E7D32', alpha: 0.85, activa: true,
+    sub: null },
+  { key: 'Generada',           label: 'Generada',           color: '#E8A000', alpha: 0.85, activa: false,
+    sub: null },
+  { key: 'Completada',         label: 'Completada',         color: '#00897B', alpha: 0.75, activa: false,
     sub: { key: 'Cerrada', label: '· Cerrada', color: '#607D8B', alpha: 0.60 } },
-  { key: 'Cancelada',          color: '#C62828', alpha: 0.60, activa: false, sub: null },
-  { key: 'Anulada',            color: '#795548', alpha: 0.55, activa: false, sub: null },
+  { key: 'Cancelada',          label: 'Cancelada',          color: '#C62828', alpha: 0.60, activa: false,
+    sub: null },
+  { key: 'Anulada',            label: 'Anulada',            color: '#795548', alpha: 0.55, activa: false,
+    sub: null },
 ];
+
+// Barras apiladas acumuladas (de abajo hacia arriba, como P3 Contratos)
+const STACK_SEGS = [
+  { key: 'Anulada',            color: '#795548', alpha: 0.55 },
+  { key: 'Cancelada',          color: '#C62828', alpha: 0.60 },
+  { key: 'Cerrada',            color: '#607D8B', alpha: 0.60 },
+  { key: 'Completada',         color: '#00897B', alpha: 0.75 },
+  { key: 'Generada',           color: '#E8A000', alpha: 0.85 },
+  { key: 'En Proceso Entrega', color: '#2E7D32', alpha: 0.85 },
+  { key: 'Aprobada',           color: '#1565C0', alpha: 0.85 },
+];
+const SEG_MAP = Object.fromEntries(STACK_SEGS.map(s => [s.key, s]));
+const CUMUL_KEYS = {
+  Anulada:            ['Anulada'],
+  Cancelada:          ['Anulada','Cancelada'],
+  Completada:         ['Anulada','Cancelada','Cerrada','Completada'],
+  Generada:           ['Anulada','Cancelada','Cerrada','Completada','Generada'],
+  'En Proceso Entrega': ['Anulada','Cancelada','Cerrada','Completada','Generada','En Proceso Entrega'],
+  Aprobada:           ['Anulada','Cancelada','Cerrada','Completada','Generada','En Proceso Entrega','Aprobada'],
+};
 
 export default function Panel4Anticipos({ loading, comprasData, anticiposData, macroKey, macro, activeSub }) {
   const navigate = useNavigate();
@@ -91,38 +115,40 @@ export default function Panel4Anticipos({ loading, comprasData, anticiposData, m
               </div>
 
               {(() => {
-                // Calcular porcentajes con suma exacta = 100%
-                const visibles = GRUPOS.map(g => {
-                  const est    = data.est[g.key] || { n: 0, valor: 0 };
-                  const subEst = g.sub ? (data.est[g.sub.key] || { n: 0, valor: 0 }) : null;
-                  const nTotal = (est.n || 0) + (subEst ? (subEst.n || 0) : 0);
-                  return { ...g, est, subEst, n: nTotal };
-                }).filter(g => g.n > 0 || g.activa);
-
-                const rawPcts = visibles.map(g => data.total > 0 ? g.n / data.total * 100 : 0);
-                const rounded = rawPcts.map(p => Math.floor(p));
-                const diff    = 100 - rounded.reduce((s, v) => s + v, 0);
-                const remainders = rawPcts.map((p, i) => ({ i, r: p - rounded[i] }))
-                  .sort((a, b) => b.r - a.r);
-                for (let k = 0; k < diff; k++) rounded[remainders[k].i]++;
-
+                const est = data.est;
+                // Contar n por estado incluyendo Cerrada
+                const nByKey = k => (est[k]?.n || 0);
+                const ACUM = {
+                  Anulada:            nByKey('Anulada'),
+                  Cancelada:          nByKey('Anulada') + nByKey('Cancelada'),
+                  Completada:         nByKey('Anulada') + nByKey('Cancelada') + nByKey('Cerrada') + nByKey('Completada'),
+                  Generada:           nByKey('Anulada') + nByKey('Cancelada') + nByKey('Cerrada') + nByKey('Completada') + nByKey('Generada'),
+                  'En Proceso Entrega': nByKey('Anulada') + nByKey('Cancelada') + nByKey('Cerrada') + nByKey('Completada') + nByKey('Generada') + nByKey('En Proceso Entrega'),
+                  Aprobada:           data.total,
+                };
                 return (
                   <div className="p3-cats">
-                    {visibles.map((g, idx) => {
-                      const pct      = rounded[idx];
-                      const mainN    = g.est.n || 0;
-                      const subN     = g.subEst?.n || 0;
-                      const hasSub   = g.sub && subN > 0;
-                      const mainW    = data.total > 0 ? (mainN / data.total * 100) : 0;
-                      const subW     = data.total > 0 ? (subN  / data.total * 100) : 0;
-                      const valor    = (g.est.valor || 0) + (g.subEst?.valor || 0);
+                    {GRUPOS.map(g => {
+                      const mainN  = nByKey(g.key);
+                      const subN   = g.sub ? nByKey(g.sub.key) : 0;
+                      const groupN = mainN + subN;
+                      const hasSub = g.sub && subN > 0;
+                      const pct    = data.total > 0 ? Math.round(groupN / data.total * 100) : 0;
+                      const cumul  = ACUM[g.key] || 0;
+                      const valor  = (est[g.key]?.valor || 0) + (g.sub ? (est[g.sub.key]?.valor || 0) : 0);
+                      const barSegs = (CUMUL_KEYS[g.key] || [])
+                        .map(k => ({ ...SEG_MAP[k], w: data.total > 0 ? nByKey(k) / data.total * 100 : 0 }))
+                        .filter(s => s.w > 0);
+                      if (groupN === 0 && !g.activa) return null;
                       return (
                         <div key={g.key} className="p3-grupo" style={{ cursor:'pointer', gridTemplateRows: hasSub ? '1fr 1fr' : '1fr' }} onClick={() => irDetalle(g.key)}>
-                          <span className="p3-lbl" style={{ gridColumn:1, gridRow:1, color: g.color }}>{g.key}</span>
+                          <span className="p3-lbl" style={{ gridColumn:1, gridRow:1, color: g.color }}>{g.label}</span>
                           <span className="p3-cnt" style={{ gridColumn:2, gridRow:1 }}>{mainN}</span>
-                          <div className="p3-bar-wrap" style={{ gridColumn:3, gridRow: hasSub ? '1/3' : '1' }}>
-                            {mainW > 0 && <div className="p3-bar" style={{ width: mainW+'%', background: g.color, opacity: g.alpha, float:'left' }} />}
-                            {hasSub && subW > 0 && <div className="p3-bar" style={{ width: subW+'%', background: g.sub.color, opacity: g.sub.alpha, float:'left' }} />}
+                          <div className="p3-bar-wrap" style={{ gridColumn:3, gridRow: hasSub ? '1/3' : '1', position:'relative' }}>
+                            {barSegs.map(s => (
+                              <div key={s.key} className="p3-bar" style={{ width: s.w+'%', background: s.color, opacity: s.alpha, float:'left' }} />
+                            ))}
+                            <span style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',fontSize:'0.62rem',fontWeight:700,color:'rgba(0,0,0,0.82)',lineHeight:1,pointerEvents:'none'}}>{cumul}</span>
                           </div>
                           <span className="p3-pct" style={{ gridColumn:4, gridRow:1 }}>{pct}%</span>
                           <span className="p3-saldos" style={{ gridColumn:5, gridRow: hasSub ? '1/3' : '1' }}>
