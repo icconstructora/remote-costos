@@ -1354,14 +1354,7 @@ export default function ProyeccionesDetalle() {
               {selectedWeekP1 ? ` · ${getWeekChips(proyData?.meses[selectedMonthP1]?.folios||[]).find(w=>w.key===selectedWeekP1)?.label||''}` : ''}
             </span>
             <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#888'}}>
-              {foliosP3Month.length} folios · {fmtM((() => {
-                if (selectedWeekP1) return foliosP3Month.reduce((s,f)=>s+f.valor,0);
-                if (selectedCausaP1 && proyData?.meses[selectedMonthP1]?.causas) {
-                  const causasMesP3 = Object.fromEntries(Object.entries(proyData.meses[selectedMonthP1].causas).map(([c,v])=>[normCausa(c),v]));
-                  return causasMesP3[selectedCausaP1] ?? foliosP3Month.reduce((s,f)=>s+f.valor,0);
-                }
-                return foliosP3Month.reduce((s,f)=>s+f.valor,0);
-              })())}
+              {foliosP3Month.length} folios · {fmtM(foliosP3Month.reduce((s,f)=>s+f.valor,0))}
             </span>
           </div>
           <div style={{flex:1,overflowY:'auto',minHeight:0}}>
