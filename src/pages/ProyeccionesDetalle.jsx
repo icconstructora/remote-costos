@@ -632,6 +632,11 @@ function getCalendarWeekChips(ym, folios) {
     }
     fri = new Date(fri); fri.setDate(fri.getDate() + 7);
   }
+  // Chip especial para folios sin skidfechaaprobacion
+  const sinFecha = (folios || []).filter(f => !f.fecha || String(f.fecha).length < 8).length;
+  if (sinFecha > 0) {
+    chips.push({ key: '__sin_fecha__', label: 'Sin fecha', count: sinFecha });
+  }
   return chips;
 }
 
@@ -941,17 +946,21 @@ export default function ProyeccionesDetalle() {
       folios = folios.filter(f => normCausa(f.causa) === selectedCausaP1);
     }
     if (selectedWeekP1) {
-      folios = folios.filter(f => {
-        if (!f.fecha) return false;
-        const ds = String(f.fecha);
-        if (ds.length < 8) return false;
-        const y = parseInt(ds.slice(0,4),10), mo = parseInt(ds.slice(4,6),10)-1, d = parseInt(ds.slice(6,8),10);
-        const date = new Date(y, mo, d);
-        const dow = date.getDay();
-        const daysBack = dow >= 5 ? dow - 5 : dow + 2;
-        const fri = new Date(date); fri.setDate(date.getDate() - daysBack);
-        return fri.toISOString().slice(0,10) === selectedWeekP1;
-      });
+      if (selectedWeekP1 === '__sin_fecha__') {
+        folios = folios.filter(f => !f.fecha || String(f.fecha).length < 8);
+      } else {
+        folios = folios.filter(f => {
+          if (!f.fecha) return false;
+          const ds = String(f.fecha);
+          if (ds.length < 8) return false;
+          const y = parseInt(ds.slice(0,4),10), mo = parseInt(ds.slice(4,6),10)-1, d = parseInt(ds.slice(6,8),10);
+          const date = new Date(y, mo, d);
+          const dow = date.getDay();
+          const daysBack = dow >= 5 ? dow - 5 : dow + 2;
+          const fri = new Date(date); fri.setDate(date.getDate() - daysBack);
+          return fri.toISOString().slice(0,10) === selectedWeekP1;
+        });
+      }
     }
     return [...folios].sort((a,b) => Math.abs(b.valor) - Math.abs(a.valor));
   }, [proyData, selectedMonthP1, selectedWeekP1, selectedCausaP1]);
