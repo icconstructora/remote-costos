@@ -331,8 +331,8 @@ export default function Panel3Contratos({
                         <span className="p3-saldos" style={{ gridColumn:5, gridRow: hasSub ? '1/3' : '1' }}>
                           {rte >= 1000 && g.key !== 'liquidar' && <span className="p3-rte">{fmtM(rte)}</span>}
                           {g.key === 'liquidar' && afData?.gta && rte >= 1000 && (() => {
-                            const saldoGta = afData.gta - (afData.con_acta || 0) - (afData.con_acta_ek || 0);
-                            const pctSaldo = saldoGta > 0 ? Math.round(rte / saldoGta * 100) : 0;
+                            const totalGta = (afData.gta || 0) + (afData.completado || 0) + (afData.liquidado || 0);
+                            const pctSaldo = totalGta > 0 ? Math.round(rte / totalGta * 100) : 0;
                             return (
                               <>
                                 <span style={{fontSize:'0.65rem', color:'#555', lineHeight:1.2, whiteSpace:'nowrap'}}>Rte: {fmtM(rte)} / Saldo Gta</span>
