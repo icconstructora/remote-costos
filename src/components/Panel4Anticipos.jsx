@@ -46,7 +46,7 @@ const CUMUL_KEYS = {
   Aprobada:           ['Anulada','Cancelada','Cerrada','Completada','Generada','En Proceso Entrega','Aprobada'],
 };
 
-export default function Panel4Anticipos({ loading, comprasData, anticiposData, macroKey, macro, activeSub }) {
+export default function Panel4Anticipos({ loading, comprasData, anticiposData, balanceData, macroKey, macro, activeSub }) {
   const navigate = useNavigate();
   const entry = useMemo(() => {
     if (!comprasData || !macroKey) return null;
@@ -57,6 +57,11 @@ export default function Panel4Anticipos({ loading, comprasData, anticiposData, m
     if (!anticiposData || !macroKey) return null;
     return anticiposData[macroKey] || null;
   }, [anticiposData, macroKey]);
+
+  const balTotals = useMemo(() => {
+    if (!balanceData || !macroKey) return null;
+    return balanceData[macroKey]?.totals || null;
+  }, [balanceData, macroKey]);
 
   const data = useMemo(() => {
     if (!entry) return null;
@@ -218,6 +223,34 @@ export default function Panel4Anticipos({ loading, comprasData, anticiposData, m
                       background: ant.pct_amort >= 80 ? '#2E7D32' : ant.pct_amort >= 50 ? '#E8A000' : '#C62828',
                     }} />
                   </div>
+                </>
+              ) : balTotals && (balTotals.gar_cum > 0 || balTotals.ant_cont > 0) ? (
+                <>
+                  <div className="p3-af-ttl">A&amp;F · Balance</div>
+                  {balTotals.gar_cum > 0 && (
+                    <div className="p3-af-row">
+                      <span className="p3-af-lbl">Gta. Cumplimiento</span>
+                      <span className="p3-af-val" style={{ color: '#1565C0' }}>{fmtM(balTotals.gar_cum)}</span>
+                    </div>
+                  )}
+                  {balTotals.ant_cont > 0 && (
+                    <div className="p3-af-row">
+                      <span className="p3-af-lbl">Ant. Contratistas</span>
+                      <span className="p3-af-val" style={{ color: '#1565C0' }}>{fmtM(balTotals.ant_cont)}</span>
+                    </div>
+                  )}
+                  {balTotals.con_acta > 0 && (
+                    <div className="p3-af-row">
+                      <span className="p3-af-lbl">Con acta</span>
+                      <span className="p3-af-val" style={{ color: '#2E7D32' }}>{fmtM(balTotals.con_acta)}</span>
+                    </div>
+                  )}
+                  {balTotals.con_acta_ek > 0 && (
+                    <div className="p3-af-row">
+                      <span className="p3-af-lbl">Con Acta de EK</span>
+                      <span className="p3-af-val" style={{ color: '#2E7D32' }}>{fmtM(balTotals.con_acta_ek)}</span>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="p3-af-empty">—</div>
