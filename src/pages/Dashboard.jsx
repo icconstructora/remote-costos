@@ -92,8 +92,8 @@ function CorteBar({ corte, generatedAt, updateManifest }) {
             <div key={s.key} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: '.6rem', padding: '2px 0', borderBottom: '1px solid var(--border)' }}>
               <span style={{ color: '#555' }}>{s.label}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.status === 'ok' ? '#2E7D32' : '#C62828', display: 'inline-block', flexShrink: 0 }} />
-                <strong style={{ color: s.status === 'ok' ? '#333' : '#C62828' }}>{s.timestamp || '—'}</strong>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.status === 'ok' ? '#2E7D32' : s.status === 'manual' ? '#1565C0' : '#C62828', display: 'inline-block', flexShrink: 0 }} />
+                <strong style={{ color: s.status === 'ok' ? '#333' : s.status === 'manual' ? '#1565C0' : '#C62828' }}>{s.status === 'manual' ? 'Excel/Manual' : (s.timestamp || '—')}</strong>
               </span>
             </div>
           ))}

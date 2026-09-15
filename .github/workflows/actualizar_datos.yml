@@ -90,23 +90,71 @@ jobs:
         timeout-minutes: 55
         continue-on-error: true   # No bloquea el deploy si falla
 
-      # ── 4. Actualizar update_manifest con timestamp de hoy ───────────────
+      # ── 4. Actualizar update_manifest con timestamps reales de cada JSON ───
       - name: Actualizar update_manifest
         run: |
           python - <<'EOF'
           import json, datetime, os
-          path = os.path.join(os.environ['GITHUB_WORKSPACE'], 'public/data/update_manifest.json')
+
+          DATA = os.path.join(os.environ['GITHUB_WORKSPACE'], 'public/data')
+          path = os.path.join(DATA, 'update_manifest.json')
+
           try:
               with open(path, encoding='utf-8') as f:
                   m = json.load(f)
           except Exception:
               m = {}
+
           cot = datetime.timezone(datetime.timedelta(hours=-5))
-          m['last_run'] = datetime.datetime.now(cot).strftime('%d %b %Y %H:%M')
-          m['all_ok'] = True
+          now_str = datetime.datetime.now(cot).strftime('%d %b %Y %H:%M')
+          m['last_run'] = now_str
+
+          # Leer generated_at real de cada archivo JSON
+          API_SCRIPTS = [
+              ('estado',    'estado_detalle_data.json',  'Estado del Proyecto'),
+              ('contratos', 'contracts_data.json',       'Contratos'),
+              ('balance',   'balance_data.json',         'Balance (garantias/anticipos)'),
+              ('consumido', 'consumido_data.json',       'Consumido por mes'),
+              ('compras',   'compras_data.json',         'Compras ADPRO'),
+              ('anticipos', 'anticipos_data.json',       'Anticipos A&F vs ADPRO'),
+              ('liquidados','liquidados_data.json',      'Liquidados F029'),
+          ]
+
+          scripts = {s['key']: s for s in m.get('scripts', [])}
+
+          for key, fname, label in API_SCRIPTS:
+              fpath = os.path.join(DATA, fname)
+              ts = now_str
+              status = 'error'
+              if os.path.exists(fpath):
+                  try:
+                      d = json.load(open(fpath, encoding='utf-8'))
+                      ts = d.get('generated_at') or d.get('corte') or now_str
+                      status = 'ok'
+                  except Exception:
+                      pass
+              scripts[key] = {
+                  'key': key, 'label': label,
+                  'status': status, 'timestamp': ts, 'duracion': 0,
+              }
+
+          # Cierre y balance_cierre: manual desde Excel — conservar último timestamp conocido
+          for key, label in [('cierre', 'Cierre Proyecto (Estado Liquidacion)'),
+                              ('balance_cierre', 'Balance Cierre (detalle)')]:
+              if key not in scripts:
+                  scripts[key] = {'key': key, 'label': label,
+                                  'status': 'manual', 'timestamp': '—', 'duracion': 0}
+              else:
+                  scripts[key]['status'] = 'manual'
+
+          m['scripts'] = list(scripts.values())
+          m['all_ok'] = all(s['status'] in ('ok', 'manual') for s in m['scripts'])
+
           with open(path, 'w', encoding='utf-8') as f:
               json.dump(m, f, ensure_ascii=False)
-          print('update_manifest actualizado:', m['last_run'])
+          print('update_manifest actualizado:', now_str)
+          for s in m['scripts']:
+              print(f"  {s['key']:15} {s['status']:6}  {s['timestamp']}")
           EOF
 
       # ── 5. Commit y push → Azure SWA construye automáticamente ───────────
