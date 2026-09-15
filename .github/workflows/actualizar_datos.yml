@@ -138,14 +138,17 @@ jobs:
                   'status': status, 'timestamp': ts, 'duracion': 0,
               }
 
-          # Cierre y balance_cierre: manual desde Excel — conservar último timestamp conocido
-          for key, label in [('cierre', 'Cierre Proyecto (Estado Liquidacion)'),
-                              ('balance_cierre', 'Balance Cierre (detalle)')]:
-              if key not in scripts:
-                  scripts[key] = {'key': key, 'label': label,
-                                  'status': 'manual', 'timestamp': '—', 'duracion': 0}
-              else:
-                  scripts[key]['status'] = 'manual'
+          # Cierre: manual desde Excel — conservar último timestamp conocido
+          key, label = 'cierre', 'Cierre Proyecto (Estado Liquidacion)'
+          if key not in scripts:
+              scripts[key] = {'key': key, 'label': label,
+                              'status': 'manual', 'timestamp': '—', 'duracion': 0}
+          else:
+              scripts[key]['status'] = 'manual'
+
+          # Eliminar entradas obsoletas que ya no tienen script activo
+          for obsoleto in ('balance_cierre',):
+              scripts.pop(obsoleto, None)
 
           m['scripts'] = list(scripts.values())
           m['all_ok'] = all(s['status'] in ('ok', 'manual') for s in m['scripts'])
