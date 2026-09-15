@@ -147,7 +147,7 @@ jobs:
               scripts[key]['status'] = 'manual'
 
           # Eliminar entradas obsoletas que ya no tienen script activo
-          for obsoleto in ('balance_cierre',):
+          for obsoleto in ('balance_cierre', 'liquidados'):
               scripts.pop(obsoleto, None)
 
           m['scripts'] = list(scripts.values())
