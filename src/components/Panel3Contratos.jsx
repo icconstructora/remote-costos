@@ -39,53 +39,57 @@ const fmtM = v => {
 function calcIrrCount(balanceData, macroKey, contratosStatic) {
   if (!balanceData || !macroKey || !balanceData[macroKey]) return 0;
   const normN = s => (s || '').toUpperCase().trim().replace(/\s+/g, ' ').replace(/\.+$/, '');
+  const TOL = 1000;
 
   const brows = balanceData[macroKey].rows || [];
-  const gtaMap = {};
-  brows.forEach(r => {
-    if (r.acct === 'Gta. Cumplimiento' && r.saldo > 0)
-      gtaMap[normN(r.tercero)] = (gtaMap[normN(r.tercero)] || 0) + r.saldo;
-  });
 
-  const contracts = contratosStatic || [];
-  // NC → contratista
-  const ncToContratista = {};
-  contracts.forEach(c => { if (c.noContrato) ncToContratista[String(c.noContrato)] = normN(c.contratista); });
-
-  const conActaMap = {};
-  let ekTotal = 0;
+  // gtaByTercero — igual que ContratosDetalle
+  const gtaByTercero = {};
   brows.forEach(r => {
-    if (!r.saldo || r.saldo < 1) return;
-    if (r.acct === 'Con Acta') {
-      const cont = normN(r.tercero || '');
-      if (cont) conActaMap[cont] = (conActaMap[cont] || 0) + r.saldo;
-    } else if (r.acct === 'Con Acta EK') {
-      ekTotal += r.saldo;
+    if (r.acct === 'Gta. Cumplimiento' && r.saldo > 0) {
+      const k = normN(r.tercero);
+      if (k) gtaByTercero[k] = (gtaByTercero[k] || 0) + r.saldo;
     }
   });
-  if (ekTotal > 0) {
-    const gtaTotal = Object.values(gtaMap).reduce((s, v) => s + v, 0);
-    if (gtaTotal > 0)
-      Object.entries(gtaMap).forEach(([k, gta]) => {
-        conActaMap[k] = (conActaMap[k] || 0) + ekTotal * (gta / gtaTotal);
-      });
-  }
 
-  const rteByTercero = {};
-  contracts.forEach(r => {
-    const k = normN(r.contratista);
-    rteByTercero[k] = (rteByTercero[k] || 0) + (r.saldoRte || 0);
+  // conActa por NC y por tercero (sin EK — igual que ContratosDetalle)
+  const conActaByTercero = {};
+  const conActaByNC = {};
+  brows.forEach(r => {
+    if (r.acct !== 'Con Acta' || !r.saldo || r.saldo < 1) return;
+    const cont = normN(r.tercero);
+    if (cont) conActaByTercero[cont] = (conActaByTercero[cont] || 0) + r.saldo;
+    if (r.nc)  conActaByNC[String(r.nc)] = (conActaByNC[String(r.nc)] || 0) + r.saldo;
   });
 
-  const TOL = 1000;
+  // conActaByTerceroNC via NC del contrato (más preciso)
+  const contracts = contratosStatic || [];
+  const conActaByTerceroNC = {};
+  contracts.forEach(c => {
+    const k = normN(c.contratista);
+    const v = conActaByNC[c.noContrato] || 0;
+    if (k && v) conActaByTerceroNC[k] = (conActaByTerceroNC[k] || 0) + v;
+  });
+
+  // saldoRte por tercero
+  const saldoRteByTercero = {};
+  contracts.forEach(c => {
+    const k = normN(c.contratista);
+    saldoRteByTercero[k] = (saldoRteByTercero[k] || 0) + (c.saldoRte || 0);
+  });
+
+  // mismo filtro que irrTerceros en ContratosDetalle
+  const terceros = new Set([
+    ...Object.keys(gtaByTercero),
+    ...contracts.map(c => normN(c.contratista)).filter(Boolean),
+  ]);
   let count = 0;
-  Object.keys(gtaMap).forEach(k => {
-    const gta      = gtaMap[k]      || 0;
-    if (gta < TOL) return;
-    const conActa  = conActaMap[k]  || 0;
-    const saldoRte = rteByTercero[k]|| 0;
-    const remanente = gta - conActa;
-    if (remanente > saldoRte + TOL) count++;
+  terceros.forEach(k => {
+    const gtaCumpl = gtaByTercero[k] || 0;
+    if (gtaCumpl < TOL) return;
+    const conActa  = (conActaByTerceroNC[k] || conActaByTercero[k]) || 0;
+    const saldoRte = saldoRteByTercero[k] || 0;
+    if ((gtaCumpl - conActa) > saldoRte + TOL) count++;
   });
   return count;
 }
