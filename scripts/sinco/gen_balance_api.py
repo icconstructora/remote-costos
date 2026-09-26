@@ -42,7 +42,7 @@ ACCT_PREFIX = {
     '1490100501': 'Ant. Contratistas',    # cuenta exacta
     '2220060001': 'Dev. Ret. Garantía',   # cuenta exacta
     '2825150101': 'Gta. Cumplimiento',    # cuentas exactas
-    '2825150102': 'Gta. Cumplimiento',
+    # '2825150102': excluida — solo se toma 2825150101
 }
 
 def acct_cat(cuenta):
